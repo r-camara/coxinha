@@ -1,0 +1,40 @@
+# Optional helper services for development.
+# Coxinha is standalone; these containers are NOT required.
+#
+# Use them when you want to test:
+# - Local Ollama for offline summarization
+# - Local Qdrant for embeddings (F4)
+#
+# docker compose up -d ollama      # Ollama only
+# docker compose up -d              # everything
+
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: coxinha-ollama
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: coxinha-qdrant
+    restart: unless-stopped
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant_data:/qdrant/storage
+
+volumes:
+  ollama_data:
+  qdrant_data:
