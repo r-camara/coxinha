@@ -258,6 +258,14 @@ impl Storage {
         self.db.search_notes(query)
     }
 
+    pub async fn list_tags(&self) -> Result<Vec<TagCount>> {
+        self.db.list_tags()
+    }
+
+    pub async fn list_notes_by_tag(&self, tag: &str) -> Result<Vec<Note>> {
+        self.db.list_notes_by_tag(tag)
+    }
+
     // ---- Meetings ----
 
     pub async fn list_meetings(&self) -> Result<Vec<Meeting>> {

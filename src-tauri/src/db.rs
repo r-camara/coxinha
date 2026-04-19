@@ -237,11 +237,8 @@ impl Db {
         Ok(())
     }
 
-    // ---- Tags (spec 0014) ----
+    // ---- Tags ----
 
-    /// Flatten every note's `tags_json` via SQLite's `json_each`
-    /// and return `(tag, count)` ordered by count desc, then tag
-    /// asc so the sidebar has a stable, "most-used first" order.
     pub fn list_tags(&self) -> Result<Vec<TagCount>> {
         let conn = self.conn.lock().unwrap();
         let mut stmt = conn.prepare(
@@ -259,10 +256,9 @@ impl Db {
         rows.collect::<Result<_, _>>().map_err(Into::into)
     }
 
-    /// Notes whose `tags_json` contains an exact match for `tag`.
-    /// Case-sensitive on purpose — `#Project` and `#project` are
-    /// distinct in our extractor, and we don't want the filter
-    /// rewriting the user's markdown.
+    // Case-sensitive on purpose: `#Project` and `#project` are
+    // distinct in `extract_tags`, so rewriting here would hide
+    // whichever form the user typed.
     pub fn list_notes_by_tag(&self, tag: &str) -> Result<Vec<Note>> {
         let conn = self.conn.lock().unwrap();
         let mut stmt = conn.prepare(

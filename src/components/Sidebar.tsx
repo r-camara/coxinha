@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAppStore } from '../lib/store';
 import { commands, type Note, type TagCount } from '../lib/bindings';
@@ -45,10 +45,15 @@ export function Sidebar({ current, onNavigate }: Props) {
     return () => clearTimeout(handle);
   }, [query, searchNotes]);
 
+  // Cheap signature that changes only when the tag set changes —
+  // lets the effects below skip re-fetching on body-only saves,
+  // which re-identity the `notes` array every keystroke.
+  const tagSignature = useMemo(
+    () => notes.map((n) => `${n.id}:${[...n.tags].sort().join(',')}`).join('|'),
+    [notes],
+  );
+
   useEffect(() => {
-    // Refresh tag cloud whenever the notes list changes — a save
-    // can introduce a new tag, a delete can drop the last
-    // occurrence of one.
     let cancelled = false;
     commands.listTags().then((r) => {
       if (!cancelled && r.status === 'ok') setTags(r.data);
@@ -56,7 +61,7 @@ export function Sidebar({ current, onNavigate }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [notes]);
+  }, [tagSignature]);
 
   useEffect(() => {
     if (!tagFilter) {
@@ -70,11 +75,10 @@ export function Sidebar({ current, onNavigate }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [tagFilter, notes]);
+  }, [tagFilter, tagSignature]);
 
   const searching = results !== null;
-  const filteringByTag = tagFilter !== null;
-  const listItems = searching ? results! : filteringByTag ? tagNotes : notes;
+  const listItems = searching ? results! : tagFilter !== null ? tagNotes : notes;
 
   return (
     <aside className="w-72 border-r border-border flex flex-col bg-muted/50">
@@ -150,11 +154,11 @@ export function Sidebar({ current, onNavigate }: Props) {
               <h2 className="text-xs uppercase text-muted-foreground">
                 {searching
                   ? t('sidebar.searchResultsHeading')
-                  : filteringByTag
+                  : tagFilter !== null
                     ? t('sidebar.tagFilteredHeading', { tag: tagFilter })
                     : t('sidebar.recentHeading')}
               </h2>
-              {filteringByTag && (
+              {tagFilter !== null && (
                 <button
                   type="button"
                   onClick={() => setTagFilter(null)}
@@ -189,7 +193,7 @@ export function Sidebar({ current, onNavigate }: Props) {
                 {t('sidebar.searchNoResults')}
               </p>
             )}
-            {!searching && !filteringByTag && notes.length === 0 && (
+            {!searching && !tagFilter !== null && notes.length === 0 && (
               <p className="px-2 text-sm text-muted-foreground">
                 {t('sidebar.emptyState')}
               </p>
