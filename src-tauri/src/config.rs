@@ -141,22 +141,6 @@ fn default_config(vault_root: &std::path::Path) -> AppConfig {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn default_config_builds_all_engines() {
-        // Regression guard: default_config must produce a configuration
-        // that the engine factories can build — otherwise a fresh
-        // install panics during setup. This is the kind of failure
-        // that bit us once and shouldn't again.
-        let cfg = default_config(std::path::Path::new("C:/tmp/coxinha"));
-        crate::transcriber::build(&cfg.transcriber).expect("transcriber builds");
-        crate::diarizer::build(&cfg.diarizer).expect("diarizer builds");
-    }
-}
-
 fn bootstrap_vault(root: &std::path::Path) -> Result<()> {
     for sub in &[
         "notes",
@@ -175,4 +159,20 @@ fn ensure_parent_dir(p: &std::path::Path) -> Result<()> {
         std::fs::create_dir_all(parent)?;
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn default_config_builds_all_engines() {
+        // Regression guard: default_config must produce a configuration
+        // that the engine factories can build — otherwise a fresh
+        // install panics during setup. This is the kind of failure
+        // that bit us once and shouldn't again.
+        let cfg = default_config(std::path::Path::new("C:/tmp/coxinha"));
+        crate::transcriber::build(&cfg.transcriber).expect("transcriber builds");
+        crate::diarizer::build(&cfg.diarizer).expect("diarizer builds");
+    }
 }

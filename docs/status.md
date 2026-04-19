@@ -98,8 +98,10 @@ The on-disk contracts and failure semantics are already frozen:
 - **Audio toolkit** (port from Handy — ADR-0014): Silero VAD v5
   embedded model, `SmoothedVad` 15-frame window; kickoff for
   spec 0007 recording
-- **GitHub Actions** CI + release (Windows runner job still to
-  wire — spec 0001)
+- **GitHub Actions** CI + release — `cargo fmt`, `cargo clippy
+  --no-default-features -D warnings`, and `pnpm typecheck` all
+  gate PRs on Ubuntu; Windows runner job still to wire (spec
+  0001)
 - **Scripts** for model download, icon generation, WSL setup
 
 ## 🧪 Test suite

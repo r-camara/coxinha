@@ -401,15 +401,7 @@ fn slug(s: &str) -> String {
     let lower = s.to_lowercase();
     let replaced: String = lower
         .chars()
-        .map(|c| {
-            if c.is_alphanumeric() {
-                c
-            } else if c.is_whitespace() || c == '-' || c == '_' {
-                '-'
-            } else {
-                '-'
-            }
-        })
+        .map(|c| if c.is_alphanumeric() { c } else { '-' })
         .collect();
     // Collapse repeated '-'
     let mut out = String::new();
@@ -445,7 +437,7 @@ fn extract_tags(markdown: &str) -> Vec<String> {
     let mut tags = Vec::new();
     for word in markdown.split_whitespace() {
         if let Some(rest) = word.strip_prefix('#') {
-            if !rest.is_empty() && rest.chars().next().map_or(false, |c| c.is_alphabetic()) {
+            if !rest.is_empty() && rest.chars().next().is_some_and(|c| c.is_alphabetic()) {
                 let clean: String = rest
                     .chars()
                     .take_while(|c| c.is_alphanumeric() || *c == '-' || *c == '_')
