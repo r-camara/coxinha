@@ -235,12 +235,14 @@ describe('SettingsView — shortcuts panel', () => {
 
     render(<SettingsView />);
 
-    // One <kbd> per binding, all visible after config loads.
-    expect(await screen.findByText('Ctrl+Alt+N')).toBeInTheDocument();
-    expect(screen.getByText('Ctrl+Alt+C')).toBeInTheDocument();
-    expect(screen.getByText('Ctrl+Alt+A')).toBeInTheDocument();
-    expect(screen.getByText('Ctrl+Alt+M')).toBeInTheDocument();
-    expect(screen.getByText('Ctrl+Alt+R')).toBeInTheDocument();
+    // Assert against BASE_CONFIG so the test tracks whatever the
+    // fixture says, not hard-coded Rust defaults that could drift.
+    const { shortcuts } = BASE_CONFIG;
+    expect(await screen.findByText(shortcuts.new_note)).toBeInTheDocument();
+    expect(screen.getByText(shortcuts.open_app)).toBeInTheDocument();
+    expect(screen.getByText(shortcuts.agenda)).toBeInTheDocument();
+    expect(screen.getByText(shortcuts.meetings)).toBeInTheDocument();
+    expect(screen.getByText(shortcuts.toggle_recording)).toBeInTheDocument();
 
     // Action labels from the i18n table.
     expect(screen.getByText('settings.shortcuts.action.new_note')).toBeInTheDocument();

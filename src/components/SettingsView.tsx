@@ -311,19 +311,23 @@ function AppearanceSection() {
   );
 }
 
+// Display order matches the user's mental model (create → navigate
+// → record), not the struct field order — lifted to module scope
+// so it isn't recreated per render.
+const SHORTCUT_KEYS: ReadonlyArray<keyof AppConfig['shortcuts']> = [
+  'new_note',
+  'open_app',
+  'agenda',
+  'meetings',
+  'toggle_recording',
+];
+
 function ShortcutsSection({
   shortcuts,
 }: {
   shortcuts: AppConfig['shortcuts'];
 }) {
   const { t } = useTranslation();
-  const rows: Array<[keyof AppConfig['shortcuts'], string]> = [
-    ['new_note', shortcuts.new_note],
-    ['open_app', shortcuts.open_app],
-    ['agenda', shortcuts.agenda],
-    ['meetings', shortcuts.meetings],
-    ['toggle_recording', shortcuts.toggle_recording],
-  ];
 
   return (
     <section aria-labelledby="shortcuts-heading" className="space-y-3">
@@ -333,21 +337,21 @@ function ShortcutsSection({
       <p className="text-xs text-muted-foreground">
         {t('settings.shortcuts.rebindComingSoon')}
       </p>
-      <dl className="space-y-1">
-        {rows.map(([key, binding]) => (
-          <div
+      <ul className="space-y-0.5">
+        {SHORTCUT_KEYS.map((key) => (
+          <li
             key={key}
             className="grid grid-cols-[1fr_auto] items-center gap-4 px-2 py-1.5 rounded hover:bg-accent/30"
           >
-            <dt className="text-sm">{t(`settings.shortcuts.action.${key}`)}</dt>
-            <dd>
-              <kbd className="text-xs font-mono px-2 py-0.5 rounded border border-border bg-background">
-                {binding}
-              </kbd>
-            </dd>
-          </div>
+            <span className="text-sm">
+              {t(`settings.shortcuts.action.${key}`)}
+            </span>
+            <kbd className="text-xs font-mono px-2 py-0.5 rounded border border-border bg-background">
+              {shortcuts[key]}
+            </kbd>
+          </li>
         ))}
-      </dl>
+      </ul>
     </section>
   );
 }
