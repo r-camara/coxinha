@@ -40,7 +40,10 @@ jobs:
         with:
           workspaces: './ -> target'
       - run: cargo fmt --all -- --check
-      # `--no-default-features` skips STT engines that pull libclang/ONNX
-      # on CI — the default dev loop already runs without them.
-      - run: cargo clippy --workspace --all-targets --no-default-features -- -D warnings
+      # Scope:
+      # - `--lib --tests` keeps us off the Tauri binary, which pulls
+      #   glib/GTK system deps we don't want to install on the runner.
+      # - `--no-default-features` skips STT engines that pull
+      #   libclang/ONNX — the default dev loop already runs without them.
+      - run: cargo clippy --workspace --lib --tests --no-default-features -- -D warnings
         working-directory: ./src-tauri
