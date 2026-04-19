@@ -39,11 +39,13 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: './ -> target'
+      # Tauri's Linux build pulls GTK/webkit via tao/wry; clippy still
+      # needs to compile the lib target to check it. Install the
+      # minimal GTK deps so the runner resolves the system libraries.
+      - run: sudo apt-get update && sudo apt-get install -y libglib2.0-dev libgtk-3-dev libwebkit2gtk-4.1-dev libsoup-3.0-dev libjavascriptcoregtk-4.1-dev
       - run: cargo fmt --all -- --check
-      # Scope:
-      # - `--lib --tests` keeps us off the Tauri binary, which pulls
-      #   glib/GTK system deps we don't want to install on the runner.
-      # - `--no-default-features` skips STT engines that pull
-      #   libclang/ONNX — the default dev loop already runs without them.
+      # `--no-default-features` skips STT engines that pull libclang/ONNX.
+      # `--lib --tests` skips the Tauri binary entrypoint (adds nothing
+      # that the lib doesn't already cover).
       - run: cargo clippy --workspace --lib --tests --no-default-features -- -D warnings
         working-directory: ./src-tauri
