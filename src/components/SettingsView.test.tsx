@@ -35,6 +35,7 @@ vi.mock('../lib/store', () => ({
 }));
 
 import { SettingsView } from './SettingsView';
+import { THEME_STORAGE_KEY } from '../lib/theme';
 
 const BASE_CONFIG = {
   vault_path: 'C:/Users/me/coxinha',
@@ -175,5 +176,51 @@ describe('SettingsView — vault panel', () => {
     const alert = await screen.findByRole('alert');
     expect(alert.textContent).toContain('disk full');
     expect(loadNotes).not.toHaveBeenCalled();
+  });
+});
+
+describe('SettingsView — appearance panel', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    document.documentElement.classList.remove('dark');
+    getConfig.mockResolvedValue({ status: 'ok', data: BASE_CONFIG });
+    listObsidianVaults.mockResolvedValue({ status: 'ok', data: [] });
+  });
+
+  it('defaults to Auto when no preference is stored', async () => {
+    render(<SettingsView />);
+    const auto = await screen.findByRole('radio', { name: 'settings.appearance.theme.auto' });
+    expect(auto).toBeChecked();
+  });
+
+  it('persists the chosen theme to localStorage and broadcasts the change', async () => {
+    const user = userEvent.setup();
+    render(<SettingsView />);
+
+    const events: string[] = [];
+    const listener = (e: Event) =>
+      events.push((e as CustomEvent).detail as string);
+    window.addEventListener('coxinha:theme-pref-changed', listener);
+
+    await user.click(
+      await screen.findByRole('radio', { name: 'settings.appearance.theme.dark' }),
+    );
+
+    expect(localStorage.getItem(THEME_STORAGE_KEY)).toBe('dark');
+    expect(events).toEqual(['dark']);
+
+    window.removeEventListener('coxinha:theme-pref-changed', listener);
+  });
+
+  it('clears the stored value when Auto is chosen after an override', async () => {
+    const user = userEvent.setup();
+    localStorage.setItem(THEME_STORAGE_KEY, 'light');
+    render(<SettingsView />);
+
+    await user.click(
+      await screen.findByRole('radio', { name: 'settings.appearance.theme.auto' }),
+    );
+
+    expect(localStorage.getItem(THEME_STORAGE_KEY)).toBeNull();
   });
 });

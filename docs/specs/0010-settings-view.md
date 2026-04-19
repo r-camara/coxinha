@@ -1,6 +1,6 @@
 # Spec 0010: Settings view UI
 
-- **Status:** draft
+- **Status:** in-progress (Vault + Rebuild + Appearance → theme shipped)
 - **Phase:** F1
 - **Owner:** Rodolfo
 - **Depends on:** —
@@ -78,3 +78,20 @@ without editing `~/coxinha/.coxinha/config.toml` by hand.
   with localhost:11434 probably works) or include for uniformity?
   Include.
 - Live shortcut conflict check against existing ones? Yes.
+
+## Shipped so far
+- **Vault panel** (PRs #4 / #5): Obsidian detection, custom path,
+  Save persists to `AppConfig.vault_path`.
+- **Index panel** (PR #6): `Rebuild index` button wired to
+  `rebuild_from_vault`, stats surfaced inline.
+- **Appearance → Theme** (PR #9, planned): radio between Auto /
+  Light / Dark. `auto` follows `prefers-color-scheme` and flips
+  live; explicit picks ignore the OS. Preference stored in
+  `localStorage` (`coxinha.themePref`) and broadcast via
+  `CustomEvent('coxinha:theme-pref-changed')` so `App.tsx`
+  re-applies without a reload. Config file untouched — theme is
+  a per-install UI affordance, not a vault setting.
+- **Still out**: Transcription, Diarization, LLM, Shortcuts,
+  Models panels, Locale override, Reset-to-defaults, atomic
+  config writes with `.bak` rollback (the spec's Handy #1262
+  item).

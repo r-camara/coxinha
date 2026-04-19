@@ -7,6 +7,11 @@ import {
   type RebuildStats,
 } from '../lib/bindings';
 import { useAppStore } from '../lib/store';
+import {
+  getThemePreference,
+  setThemePreference,
+  type ThemePreference,
+} from '../lib/theme';
 
 type LoadState =
   | { kind: 'loading' }
@@ -205,6 +210,8 @@ export function SettingsView() {
         </div>
       </section>
 
+      <AppearanceSection />
+
       <section aria-labelledby="rebuild-heading" className="space-y-3">
         <h2 id="rebuild-heading" className="text-lg font-semibold">
           {t('settings.vault.rebuildHeading')}
@@ -253,6 +260,52 @@ export function SettingsView() {
         </div>
       </section>
     </SettingsFrame>
+  );
+}
+
+function AppearanceSection() {
+  const { t } = useTranslation();
+  const [pref, setPref] = useState<ThemePreference>(() => getThemePreference());
+
+  function choose(next: ThemePreference) {
+    setPref(next);
+    setThemePreference(next);
+  }
+
+  const options: ThemePreference[] = ['auto', 'light', 'dark'];
+
+  return (
+    <fieldset aria-labelledby="appearance-heading" className="space-y-3">
+      <legend id="appearance-heading" className="text-lg font-semibold">
+        {t('settings.appearance.heading')}
+      </legend>
+      <p className="text-xs text-muted-foreground">
+        {t('settings.appearance.themeHint')}
+      </p>
+      <div className="flex gap-2">
+        {options.map((opt) => (
+          <label
+            key={opt}
+            className={
+              'cursor-pointer text-sm px-3 py-1.5 rounded border focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-ring ' +
+              (pref === opt
+                ? 'bg-primary text-primary-foreground border-primary'
+                : 'border-border hover:bg-accent/50')
+            }
+          >
+            <input
+              type="radio"
+              name="theme-pref"
+              value={opt}
+              checked={pref === opt}
+              onChange={() => choose(opt)}
+              className="sr-only"
+            />
+            {t(`settings.appearance.theme.${opt}`)}
+          </label>
+        ))}
+      </div>
+    </fieldset>
   );
 }
 

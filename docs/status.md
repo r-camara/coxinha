@@ -84,9 +84,10 @@ The on-disk contracts and failure semantics are already frozen:
   (`--card`, `--popover`, `--secondary`, `--destructive`,
   `--input`, `--ring`, `--radius`) plus coxinha orange as
   `--primary`; Tailwind aliases so `bg-background`, `text-muted`,
-  `border-border`, etc. resolve; `.dark` class synced from
-  `prefers-color-scheme` at module load + React effect with
-  cleanup
+  `border-border`, etc. resolve; Settings &gt; Appearance
+  exposes an Auto/Light/Dark preference stored in
+  `localStorage`, with Auto following `prefers-color-scheme`
+  live (spec 0010)
 - **Icon set** generated from `assets/icon2.png` via
   `scripts/generate-icons.ps1` (32/128/128@2x/icon.png +
   256×256 PNG-in-ICO)
@@ -106,8 +107,9 @@ The on-disk contracts and failure semantics are already frozen:
 - **Rust: 71 tests** — 69 unit (storage, db, config, obsidian,
   transcriber, VAD smoothed + silero, wiki-link extractor,
   backlinks query, tag aggregation) + 1 boot smoke + 1 perf smoke
-- **Frontend: 30 tests** — locale catalog, `sortByUpdated`,
-  theme helpers, `SettingsView`, `Sidebar` (search + tags),
+- **Frontend: 42 tests** — locale catalog, `sortByUpdated`,
+  theme helpers (incl. Auto/Light/Dark preference), `SettingsView`
+  (Vault + Appearance), `Sidebar` (search + tags),
   `BacklinksPanel`
 - **Baselines today**: boot ~800 ms, idle RSS ~38 MB, idle CPU
   0 %, idle growth ~0 MB, vitest suite ~3 s

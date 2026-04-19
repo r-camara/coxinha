@@ -7,7 +7,7 @@ import { SettingsView } from './components/SettingsView';
 import { Sidebar } from './components/Sidebar';
 import type { CallDetected } from './lib/bindings';
 import { useAppStore } from './lib/store';
-import { followSystemTheme } from './lib/theme';
+import { followThemePreference, getThemePreference, THEME_PREF_EVENT } from './lib/theme';
 
 type View = 'notes' | 'agenda' | 'meetings' | 'settings';
 
@@ -17,7 +17,18 @@ export default function App() {
   const activeNoteId = useAppStore((s) => s.activeNoteId);
   const newNote = useAppStore((s) => s.newNote);
 
-  useEffect(() => followSystemTheme(), []);
+  useEffect(() => {
+    let cleanup = followThemePreference(getThemePreference());
+    const handle = () => {
+      cleanup();
+      cleanup = followThemePreference(getThemePreference());
+    };
+    window.addEventListener(THEME_PREF_EVENT, handle);
+    return () => {
+      cleanup();
+      window.removeEventListener(THEME_PREF_EVENT, handle);
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
