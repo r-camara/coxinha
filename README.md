@@ -6,6 +6,63 @@
 and personal memory. Runs 100% locally, works offline, tray-resident
 with instant startup.
 
+## The problem
+
+A corporate-shaped work day is: meeting, context switch, meeting,
+quick note, meeting, follow-up, meeting. Without a fast way to
+capture notes and turn meetings into searchable memory, the
+"second brain" stays a fantasy — raw material leaks into Slack
+threads, half-notes in OneNote, and transcripts stuck inside some
+SaaS you don't own.
+
+Two problems have to be solved **together**, because solving only
+one doesn't move the needle: a note-taking tool fast enough to use
+mid-meeting, **and** a meeting recorder that actually feeds the
+same tool.
+
+## Editors — why the obvious choices don't fit
+
+| Tool | Deal-breaker |
+|---|---|
+| Notion | Cloud-first, proprietary schema, slow cold start, vendor lock-in |
+| Obsidian | Great vault, but no built-in meeting recording or AI summary — an ecosystem of plugins you assemble and maintain yourself |
+| Logseq | Local and open, but block-centric UX is niche, sluggish on Windows, no meeting recorder |
+| Apple Notes / OneNote | Tied to a single ecosystem, proprietary format, zero local control |
+| Roam Research | Cloud-only subscription, slow, data lives on someone else's servers |
+| Bear | Markdown-ish but locks you to Apple, no AI |
+| VS Code + Markdown | Fast and local, but no slash menu, no backlinks UX, no image paste — a text editor, not a note tool |
+
+## Meeting tools — same story
+
+| Tool | Deal-breaker |
+|---|---|
+| Fathom | Bot joins the call (visible to everyone), cloud transcription, your audio leaves your machine |
+| Granola | Bot-less, but summarization is cloud; Mac-first, Windows lags; subscription |
+| Otter.ai | Everything lives in their cloud; subscription |
+| Fireflies | Bot-based, cloud-only, subscription |
+| Read.ai / Krisp | Cloud-first, locked to specific conferencing tools |
+| MS Copilot for Teams | Only Teams, enterprise licensing, data stays in the MS 365 silo |
+| Meetily | Closest match — open, local, bot-less — but young and limited; no vault of its own |
+| AiNotes | Open and local, but the Python sidecar adds +200MB and is painful to bundle on Windows |
+
+## What Coxinha is
+
+The intersection of both problems, solved together:
+
+- **Bot-less, local-first meeting capture** — mic + system loopback
+  mixed into a 16kHz WAV, transcribed by `whisper-rs` or Parakeet,
+  diarized by `pyannote-rs`. Nothing leaves the machine.
+- **Notion-like editor** that opens in <50ms via tray shortcut,
+  stores plain Markdown under `~/coxinha/`, and stays compatible
+  with Obsidian or VS Code opening the exact same files.
+- **One vault for both surfaces** — meeting summaries land as
+  Markdown next to your notes, searchable by SQLite FTS5, linkable
+  via wiki-links, summarized by your LLM of choice (local Ollama,
+  Claude API, whatever you point it at).
+
+Windows-first. Keyboard-first. Tray-resident. MIT-licensed.
+Subscription: none.
+
 ## Features (F1 — MVP)
 
 - ⚡ Tray-resident; `Ctrl+Alt+N` opens the app in <50ms
@@ -22,7 +79,7 @@ with instant startup.
 ### Prerequisites
 
 - Windows 11 (primary target) or macOS/Linux (experimental)
-- Rust stable (1.82+)
+- Rust stable (1.88+) — `rustup update` if you haven't lately
 - Node.js 20+
 - pnpm (`npm i -g pnpm`)
 - **Dev:** WSL2 Ubuntu (recommended, Rust builds 2-3x faster)
