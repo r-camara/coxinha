@@ -41,6 +41,9 @@ models/
 *.bin
 *.onnx
 *.onnx.data
+# Silero VAD is embedded via include_bytes! (~2.3 MB); every build
+# needs it, so the bundled copy lives in the repo (ADR-0014).
+!src-tauri/resources/silero_vad.onnx
 
 # Dev user data
 dev-vault/
