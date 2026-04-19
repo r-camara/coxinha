@@ -25,6 +25,23 @@ either the spec needs writing or the PR is out of scope.
 
 ## Index
 
+### ⭐ Critical path to MVP
+
+`0006` → `0007` → `0008` → `0005` → `0009`
+
+- **0006 — Mic + loopback recording** captures the raw audio
+- **0007 — Transcription** turns the WAV into text segments; this
+  spec also owns the `transcribe_meeting` orchestration
+  (transcriber → diarizer → `transcript.json` → DB flag)
+- **0008 — Diarization** adds speaker labels on top of the segments
+- **0005 — Call detection** is the trigger that makes the chain
+  fire automatically from Teams/Zoom/Meet
+- **0009 — Summarization** closes the value loop: a clean
+  `summary.md` next to the recording
+
+Until this chain runs end-to-end, everything else in F1 is polish
+around something the user cannot yet feel.
+
 ### F1 — Local-first MVP
 
 | #    | Feature                                                  | Status      |

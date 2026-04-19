@@ -4,33 +4,45 @@
 
 **Goal:** replace Fathom for personal use on Windows.
 
-### Core
+### ⭐ Critical path — close the meeting loop
+
+Without this chain Coxinha is a slower Obsidian. These items are
+F1's reason to exist and block everything else:
+
+- [ ] Mic + WASAPI loopback recording → 16kHz mono WAV (spec 0006)
+- [ ] Windows COM call detection for Teams/Zoom/Meet (spec 0005)
+- [ ] `Transcriber` trait with `WhisperTranscriber` default (spec 0007)
+- [ ] `Diarizer` trait with real `PyannoteDiarizer` wiring (spec 0008)
+- [ ] `transcribe_meeting` orchestration: recorder → transcriber →
+      diarizer → `transcript.json` on disk → `has_transcript` flipped
+      in the DB (spec 0007 design notes)
+- [ ] Summarization via `genai` persists `summary.md` next to the
+      recording (spec 0009)
+
+### Editor and vault
+
 - [x] Tauri + React + BlockNote + shadcn setup
-- [ ] Tray-resident + auto-launch + global shortcuts
-- [ ] Note editor with image paste (auto WebP compression)
-- [ ] Automatic daily notes
-- [ ] Filesystem-backed storage (`~/coxinha/notes/*.md`)
-- [ ] SQLite FTS5 for search
+- [ ] Tray-resident + auto-launch (spec 0003)
+- [ ] Global shortcuts (spec 0004)
+- [ ] Note editor with image paste, WebP compression (spec 0001)
+- [ ] Filesystem-backed storage, `~/coxinha/notes/*.md` (spec 0001)
+- [ ] SQLite FTS5 search (spec 0010)
+- [ ] Automatic daily notes (spec 0002)
 
-### Audio and meetings
-- [ ] Call detector (Teams/Zoom/Meet)
-- [ ] Mic + WASAPI loopback recording
-- [ ] `Transcriber` trait with `WhisperTranscriber` default
-- [ ] Optional `ParakeetTranscriber` behind a feature flag
-- [ ] `Diarizer` trait with `NoneDiarizer` default
-- [ ] Optional `PyannoteDiarizer`
+### Optional STT engine
 
-### LLM
-- [ ] Summarization via `genai` (Claude + Ollama)
+- [ ] `ParakeetTranscriber` behind a feature flag (spec 0007)
+
+### LLM integration polish
+
 - [ ] Configurable prompt templates
-- [ ] Meeting-to-markdown integration
+- [ ] Meeting ↔ note cross-linking (open a note and see the related
+      meeting; open a meeting and see notes mentioning it)
 
-### Global shortcuts
-- [ ] `Ctrl+Alt+N` — quick new note
-- [ ] `Ctrl+Alt+C` — open last view
-- [ ] `Ctrl+Alt+A` — today's agenda
-- [ ] `Ctrl+Alt+M` — meetings list
-- [ ] `Ctrl+Alt+R` — toggle manual recording
+### Cross-cutting
+
+- [ ] i18n infrastructure in place (spec 0033)
+- [ ] Accessibility baseline (spec 0034)
 
 ## F1.5 — Rich blocks (post-MVP)
 
