@@ -36,28 +36,74 @@ The on-disk contracts and failure semantics are already frozen:
 
 ## ✅ Actually implemented
 
-- **Full documentation** — README with pitch, architecture
-  overview + `vault-schema.md` + `meeting-pipeline.md`, 13 ADRs,
-  36 specs, roadmap, CLAUDE.md, lessons
+- **Full documentation** — README, architecture overview +
+  `vault-schema.md` + `meeting-pipeline.md`, **14 ADRs**, **38
+  specs**, roadmap, CLAUDE.md, lessons (+ postmortem for the
+  four boot-failure class)
 - **Cargo workspace** configured (`src-tauri` + `shared`)
 - **Shared types** (`shared/src/lib.rs`) with `specta::Type` and
-  `PartialEq/Eq` for IPC and config diffing
-- **Tauri commands** (`lib.rs`) defining the full F1 API
-- **SQLite + FTS5 DB** (`db.rs`) working
+  `PartialEq/Eq` for IPC and config diffing; `TranscriberConfig`
+  gained a safe `None` default + `NoopTranscriber` fallback so
+  a fresh install never panics on a missing engine
+- **Tauri commands** (`lib.rs`) defining the full F1 API plus
+  `list_obsidian_vaults` (spec 0037) and
+  `get_or_create_daily_note` (spec 0005)
+- **SQLite + FTS5 DB** (`db.rs`) working, with `get_note_by_path`
+  for the daily-note probe
 - **Filesystem storage** (`storage.rs`) with backend WebP
   compression, TOCTOU-free delete, `update_note` returns the
-  refreshed Note
+  refreshed Note, **atomic writes** (`.coxinha-tmp` + rename)
+  for every on-disk mutation
+- **Daily notes**: `~/coxinha/daily/YYYY-MM-DD.md` template,
+  path-probe idempotency, Agenda view renders today's daily on
+  mount
+- **Obsidian vault detection** (Windows): `obsidian.json` parsed,
+  surfaced in Settings with radio-pick + custom-path input;
+  Save updates `vault_path` (restart still required for
+  re-index — spec 0004)
 - **Tray + global shortcuts + config** baseline (no `block_on`
-  inside Tauri `setup`; HashMap-based shortcut routing)
+  inside Tauri `setup`; HashMap-based shortcut routing); JSON
+  `app.trayIcon` removed so only the programmatic tray survives;
+  stale `plugins.autostart` block removed
+- **`default = []` feature set** — STT engines opt-in
+  (`stt-whisper`, `stt-parakeet`, `full-release`); no libclang
+  needed for the default dev loop
 - **React frontend** with BlockNote, client-side WebP
   compression, Zustand store that patches locally instead of
-  re-fetching on save
+  re-fetching on save; sidebar live search with 150 ms debounce;
+  new-note shortcut creates an empty note and drops the cursor
+  in the body
+- **Dark mode + shadcn tokens**: full token palette
+  (`--card`, `--popover`, `--secondary`, `--destructive`,
+  `--input`, `--ring`, `--radius`) plus coxinha orange as
+  `--primary`; Tailwind aliases so `bg-background`, `text-muted`,
+  `border-border`, etc. resolve; `.dark` class synced from
+  `prefers-color-scheme` at module load + React effect with
+  cleanup
+- **Icon set** generated from `assets/icon2.png` via
+  `scripts/generate-icons.ps1` (32/128/128@2x/icon.png +
+  256×256 PNG-in-ICO)
 - **i18n** wired end-to-end (`react-i18next` + `rust-i18n`); OS
   locale detection + fallback to `en`
 - **Accessibility** baseline: semantic HTML, `aria-label`,
   focus-visible, `role="status"` on loading states
-- **GitHub Actions** CI + release
-- **Scripts** for model download and WSL setup
+- **Audio toolkit** (port from Handy — ADR-0014): Silero VAD v5
+  embedded model, `SmoothedVad` 15-frame window; kickoff for
+  spec 0007 recording
+- **GitHub Actions** CI + release (Windows runner job still to
+  wire — spec 0001)
+- **Scripts** for model download, icon generation, WSL setup
+
+## 🧪 Test suite
+
+- **Rust: 46 tests** — 44 unit (storage, db, config, obsidian,
+  transcriber, VAD smoothed + silero) + 1 boot smoke (spawns
+  binary, asserts `Coxinha ready` within 5 s) + 1 perf smoke
+  (RSS < 200 MB, CPU < 25 %, idle growth < 30 MB over 5 s)
+- **Frontend: 22 tests** — locale catalog, `sortByUpdated`,
+  theme helpers, `SettingsView`, `Sidebar`
+- **Baselines today**: boot ~800 ms, idle RSS ~38 MB, idle CPU
+  0 %, idle growth ~0 MB, vitest suite ~3 s
 
 ## ❓ Needs pinning before F1 ships
 
@@ -87,17 +133,19 @@ whatever broke; pin the exact version next to any fix.
 
 - `eslint.config.js` (referenced by `pnpm lint`). Create one or
   drop the script from `package.json` (handled by spec 0001).
-- Tests — none yet. Tracked in spec 0002.
-- `src/components/MeetingsList.tsx`, `Agenda.tsx`,
-  `CallDetectedToast.tsx`, `Settings.tsx` — `App.tsx` has inline
-  placeholders only. Tracked in specs 0009 (meetings list), 0010
-  (settings view); agenda surface is part of spec 0005, call
-  toast is part of spec 0007.
-- Formal DB migrations (today it's inline SQL in `Db::migrate`).
-  Tracked in spec 0004.
-- Installer + first-run onboarding — tracked in spec 0017.
-- Vault import / backup / external-edit handling — tracked in
-  specs 0015, 0016, 0018 (all F1.5).
+- `src/components/MeetingsList.tsx` and `CallDetectedToast.tsx`
+  (specs 0009 / 0007). Agenda ✓, Settings ✓ (Vault panel only
+  so far; full Settings UI is spec 0010).
+- Formal DB migrations (today it's inline SQL in `Db::migrate`
+  with `IF NOT EXISTS`). Tracked in spec 0004.
+- Installer + first-run onboarding — spec 0017, with
+  "test microphone" step added post-Handy issues review.
+- Vault adopt-and-re-index: detection + Save ✓, but the actual
+  re-bootstrap / rebuild from disk needs spec 0004 first.
+- Vault import / backup / external-edit handling — specs 0015,
+  0016, 0018 (all F1.5).
+- CI Windows runner step for `cargo test` + `pnpm test` — the
+  workflow exists but Windows job still missing (spec 0001).
 
 ## Recommended first run
 

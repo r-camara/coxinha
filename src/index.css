@@ -3,41 +3,103 @@
 @tailwind utilities;
 
 @layer base {
+  /* shadcn token set. Every colour goes through a `--token: H S L`
+     triplet so the Tailwind alias can wrap it with `hsl(var(...))`
+     and we can swap light/dark by toggling the `.dark` class on
+     <html>. Primary is the Coxinha orange (#de8c3a) in both modes
+     — the background flips, the accent colour stays the brand. */
   :root {
     --background: 0 0% 100%;
-    --foreground: 0 0% 10%;
+    --foreground: 222 47% 11%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+
+    --primary: 28 69% 55%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222 47% 11%;
+
     --muted: 210 40% 96%;
     --muted-foreground: 215 16% 47%;
-    --border: 214 32% 91%;
-    --primary: 222 47% 11%;
-    --primary-foreground: 210 40% 98%;
+
     --accent: 210 40% 96%;
     --accent-foreground: 222 47% 11%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 28 69% 55%;
+
+    --radius: 0.5rem;
   }
 
   .dark {
     --background: 222 47% 6%;
     --foreground: 210 40% 98%;
+
+    --card: 222 47% 6%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222 47% 6%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 28 69% 55%;
+    --primary-foreground: 222 47% 11%;
+
+    --secondary: 217 33% 17%;
+    --secondary-foreground: 210 40% 98%;
+
     --muted: 217 33% 17%;
     --muted-foreground: 215 20% 65%;
-    --border: 217 33% 17%;
-    --primary: 210 40% 98%;
-    --primary-foreground: 222 47% 11%;
+
     --accent: 217 33% 17%;
     --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217 33% 17%;
+    --input: 217 33% 17%;
+    --ring: 28 69% 55%;
   }
 
   * {
-    @apply border-[hsl(var(--border))];
+    @apply border-border;
+  }
+
+  html,
+  body,
+  #root {
+    @apply h-full;
   }
 
   body {
-    @apply bg-[hsl(var(--background))] text-[hsl(var(--foreground))];
+    @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  /* Respect the OS "reduce motion" setting for everyone, not just
+     the components that remember to gate their transitions. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    ::before,
+    ::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
   }
 }
 
-/* Ajustes BlockNote quando dentro do nosso layout */
+/* BlockNote inside our layout: fill the pane, respect the theme. */
 .bn-container {
   height: 100%;
 }

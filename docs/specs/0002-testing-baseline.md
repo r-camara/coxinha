@@ -1,6 +1,8 @@
 # Spec 0002: Testing & reliability baseline
 
-- **Status:** in-progress
+- **Status:** done (core baseline — see "Shipped" below; perf +
+  CI Windows matrix rolling in as follow-ups under their own
+  specs)
 - **Phase:** F1
 - **Owner:** Rodolfo
 - **Depends on:** —
@@ -87,8 +89,52 @@ path that has to keep working on every PR:
 - Crash-recovery test invokes itself as a subprocess with a
   magic argv so the same binary is both orchestrator and target
 
+## Shipped (as of 2026-04-18)
+
+- **44 Rust unit tests** covering `storage` (slug, tags, heading,
+  sanitize, atomic-write, create/update/delete, daily-note
+  idempotency), `db` (roundtrip, sort, delete, FTS match,
+  idempotent upsert, schema-open idempotence), `config`
+  (`default_config_builds_all_engines` regression guard for the
+  Whisper-panic bug), `obsidian` (parse, sort, existence, empty,
+  malformed), `transcriber` (noop fallback), `audio_toolkit::vad`
+  (Silero load + silence classification + frame-size validation;
+  `SmoothedVad` window, flip, decay, reset).
+- **1 boot integration test** (`tests/boot_smoke.rs`) that spawns
+  `coxinha.exe`, reads stdout/stderr over threads, waits for
+  `Coxinha ready`. Catches the four plugin/config drift failures
+  that pure-function tests couldn't (see
+  [`lessons.md`](../lessons.md) 2026-04-18 postmortem).
+- **1 perf integration test** (`tests/perf_smoke.rs`) using
+  `sysinfo` — samples RSS + CPU at 100 ms over a 5 s idle window
+  after ready. Budgets: peak RSS < 200 MB, avg CPU < 25 %,
+  idle-window growth < 30 MB. Current baseline ~38 MB RSS,
+  0 % CPU, ~0 MB growth.
+- **22 frontend tests (Vitest)**: i18n catalog key coverage,
+  `sortByUpdated` purity, `theme` helpers (apply, follow, cleanup,
+  flips on OS change), `SettingsView` (empty state, dirty track,
+  save path, load error), `Sidebar` (recents, debounce, no
+  results, clear button, whitespace no-op).
+- `pnpm typecheck` clean; `cargo build` zero warnings.
+
+## Still open (explicit carve-outs)
+
+- **Crash-recovery integration test** (SIGKILL during recording)
+  belongs to spec 0007 when the recorder is real. The perf smoke
+  harness is the template.
+- **`rebuild_from_vault` round-trip test** waits on that command
+  existing — spec 0004.
+- **CI Windows runner** — local Windows validation works, but
+  `.github/workflows/ci.yml` still needs a `windows-latest` job
+  running `cargo test -p coxinha --no-default-features` and
+  `pnpm test`. Tracked in spec 0001.
+- **UI smoke (Playwright + Tauri WebDriver)** — deferred past
+  F1. Current Vitest coverage of components is meaningful
+  without a browser-driver harness.
+- **Coverage percentage gate** — not now; we have "tests exist"
+  as the gate.
+
 ## Open questions
-- Coverage gate in CI? Start with "tests exist"; add percentage
-  gates once the core is steady.
-- Windows CI is slow — run on every PR or only on core changes?
-  Every PR for F1 while the pipeline is fragile; dial back later.
+- When do we add an endurance test (hours-long synthetic
+  recording + transcription) to catch slow leaks per spec 0007
+  RSS budget? Probably right after the recorder lands.

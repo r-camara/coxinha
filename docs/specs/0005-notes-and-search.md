@@ -87,6 +87,27 @@ the same vault.
   `src/components/Sidebar.tsx`, store in `src/lib/store.ts`
 - File layout follows `architecture/vault-schema.md` to the letter
 
+## Shipped (as of 2026-04-18)
+
+- Full Note CRUD via IPC, store, sidebar, editor.
+- `atomic_write` helper with `.coxinha-tmp` + rename; covers
+  every on-disk note mutation + daily note template write.
+- Daily notes end-to-end: `get_or_create_daily_note(date?)` IPC,
+  `AgendaView` that opens today's daily, template
+  `# YYYY-MM-DD\n\n## Notes\n\n`, path-probe idempotency.
+- Sidebar live search: 150 ms debounce, empty-state, clear button,
+  whitespace no-op, results heading vs recents heading.
+- Image paste → backend WebP compression (already present;
+  frontend compression added in prior pass).
+
+## Still open
+
+- `rebuild_from_vault` command + `kind` column on `notes` to
+  tag daily vs regular notes. Tracked with spec 0004 (DB
+  migrations) — doing it without a migrator is a landmine.
+- External-edit watcher (Obsidian saves same file) → spec 0018.
+- Snippet highlighting (`fts5 snippet()`) — deferred.
+
 ## Open questions
 - Day cutover: local midnight vs 4am Logseq-style? (Start with
   local midnight; revisit if annoying.)

@@ -112,6 +112,9 @@ impl Recorder {
         Ok(m)
     }
 
+    /// Used by the tray toggle (spec 0007) to decide whether
+    /// `Ctrl+Alt+R` should start or stop a recording.
+    #[allow(dead_code)]
     pub fn is_recording(&self) -> bool {
         self.current.is_some()
     }

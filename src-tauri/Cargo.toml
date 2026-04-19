@@ -17,7 +17,7 @@ tauri-build = { version = "2", features = [] }
 shared = { path = "../shared" }
 
 # Tauri core + plugins
-tauri = { version = "2", features = ["tray-icon", "macos-private-api"] }
+tauri = { version = "2", features = ["tray-icon"] }
 tauri-plugin-autostart = "2"
 tauri-plugin-global-shortcut = "2"
 tauri-plugin-notification = "2"
@@ -49,6 +49,17 @@ rusqlite = { version = "0.32", features = ["bundled", "backup", "chrono"] }
 cpal = "0.15"
 hound = "3.5"
 
+# Voice activity detection (Silero ONNX). Ported from Handy per
+# ADR-0014. `download-binaries` grabs the ONNX Runtime shared
+# library at build time so Windows doesn't need libclang or a
+# system install.
+ort = { version = "=2.0.0-rc.10", default-features = false, features = [
+    "std",
+    "ndarray",
+    "download-binaries",
+] }
+ndarray = "0.16"
+
 # STT — features gate the crates
 whisper-rs = { version = "0.16", default-features = false, optional = true }
 transcribe-rs = { version = "0.3", features = ["onnx"], optional = true }
@@ -75,6 +86,12 @@ image = { version = "0.25", features = ["webp", "png", "jpeg"] }
 rust-i18n = "3"
 sys-locale = "0.3"
 
+[dev-dependencies]
+tempfile = "3"
+tokio = { workspace = true }
+# Lightweight process inspection for perf smoke (RSS + CPU sampling).
+sysinfo = { version = "0.32", default-features = false, features = ["system"] }
+
 [target.'cfg(windows)'.dependencies]
 # Call detection + process-specific loopback
 windows = { version = "0.58", features = [
@@ -89,8 +106,10 @@ windows = { version = "0.58", features = [
 wasapi = "0.18"
 
 [features]
-# Default: Whisper CPU + no diarization. Fast dev build.
-default = ["stt-whisper"]
+# Default: no STT. Keeps dev builds fast and avoids the libclang
+# system dependency that `whisper-rs-sys` needs at compile time.
+# Release builds use `full-release` below to pull real engines in.
+default = []
 
 # STT engines (one or more)
 stt-whisper = ["dep:whisper-rs"]

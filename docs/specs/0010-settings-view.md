@@ -47,9 +47,23 @@ without editing `~/coxinha/.coxinha/config.toml` by hand.
   rebuilds engines on config change)
 - Invalid shortcut (e.g. `Ctrl+ZZZ`) shows an inline error; Save
   stays disabled
+- Shortcut conflict detection: on Save, if `global_shortcut::register`
+  reports a binding already claimed by another app (or another
+  Coxinha shortcut), surface the offending combo inline with a
+  "rebind to something else" hint. This is the failure mode
+  Handy's issue tracker shows users hit repeatedly, and our
+  current `shortcuts::register_all` only logs a warning —
+  Settings must escalate it into the UI.
 - "Test LLM connection" hits a lightweight endpoint (e.g. list
   models) and reports success/failure in <5s
 - Reset clears `config.toml` and the next reload shows defaults
+- **Atomic config writes (Handy #1262 addendum):** every Save
+  writes to `.coxinha/config.toml.tmp`, fsyncs, then renames
+  onto `config.toml`. Old file goes to `.coxinha/config.toml.bak`
+  before the rename. On corrupt/malformed read at startup,
+  Coxinha loads `.bak` and surfaces a toast explaining the
+  rollback — never silently regenerates with defaults and
+  discards the user's data.
 
 ## Design notes
 - shadcn `<Tabs>` for sections

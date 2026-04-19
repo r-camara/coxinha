@@ -18,9 +18,18 @@ use crate::summarizer::Summarizer;
 use crate::transcriber::Transcriber;
 
 pub struct AppState {
+    /// Kept so future background tasks (call detector, sync workers)
+    /// can emit events without threading the handle through every
+    /// call path. Unused today — remove only if we're sure nothing
+    /// spawned from state will need it.
+    #[allow(dead_code)]
     pub app_handle: AppHandle,
     pub config: AppConfig,
     pub config_path: PathBuf,
+    /// Held so the DB stays alive for Storage/Recorder clones and so
+    /// the `rebuild_from_vault` command (spec 0004) can access it
+    /// directly once wired.
+    #[allow(dead_code)]
     pub db: Arc<Db>,
     pub storage: Arc<Storage>,
     pub recorder: Recorder,
@@ -104,7 +113,12 @@ impl AppState {
     }
 }
 
+/// Resolves the vault root. `COXINHA_VAULT` wins when set — used by
+/// the boot smoke test to keep runs off the user's real home folder.
 fn default_vault_root() -> Result<PathBuf> {
+    if let Some(custom) = std::env::var_os("COXINHA_VAULT") {
+        return Ok(PathBuf::from(custom));
+    }
     let dirs = directories::UserDirs::new().context("UserDirs unavailable")?;
     Ok(dirs.home_dir().join("coxinha"))
 }
@@ -114,13 +128,9 @@ fn default_config(vault_root: &std::path::Path) -> AppConfig {
         vault_path: vault_root.display().to_string(),
         // Empty string = "use OS default at runtime".
         locale: String::new(),
-        transcriber: TranscriberConfig::Whisper {
-            model_path: vault_root
-                .join(".coxinha/models/ggml-base.bin")
-                .display()
-                .to_string(),
-            accelerator: Accelerator::Cpu,
-        },
+        // None by default — a fresh install boots without needing a
+        // model on disk. Users pick Whisper/Parakeet in Settings.
+        transcriber: TranscriberConfig::None,
         diarizer: DiarizerConfig::None,
         llm: LlmProvider::Ollama {
             endpoint: "http://localhost:11434".into(),
@@ -128,6 +138,22 @@ fn default_config(vault_root: &std::path::Path) -> AppConfig {
         },
         autostart: false,
         shortcuts: ShortcutsConfig::default(),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn default_config_builds_all_engines() {
+        // Regression guard: default_config must produce a configuration
+        // that the engine factories can build — otherwise a fresh
+        // install panics during setup. This is the kind of failure
+        // that bit us once and shouldn't again.
+        let cfg = default_config(std::path::Path::new("C:/tmp/coxinha"));
+        crate::transcriber::build(&cfg.transcriber).expect("transcriber builds");
+        crate::diarizer::build(&cfg.diarizer).expect("diarizer builds");
     }
 }
 

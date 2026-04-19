@@ -83,7 +83,7 @@ impl Summarizer {
             .await
             .map_err(|e| anyhow::anyhow!("LLM error: {:?}", e))?;
 
-        res.content_text_as_str()
+        res.first_text()
             .map(|s| s.to_string())
             .ok_or_else(|| anyhow::anyhow!("empty LLM response"))
     }

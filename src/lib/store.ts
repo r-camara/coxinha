@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { invoke } from '@tauri-apps/api/core';
 
 import type { Note } from './bindings';
+import { sortByUpdated } from './notes';
 
 interface AppStore {
   notes: Note[];
@@ -13,9 +14,10 @@ interface AppStore {
   saveNote: (id: string, markdown: string) => Promise<void>;
   deleteNote: (id: string) => Promise<void>;
   searchNotes: (query: string) => Promise<Note[]>;
+  openDailyNote: (date?: string) => Promise<Note>;
 }
 
-export const useAppStore = create<AppStore>((set, get) => ({
+export const useAppStore = create<AppStore>((set) => ({
   notes: [],
   activeNoteId: null,
 
@@ -29,9 +31,14 @@ export const useAppStore = create<AppStore>((set, get) => ({
   },
 
   async newNote() {
+    // Empty title + empty body on purpose: the editor opens with the
+    // cursor in the body so the user can just start typing. A title
+    // gets derived from the first `#` heading on save (see
+    // `storage::update_note`), and the sidebar falls back to
+    // "(untitled)" until then.
     const note = await invoke<Note>('create_note', {
-      title: 'New note',
-      content: '# New note\n\n',
+      title: '',
+      content: '',
     });
     set((state) => ({
       notes: [note, ...state.notes],
@@ -63,8 +70,18 @@ export const useAppStore = create<AppStore>((set, get) => ({
   async searchNotes(query) {
     return await invoke<Note[]>('search_notes', { query });
   },
-}));
 
-function sortByUpdated(notes: Note[]): Note[] {
-  return notes.sort((a, b) => b.updated_at.localeCompare(a.updated_at));
-}
+  async openDailyNote(date) {
+    // Daily notes share the `notes` table — after the backend
+    // returns, upsert the entry into the local list so the sidebar
+    // reflects it without a round-trip to `list_notes`.
+    const note = await invoke<Note>('get_or_create_daily_note', {
+      date: date ?? null,
+    });
+    set((state) => ({
+      notes: sortByUpdated([note, ...state.notes.filter((n) => n.id !== note.id)]),
+      activeNoteId: note.id,
+    }));
+    return note;
+  },
+}));

@@ -132,6 +132,22 @@ impl Db {
         }
     }
 
+    /// Lookup by relative path. Used by daily-note creation to keep
+    /// a stable file per day: we probe the index before writing so
+    /// repeated opens return the same `Note`.
+    pub fn get_note_by_path(&self, rel_path: &str) -> Result<Option<Note>> {
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn.prepare(
+            "SELECT id, path, title, tags_json, created_at, updated_at
+             FROM notes WHERE path = ?1",
+        )?;
+        let mut rows = stmt.query_map(params![rel_path], row_to_note)?;
+        match rows.next() {
+            Some(r) => Ok(Some(r?)),
+            None => Ok(None),
+        }
+    }
+
     pub fn search_notes(&self, query: &str) -> Result<Vec<Note>> {
         let conn = self.conn.lock().unwrap();
         let q = format!("\"{}\"", query.replace('"', ""));
@@ -248,4 +264,113 @@ fn parse_dt(s: &str) -> DateTime<Utc> {
     DateTime::parse_from_rfc3339(s)
         .map(|d| d.with_timezone(&Utc))
         .unwrap_or_else(|_| Utc::now())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tempfile::TempDir;
+
+    fn fresh_db() -> (TempDir, Db) {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let db = Db::open(&dir.path().join("index.db")).expect("open db");
+        (dir, db)
+    }
+
+    fn sample_note(title: &str, path: &str, updated: &str) -> Note {
+        Note {
+            id: Uuid::new_v4(),
+            title: title.to_string(),
+            path: path.to_string(),
+            tags: vec![],
+            created_at: Utc::now(),
+            updated_at: updated
+                .parse::<DateTime<Utc>>()
+                .expect("rfc3339 timestamp"),
+        }
+    }
+
+    #[test]
+    fn open_creates_schema_idempotently() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("index.db");
+        // Opening twice on the same file must not fail — migrate() uses
+        // IF NOT EXISTS, so a second boot should be a no-op.
+        let _first = Db::open(&path).unwrap();
+        drop(_first);
+        let _second = Db::open(&path).unwrap();
+    }
+
+    #[test]
+    fn upsert_get_roundtrip() {
+        let (_tmp, db) = fresh_db();
+        let mut note = sample_note("Hello", "notes/hello.md", "2026-04-18T10:00:00Z");
+        note.tags = vec!["work".into(), "meeting".into()];
+
+        db.upsert_note(&note, "# Hello\n\nbody").unwrap();
+
+        let got = db.get_note(note.id).unwrap().expect("note exists");
+        assert_eq!(got.id, note.id);
+        assert_eq!(got.title, "Hello");
+        assert_eq!(got.path, "notes/hello.md");
+        assert_eq!(got.tags, vec!["work", "meeting"]);
+    }
+
+    #[test]
+    fn list_notes_orders_by_updated_desc() {
+        let (_tmp, db) = fresh_db();
+        let older = sample_note("old", "notes/old.md", "2026-01-01T00:00:00Z");
+        let newer = sample_note("new", "notes/new.md", "2026-04-01T00:00:00Z");
+        db.upsert_note(&older, "a").unwrap();
+        db.upsert_note(&newer, "b").unwrap();
+
+        let listed = db.list_notes().unwrap();
+        assert_eq!(listed.len(), 2);
+        assert_eq!(listed[0].title, "new");
+        assert_eq!(listed[1].title, "old");
+    }
+
+    #[test]
+    fn delete_removes_from_notes_and_fts() {
+        let (_tmp, db) = fresh_db();
+        let note = sample_note("bye", "notes/bye.md", "2026-04-18T10:00:00Z");
+        db.upsert_note(&note, "farewell content").unwrap();
+        assert!(db.get_note(note.id).unwrap().is_some());
+
+        db.delete_note(note.id).unwrap();
+
+        assert!(db.get_note(note.id).unwrap().is_none());
+        // FTS entry is gone too — searching the body yields nothing.
+        assert!(db.search_notes("farewell").unwrap().is_empty());
+    }
+
+    #[test]
+    fn search_matches_body_via_fts() {
+        let (_tmp, db) = fresh_db();
+        let note = sample_note("Journal", "notes/journal.md", "2026-04-18T10:00:00Z");
+        db.upsert_note(&note, "meeting with the robotics team").unwrap();
+
+        let hits = db.search_notes("robotics").unwrap();
+        assert_eq!(hits.len(), 1);
+        assert_eq!(hits[0].id, note.id);
+
+        assert!(db.search_notes("nonexistent").unwrap().is_empty());
+    }
+
+    #[test]
+    fn upsert_is_idempotent_by_id() {
+        let (_tmp, db) = fresh_db();
+        let mut note = sample_note("t", "notes/t.md", "2026-04-18T10:00:00Z");
+        db.upsert_note(&note, "v1").unwrap();
+
+        note.title = "t2".into();
+        db.upsert_note(&note, "v2").unwrap();
+
+        let listed = db.list_notes().unwrap();
+        assert_eq!(listed.len(), 1);
+        assert_eq!(listed[0].title, "t2");
+        // New body is indexed; old body is not.
+        assert_eq!(db.search_notes("v2").unwrap().len(), 1);
+        assert_eq!(db.search_notes("v1").unwrap().len(), 0);
+    }
 }

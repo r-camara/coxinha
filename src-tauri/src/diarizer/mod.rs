@@ -19,6 +19,9 @@ pub mod pyannote;
 #[async_trait]
 pub trait Diarizer: Send + Sync {
     /// Annotate existing segments with speaker labels inferred from audio.
+    /// Wired into the meeting pipeline by spec 0008 — the trait exists
+    /// today so the factory + config types are real.
+    #[allow(dead_code)]
     async fn diarize(
         &self,
         wav: &Path,
