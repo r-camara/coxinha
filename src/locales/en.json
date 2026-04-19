@@ -49,9 +49,15 @@
       "lastOpenedPrefix": "last opened",
       "save": "Save vault path",
       "saving": "Saving…",
-      "saved": "Saved. Restart Coxinha to pick up the new vault — re-index lands in spec 0004.",
+      "saved": "Saved. Click \"Rebuild index\" below to pick up files from the new vault.",
       "saveError": "Could not save: {{error}}",
-      "loadError": "Could not load: {{error}}"
+      "loadError": "Could not load: {{error}}",
+      "rebuildHeading": "Index",
+      "rebuildDescription": "The SQLite index is a rebuildable view over the vault files. Use this if you edited notes outside Coxinha or just switched vaults.",
+      "rebuild": "Rebuild index",
+      "rebuilding": "Rebuilding…",
+      "rebuiltSuccess": "Rebuilt: {{notes}} notes, {{links}} links indexed.",
+      "rebuildError": "Could not rebuild: {{error}}"
     }
   },
   "editor": {

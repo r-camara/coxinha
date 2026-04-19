@@ -84,11 +84,14 @@ existing Obsidian files.
 
 ## Still open
 
-- **Vault switch re-bootstrap**: Save writes the new
-  `vault_path` but `AppState::update_config` does NOT re-open
-  the DB, re-bootstrap the vault tree, or re-index. The UI
-  surfaces a "restart required" toast; the real switch is a
-  follow-up that depends on `rebuild_from_vault` (spec 0004).
+- **Full vault switch re-bootstrap**: Save writes the new
+  `vault_path` but `AppState::update_config` doesn't yet reopen
+  the DB against the new path. As of 2026-04-19 the Settings UI
+  exposes a "Rebuild index" button (spec 0005) that re-indexes
+  the *current* vault — good enough when the user already
+  edited `config.toml` by hand and wants the index to match,
+  but a proper in-process vault switch still needs the
+  `update_config` path to swap DB handles.
 - macOS / Linux UI flows — path resolution already works
   (`BaseDirs::config_dir()` returns the right root), but
   Windows-first validation is all we've done.

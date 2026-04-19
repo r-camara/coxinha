@@ -223,6 +223,20 @@ impl Db {
         rows.collect::<Result<_, _>>().map_err(Into::into)
     }
 
+    /// Wipe every note-side table (notes, notes_fts, links). Used by
+    /// `rebuild_from_vault` to start from a clean slate before walking
+    /// the filesystem. Meetings are untouched — they are not derivable
+    /// from markdown files.
+    pub fn clear_all_note_data(&self) -> Result<()> {
+        let mut conn = self.conn.lock().unwrap();
+        let tx = conn.transaction()?;
+        tx.execute("DELETE FROM links", [])?;
+        tx.execute("DELETE FROM notes_fts", [])?;
+        tx.execute("DELETE FROM notes", [])?;
+        tx.commit()?;
+        Ok(())
+    }
+
     pub fn search_notes(&self, query: &str) -> Result<Vec<Note>> {
         let conn = self.conn.lock().unwrap();
         let q = format!("\"{}\"", query.replace('"', ""));

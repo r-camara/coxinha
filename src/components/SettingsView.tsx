@@ -1,6 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { commands, type AppConfig, type ObsidianVault } from '../lib/bindings';
+import {
+  commands,
+  type AppConfig,
+  type ObsidianVault,
+  type RebuildStats,
+} from '../lib/bindings';
+import { useAppStore } from '../lib/store';
 
 type LoadState =
   | { kind: 'loading' }
@@ -13,11 +19,19 @@ type SaveState =
   | { kind: 'saved' }
   | { kind: 'error'; message: string };
 
+type RebuildState =
+  | { kind: 'idle' }
+  | { kind: 'running' }
+  | { kind: 'done'; stats: RebuildStats }
+  | { kind: 'error'; message: string };
+
 export function SettingsView() {
   const { t } = useTranslation();
+  const loadNotes = useAppStore((s) => s.loadNotes);
   const [state, setState] = useState<LoadState>({ kind: 'loading' });
   const [selectedPath, setSelectedPath] = useState<string>('');
   const [save, setSave] = useState<SaveState>({ kind: 'idle' });
+  const [rebuild, setRebuild] = useState<RebuildState>({ kind: 'idle' });
 
   useEffect(() => {
     let cancelled = false;
@@ -58,6 +72,18 @@ export function SettingsView() {
     }
     setSave({ kind: 'saved' });
     setState({ ...state, config: next });
+  }
+
+  async function onRebuild() {
+    setRebuild({ kind: 'running' });
+    const res = await commands.rebuildFromVault();
+    if (res.status === 'error') {
+      setRebuild({ kind: 'error', message: res.error });
+      return;
+    }
+    setRebuild({ kind: 'done', stats: res.data });
+    // Pull the freshly-indexed notes into the sidebar.
+    await loadNotes();
   }
 
   if (state.kind === 'loading') {
@@ -174,6 +200,40 @@ export function SettingsView() {
           {save.kind === 'error' && (
             <p role="alert" className="text-sm text-red-600">
               {t('settings.vault.saveError', { error: save.message })}
+            </p>
+          )}
+        </div>
+      </section>
+
+      <section aria-labelledby="rebuild-heading" className="space-y-3">
+        <h2 id="rebuild-heading" className="text-lg font-semibold">
+          {t('settings.vault.rebuildHeading')}
+        </h2>
+        <p className="text-sm text-muted-foreground">
+          {t('settings.vault.rebuildDescription')}
+        </p>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={onRebuild}
+            disabled={rebuild.kind === 'running'}
+            className="px-4 py-2 rounded border border-border bg-background hover:bg-accent/50 disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+          >
+            {rebuild.kind === 'running'
+              ? t('settings.vault.rebuilding')
+              : t('settings.vault.rebuild')}
+          </button>
+          {rebuild.kind === 'done' && (
+            <p role="status" aria-live="polite" className="text-sm text-green-700">
+              {t('settings.vault.rebuiltSuccess', {
+                notes: String(rebuild.stats.notes_indexed),
+                links: String(rebuild.stats.links_indexed),
+              })}
+            </p>
+          )}
+          {rebuild.kind === 'error' && (
+            <p role="alert" className="text-sm text-red-600">
+              {t('settings.vault.rebuildError', { error: rebuild.message })}
             </p>
           )}
         </div>

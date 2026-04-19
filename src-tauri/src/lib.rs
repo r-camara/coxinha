@@ -71,6 +71,7 @@ pub fn run() {
             commands::list_obsidian_vaults,
             commands::get_or_create_daily_note,
             commands::get_backlinks,
+            commands::rebuild_from_vault,
         ])
         .events(tauri_specta::collect_events![
             events::CallDetected,
@@ -404,5 +405,23 @@ mod commands {
     ) -> Result<Vec<Note>, String> {
         let state = state.lock().await;
         state.storage.backlinks(id).await.map_err(|e| e.to_string())
+    }
+
+    /// Wipe the notes index and rebuild it by walking the current
+    /// vault. Filesystem stays authoritative — the command makes
+    /// the invariant operational for the "adopt an Obsidian vault"
+    /// flow (spec 0037) and for disaster recovery when `index.db`
+    /// is lost (spec 0005 acceptance).
+    #[tauri::command]
+    #[specta::specta]
+    pub async fn rebuild_from_vault(
+        state: tauri::State<'_, Arc<Mutex<AppState>>>,
+    ) -> Result<RebuildStats, String> {
+        let state = state.lock().await;
+        state
+            .storage
+            .rebuild_from_vault()
+            .await
+            .map_err(|e| e.to_string())
     }
 }
