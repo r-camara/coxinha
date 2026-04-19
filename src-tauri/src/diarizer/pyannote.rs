@@ -1,0 +1,71 @@
+//! Diarization via `pyannote-rs`.
+//!
+//! Pipeline:
+//! 1. `segmentation-3.0.onnx` detects speech segments
+//! 2. `wespeaker-voxceleb-resnet34-LM.onnx` generates a per-segment embedding
+//! 3. Clustering via cosine similarity
+//!
+//! Model downloads:
+//! ```bash
+//! # segmentation-3.0
+//! wget -P ~/coxinha/.coxinha/models/ \
+//!   https://github.com/thewh1teagle/pyannote-rs/releases/download/v0.1.0/segmentation-3.0.onnx
+//! # wespeaker
+//! wget -P ~/coxinha/.coxinha/models/ \
+//!   https://github.com/thewh1teagle/pyannote-rs/releases/download/v0.1.0/wespeaker_en_voxceleb_CAM++.onnx
+//! ```
+
+#![cfg(feature = "diarize-pyannote")]
+
+use std::path::{Path, PathBuf};
+
+use anyhow::Result;
+use async_trait::async_trait;
+use shared::*;
+
+use super::Diarizer;
+
+pub struct PyannoteDiarizer {
+    segmentation_model: PathBuf,
+    embedding_model: PathBuf,
+}
+
+impl PyannoteDiarizer {
+    pub fn new(segmentation_model: PathBuf, embedding_model: PathBuf) -> Result<Self> {
+        Ok(Self {
+            segmentation_model,
+            embedding_model,
+        })
+    }
+}
+
+#[async_trait]
+impl Diarizer for PyannoteDiarizer {
+    async fn diarize(
+        &self,
+        wav: &Path,
+        segments: Vec<TranscriptSegment>,
+    ) -> Result<Vec<TranscriptSegment>> {
+        let _wav = wav.to_path_buf();
+        let _seg_model = self.segmentation_model.clone();
+        let _emb_model = self.embedding_model.clone();
+        let segments_clone = segments.clone();
+
+        // TODO: wire up real pyannote-rs. API sketch:
+        //
+        // let mut embedding_extractor = pyannote_rs::EmbeddingExtractor::new(&emb_model)?;
+        // let mut speaker_manager = pyannote_rs::EmbeddingManager::new(/* max speakers */);
+        // let segments_it = pyannote_rs::segment(&samples, sample_rate, &seg_model)?;
+        // for seg in segments_it {
+        //     let embedding = embedding_extractor.compute(&seg.samples)?;
+        //     let speaker = speaker_manager.search_speaker(embedding, /* threshold */);
+        //     ...
+        // }
+        //
+        // Then merge the speaker segments with the transcript segments by
+        // timestamp overlap.
+
+        tracing::warn!("PyannoteDiarizer: not wired yet, returning segments as-is");
+        Ok(segments_clone)
+    }
+}

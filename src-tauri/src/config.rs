@@ -1,0 +1,146 @@
+//! Global app state. Everything shared across threads lives here.
+//!
+//! Config is persisted in `~/coxinha/.coxinha/config.toml` and can be
+//! edited by hand while the app is closed.
+
+use std::path::PathBuf;
+use std::sync::Arc;
+
+use anyhow::{Context, Result};
+use shared::*;
+use tauri::AppHandle;
+
+use crate::db::Db;
+use crate::diarizer::Diarizer;
+use crate::recorder::Recorder;
+use crate::storage::Storage;
+use crate::summarizer::Summarizer;
+use crate::transcriber::Transcriber;
+
+pub struct AppState {
+    pub app_handle: AppHandle,
+    pub config: AppConfig,
+    pub config_path: PathBuf,
+    pub db: Arc<Db>,
+    pub storage: Arc<Storage>,
+    pub recorder: Recorder,
+    pub transcriber: Arc<dyn Transcriber>,
+    pub diarizer: Arc<dyn Diarizer>,
+    pub summarizer: Arc<Summarizer>,
+    pub active_calls: Vec<ActiveCall>,
+}
+
+impl AppState {
+    pub fn initialize(app_handle: &AppHandle) -> Result<Self> {
+        let vault_root = default_vault_root()?;
+        let config_path = vault_root.join(".coxinha").join("config.toml");
+
+        // Load config or create the default
+        let config = if config_path.exists() {
+            let raw = std::fs::read_to_string(&config_path)
+                .with_context(|| format!("reading {}", config_path.display()))?;
+            toml::from_str(&raw).context("parsing config.toml")?
+        } else {
+            let cfg = default_config(&vault_root);
+            ensure_parent_dir(&config_path)?;
+            std::fs::write(&config_path, toml::to_string_pretty(&cfg)?)?;
+            cfg
+        };
+
+        // Make sure the folder layout exists
+        bootstrap_vault(&vault_root)?;
+
+        // DB
+        let db_path = vault_root.join(".coxinha").join("index.db");
+        let db = Arc::new(Db::open(&db_path)?);
+
+        // Storage
+        let storage = Arc::new(Storage::new(vault_root.clone(), db.clone()));
+
+        // Recorder
+        let recorder = Recorder::new(vault_root.clone(), db.clone());
+
+        // Pluggable engines driven by config
+        let transcriber = crate::transcriber::build(&config.transcriber)?;
+        let diarizer = crate::diarizer::build(&config.diarizer)?;
+        let summarizer = Arc::new(Summarizer::new(config.llm.clone(), storage.clone()));
+
+        Ok(Self {
+            app_handle: app_handle.clone(),
+            config,
+            config_path,
+            db,
+            storage,
+            recorder,
+            transcriber,
+            diarizer,
+            summarizer,
+            active_calls: Vec::new(),
+        })
+    }
+
+    pub async fn update_config(&mut self, new_config: AppConfig) -> Result<()> {
+        let transcriber_changed = self.config.transcriber != new_config.transcriber;
+        let diarizer_changed = self.config.diarizer != new_config.diarizer;
+        let llm_changed = self.config.llm != new_config.llm;
+
+        self.config = new_config;
+
+        if transcriber_changed {
+            self.transcriber = crate::transcriber::build(&self.config.transcriber)?;
+        }
+        if diarizer_changed {
+            self.diarizer = crate::diarizer::build(&self.config.diarizer)?;
+        }
+        if llm_changed {
+            self.summarizer = Arc::new(Summarizer::new(
+                self.config.llm.clone(),
+                self.storage.clone(),
+            ));
+        }
+
+        std::fs::write(&self.config_path, toml::to_string_pretty(&self.config)?)?;
+        Ok(())
+    }
+}
+
+fn default_vault_root() -> Result<PathBuf> {
+    let dirs = directories::UserDirs::new().context("UserDirs unavailable")?;
+    Ok(dirs.home_dir().join("coxinha"))
+}
+
+fn default_config(vault_root: &std::path::Path) -> AppConfig {
+    AppConfig {
+        vault_path: vault_root.display().to_string(),
+        // Empty string = "use OS default at runtime".
+        locale: String::new(),
+        transcriber: TranscriberConfig::Whisper {
+            model_path: vault_root
+                .join(".coxinha/models/ggml-base.bin")
+                .display()
+                .to_string(),
+            accelerator: Accelerator::Cpu,
+        },
+        diarizer: DiarizerConfig::None,
+        llm: LlmProvider::Ollama {
+            endpoint: "http://localhost:11434".into(),
+            model: "llama3.2:3b".into(),
+        },
+        autostart: false,
+        shortcuts: ShortcutsConfig::default(),
+    }
+}
+
+fn bootstrap_vault(root: &std::path::Path) -> Result<()> {
+    for sub in &["notes", "meetings", "attachments", "daily", ".coxinha/models"] {
+        std::fs::create_dir_all(root.join(sub))?;
+    }
+    Ok(())
+}
+
+fn ensure_parent_dir(p: &std::path::Path) -> Result<()> {
+    if let Some(parent) = p.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
+    Ok(())
+}

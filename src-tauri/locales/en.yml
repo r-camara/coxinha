@@ -1,0 +1,7 @@
+_version: 2
+
+tray:
+  open: Open Coxinha
+  newNote: New note (Ctrl+Alt+N)
+  settings: Settings
+  quit: Quit

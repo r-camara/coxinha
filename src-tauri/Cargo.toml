@@ -1,0 +1,114 @@
+[package]
+name = "coxinha"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[lib]
+name = "coxinha_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+# Shared types
+shared = { path = "../shared" }
+
+# Tauri core + plugins
+tauri = { version = "2", features = ["tray-icon", "macos-private-api"] }
+tauri-plugin-autostart = "2"
+tauri-plugin-global-shortcut = "2"
+tauri-plugin-notification = "2"
+tauri-plugin-shell = "2"
+tauri-plugin-dialog = "2"
+tauri-plugin-fs = "2"
+
+# Typed IPC (generates TS from Rust)
+specta = { version = "2.0.0-rc", features = ["derive", "chrono", "uuid"] }
+specta-typescript = "0.0.9"
+tauri-specta = { version = "2.0.0-rc", features = ["derive", "typescript"] }
+
+# Shared workspace
+serde.workspace = true
+serde_json.workspace = true
+anyhow.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+chrono.workspace = true
+uuid.workspace = true
+tokio.workspace = true
+async-trait = "0.1"
+
+# DB
+rusqlite = { version = "0.32", features = ["bundled", "backup", "chrono"] }
+
+# Audio
+cpal = "0.15"
+hound = "3.5"
+
+# STT — features gate the crates
+whisper-rs = { version = "0.16", default-features = false, optional = true }
+transcribe-rs = { version = "0.3", features = ["onnx"], optional = true }
+
+# Diarization
+pyannote-rs = { version = "0.3", optional = true }
+# speakrs = { version = "0.1", optional = true }  # uncomment when ready
+
+# Unified LLM client
+genai = "0.5"
+
+# HTTP + config
+reqwest = { version = "0.12", features = ["json", "stream"] }
+toml = "0.8"
+directories = "5"
+
+# Filesystem watcher (detect external vault edits)
+notify = "7"
+
+# Image processing (WebP compression on paste)
+image = { version = "0.25", features = ["webp", "png", "jpeg"] }
+
+# i18n (tray menu strings etc.)
+rust-i18n = "3"
+sys-locale = "0.3"
+
+[target.'cfg(windows)'.dependencies]
+# Call detection + process-specific loopback
+windows = { version = "0.58", features = [
+    "Win32_Foundation",
+    "Win32_Media_Audio",
+    "Win32_System_Com",
+    "Win32_System_ProcessStatus",
+    "Win32_System_Threading",
+    "Win32_System_Variant",
+    "Win32_UI_Shell_PropertiesSystem",
+] }
+wasapi = "0.18"
+
+[features]
+# Default: Whisper CPU + no diarization. Fast dev build.
+default = ["stt-whisper"]
+
+# STT engines (one or more)
+stt-whisper = ["dep:whisper-rs"]
+stt-parakeet = ["dep:transcribe-rs"]
+
+# GPU acceleration (each engine picks what it needs)
+cuda = ["whisper-rs/cuda"]
+metal = ["whisper-rs/metal"]
+vulkan = ["whisper-rs/vulkan"]
+
+# Diarization engines
+diarize-pyannote = ["dep:pyannote-rs"]
+# diarize-speakrs = ["dep:speakrs"]
+
+# Full release bundle (used by GitHub Actions)
+full-release = [
+    "stt-whisper",
+    "stt-parakeet",
+    "cuda",
+    "diarize-pyannote",
+]
