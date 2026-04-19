@@ -14,6 +14,34 @@ paragraphs — not prose.
 
 ---
 
+## 2026-04-19 — `include_bytes!` inputs must not be globally gitignored
+
+**Context:** Adding `cargo clippy` to CI exploded in three rounds:
+first glib wasn't installed, then alsa, then `silero_vad.onnx` was
+missing. The onnx file was blocked by the project-wide
+`*.onnx` gitignore rule. Locally the file existed because it had
+been copied in during the Handy port; every fresh clone would
+have failed identically.
+
+**Lesson:** any file read at compile time (`include_bytes!`,
+`include_str!`, build-script inputs) is part of the source tree,
+not runtime data — the gitignore must exempt it explicitly. The
+fix is `!path/to/file` **plus** committing the file. A zero-
+byte placeholder won't do: the compile-time read needs the real
+bytes.
+
+Broader rule: when `.gitignore` uses a glob (`*.onnx`, `*.bin`,
+`*.pdf`), scan the tree for anything matching that must *not*
+be ignored and add explicit negations. Grep for the extension
+inside `include_bytes!`, `include_str!`, `std::include_bytes!`,
+and build-script `cargo:rerun-if-changed=` directives to find
+them.
+
+**Reference:** PR #10 `ci(0001)` + follow-up commit `fix(vad):
+commit bundled silero_vad.onnx`.
+
+---
+
 ## 2026-04-19 — `useEffect` on a frequently-churning array reference
 
 **Context:** Zustand's `saveNote` action rebuilds the `notes` array
