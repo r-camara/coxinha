@@ -106,48 +106,72 @@ impl Storage {
 
         let mut notes_indexed = 0u32;
         let mut links_indexed = 0u32;
+        let mut notes_skipped = 0u32;
         for abs_path in note_files {
-            let Ok(rel_raw) = abs_path.strip_prefix(&self.vault) else {
-                continue;
-            };
-            let rel_path = rel_raw.to_string_lossy().replace('\\', "/");
-
-            let content = fs::read_to_string(&abs_path).await?;
-            let metadata = fs::metadata(&abs_path).await?;
-            let updated_at: chrono::DateTime<Utc> = metadata
-                .modified()
-                .ok()
-                .map(Into::into)
-                .unwrap_or_else(Utc::now);
-            let created_at: chrono::DateTime<Utc> = metadata
-                .created()
-                .ok()
-                .map(Into::into)
-                .unwrap_or(updated_at);
-
-            let title = first_heading(&content)
-                .or_else(|| path_stem(&rel_path))
-                .unwrap_or_else(|| "(untitled)".to_string());
-
-            let wikilinks = extract_wikilinks(&content);
-            let note = Note {
-                id: Uuid::new_v4(),
-                title,
-                path: rel_path,
-                tags: extract_tags(&content),
-                created_at,
-                updated_at,
-            };
-            self.db.upsert_note(&note, &content)?;
-            self.db.replace_links(note.id, &wikilinks)?;
-            links_indexed += wikilinks.len() as u32;
-            notes_indexed += 1;
+            match self.index_one_file(&abs_path).await {
+                Ok(Some(stats)) => {
+                    notes_indexed += 1;
+                    links_indexed += stats.links;
+                }
+                Ok(None) => notes_skipped += 1,
+                Err(e) => {
+                    // One bad file must not wipe the whole rebuild —
+                    // the DB is already cleared above, so aborting
+                    // now would leave the user with an empty index.
+                    // Log + skip; the UI surfaces the count.
+                    tracing::warn!(
+                        "rebuild_from_vault: skipping {} — {:?}",
+                        abs_path.display(),
+                        e
+                    );
+                    notes_skipped += 1;
+                }
+            }
         }
 
         Ok(RebuildStats {
             notes_indexed,
             links_indexed,
+            notes_skipped,
         })
+    }
+
+    async fn index_one_file(&self, abs_path: &Path) -> Result<Option<IndexOneStats>> {
+        let Ok(rel_raw) = abs_path.strip_prefix(&self.vault) else {
+            return Ok(None);
+        };
+        let rel_path = rel_raw.to_string_lossy().replace('\\', "/");
+
+        let content = fs::read_to_string(abs_path).await?;
+        let metadata = fs::metadata(abs_path).await?;
+        let updated_at: chrono::DateTime<Utc> = metadata
+            .modified()
+            .ok()
+            .map(Into::into)
+            .unwrap_or_else(Utc::now);
+        let created_at: chrono::DateTime<Utc> = metadata
+            .created()
+            .ok()
+            .map(Into::into)
+            .unwrap_or(updated_at);
+
+        let title = first_heading(&content)
+            .or_else(|| path_stem(&rel_path))
+            .unwrap_or_else(|| "(untitled)".to_string());
+
+        let wikilinks = extract_wikilinks(&content);
+        let note = Note {
+            id: Uuid::new_v4(),
+            title,
+            path: rel_path,
+            tags: extract_tags(&content),
+            created_at,
+            updated_at,
+        };
+        self.db.upsert_note(&note, &content)?;
+        let links = wikilinks.len() as u32;
+        self.db.replace_links(note.id, &wikilinks)?;
+        Ok(Some(IndexOneStats { links }))
     }
 
     /// Notes that contain a `[[…]]` pointing at this note. The
@@ -264,9 +288,15 @@ impl Storage {
     }
 }
 
+struct IndexOneStats {
+    links: u32,
+}
+
 /// Recursively collect every `.md` file under `dir`. A missing
 /// directory is treated as empty (no error) — vaults that don't
-/// yet contain `daily/` should still rebuild cleanly.
+/// yet contain `daily/` should still rebuild cleanly. Symlinks are
+/// skipped to avoid following Obsidian "alias" folders or Windows
+/// junction points into a cycle.
 async fn collect_md_files(dir: &Path, out: &mut Vec<PathBuf>) -> Result<()> {
     let mut stack = vec![dir.to_path_buf()];
     while let Some(current) = stack.pop() {
@@ -276,8 +306,11 @@ async fn collect_md_files(dir: &Path, out: &mut Vec<PathBuf>) -> Result<()> {
             Err(e) => return Err(e.into()),
         };
         while let Some(entry) = entries.next_entry().await? {
-            let path = entry.path();
             let ft = entry.file_type().await?;
+            if ft.is_symlink() {
+                continue;
+            }
+            let path = entry.path();
             if ft.is_dir() {
                 stack.push(path);
             } else if ft.is_file() && path.extension().and_then(|s| s.to_str()) == Some("md") {
@@ -843,6 +876,30 @@ mod tests {
         storage.rebuild_from_vault().await.unwrap();
         let all = storage.list_notes().await.unwrap();
         assert_eq!(all[0].title, "my-titleless-note");
+    }
+
+    #[tokio::test]
+    async fn rebuild_from_vault_skips_invalid_utf8_without_aborting() {
+        let (tmp, storage) = fresh_storage().await;
+        tokio::fs::write(tmp.path().join("notes/good1.md"), "# One")
+            .await
+            .unwrap();
+        tokio::fs::write(tmp.path().join("notes/good2.md"), "# Two")
+            .await
+            .unwrap();
+        // Invalid UTF-8 — `read_to_string` fails, per-file handler
+        // must log+count and keep walking instead of wiping the
+        // just-cleared index and returning an error.
+        tokio::fs::write(
+            tmp.path().join("notes/broken.md"),
+            &[0xFFu8, 0xFE, 0xFD, 0x00, 0xC3, 0x28][..],
+        )
+        .await
+        .unwrap();
+
+        let stats = storage.rebuild_from_vault().await.unwrap();
+        assert_eq!(stats.notes_indexed, 2);
+        assert_eq!(stats.notes_skipped, 1);
     }
 
     #[tokio::test]

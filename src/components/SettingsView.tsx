@@ -224,11 +224,25 @@ export function SettingsView() {
               : t('settings.vault.rebuild')}
           </button>
           {rebuild.kind === 'done' && (
-            <p role="status" aria-live="polite" className="text-sm text-green-700">
-              {t('settings.vault.rebuiltSuccess', {
-                notes: String(rebuild.stats.notes_indexed),
-                links: String(rebuild.stats.links_indexed),
-              })}
+            <p
+              role="status"
+              aria-live="polite"
+              className={
+                rebuild.stats.notes_skipped > 0
+                  ? 'text-sm text-amber-600'
+                  : 'text-sm text-green-700'
+              }
+            >
+              {rebuild.stats.notes_skipped > 0
+                ? t('settings.vault.rebuiltWithSkips', {
+                    notes: String(rebuild.stats.notes_indexed),
+                    links: String(rebuild.stats.links_indexed),
+                    skipped: String(rebuild.stats.notes_skipped),
+                  })
+                : t('settings.vault.rebuiltSuccess', {
+                    notes: String(rebuild.stats.notes_indexed),
+                    links: String(rebuild.stats.links_indexed),
+                  })}
             </p>
           )}
           {rebuild.kind === 'error' && (

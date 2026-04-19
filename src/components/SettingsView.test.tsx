@@ -146,7 +146,7 @@ describe('SettingsView — vault panel', () => {
     listObsidianVaults.mockResolvedValue({ status: 'ok', data: [] });
     rebuildFromVault.mockResolvedValue({
       status: 'ok',
-      data: { notes_indexed: 42, links_indexed: 7 },
+      data: { notes_indexed: 42, links_indexed: 7, notes_skipped: 0 },
     });
 
     render(<SettingsView />);

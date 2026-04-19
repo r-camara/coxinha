@@ -163,6 +163,10 @@ pub struct AppConfig {
 pub struct RebuildStats {
     pub notes_indexed: u32,
     pub links_indexed: u32,
+    /// Files the walker found but couldn't index (unreadable, invalid
+    /// UTF-8, symlink loop). Shown in the UI only when non-zero so
+    /// the happy path stays quiet.
+    pub notes_skipped: u32,
 }
 
 // -- Obsidian vault detection (spec 0037) --
