@@ -100,5 +100,12 @@ G5400 — no fallback, hard crash. Prevent that here:
 - `pnpm typecheck` gates every PR (CI `lint-frontend`).
 - All RC deps pinned via `Cargo.lock` (done in earlier PRs).
 
-Still out: eslint or drop `pnpm lint`, Windows CI runner, CPU-
-feature runtime guard, placeholder icons check.
+- `pnpm lint` dropped from `package.json` (PR #11). The script
+  pointed at an eslint config that never existed, so every
+  invocation failed. `pnpm typecheck` stays the single frontend
+  gate; a proper eslint setup can land when it's actually needed.
+  `eslint` remains in `devDependencies` so a follow-up can wire
+  flat config without reinstalling.
+
+Still out: Windows CI runner, CPU-feature runtime guard,
+placeholder icons check, eslint flat-config (if/when needed).
