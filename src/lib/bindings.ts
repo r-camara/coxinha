@@ -179,6 +179,21 @@ async getBacklinks(id: string) : Promise<Result<Note[], string>> {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
 }
+},
+/**
+ * Wipe the notes index and rebuild it by walking the current
+ * vault. Filesystem stays authoritative — the command makes
+ * the invariant operational for the "adopt an Obsidian vault"
+ * flow (spec 0037) and for disaster recovery when `index.db`
+ * is lost (spec 0005 acceptance).
+ */
+async rebuildFromVault() : Promise<Result<RebuildStats, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("rebuild_from_vault") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
 }
 }
 
@@ -240,6 +255,7 @@ last_opened_ms: number | null;
  * the folder.
  */
 exists: boolean }
+export type RebuildStats = { notes_indexed: number; links_indexed: number }
 export type RecordingProgress = { meeting_id: string; duration_seconds: number; level_db: number }
 export type ShortcutsConfig = { new_note: string; open_app: string; agenda: string; meetings: string; toggle_recording: string }
 export type TranscriberConfig = 

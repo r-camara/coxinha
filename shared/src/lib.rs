@@ -157,6 +157,14 @@ pub struct AppConfig {
     pub shortcuts: ShortcutsConfig,
 }
 
+// -- Rebuild stats (spec 0005) --
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Type)]
+pub struct RebuildStats {
+    pub notes_indexed: u32,
+    pub links_indexed: u32,
+}
+
 // -- Obsidian vault detection (spec 0037) --
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Type)]

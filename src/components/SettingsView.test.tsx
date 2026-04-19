@@ -17,13 +17,21 @@ vi.mock('react-i18next', () => ({
 const getConfig = vi.fn();
 const listObsidianVaults = vi.fn();
 const updateConfig = vi.fn();
+const rebuildFromVault = vi.fn();
 
 vi.mock('../lib/bindings', () => ({
   commands: {
     getConfig: (...a: unknown[]) => getConfig(...a),
     listObsidianVaults: (...a: unknown[]) => listObsidianVaults(...a),
     updateConfig: (...a: unknown[]) => updateConfig(...a),
+    rebuildFromVault: (...a: unknown[]) => rebuildFromVault(...a),
   },
+}));
+
+const loadNotes = vi.fn();
+vi.mock('../lib/store', () => ({
+  useAppStore: <T,>(selector: (s: { loadNotes: typeof loadNotes }) => T) =>
+    selector({ loadNotes }),
 }));
 
 import { SettingsView } from './SettingsView';
@@ -48,6 +56,8 @@ beforeEach(() => {
   getConfig.mockReset();
   listObsidianVaults.mockReset();
   updateConfig.mockReset();
+  rebuildFromVault.mockReset();
+  loadNotes.mockReset();
 });
 
 describe('SettingsView — vault panel', () => {
@@ -129,5 +139,41 @@ describe('SettingsView — vault panel', () => {
 
     const alert = await screen.findByRole('alert');
     expect(alert.textContent).toContain('boom');
+  });
+
+  it('rebuilds the index, shows the stats, and reloads notes', async () => {
+    getConfig.mockResolvedValue({ status: 'ok', data: BASE_CONFIG });
+    listObsidianVaults.mockResolvedValue({ status: 'ok', data: [] });
+    rebuildFromVault.mockResolvedValue({
+      status: 'ok',
+      data: { notes_indexed: 42, links_indexed: 7 },
+    });
+
+    render(<SettingsView />);
+
+    const button = await screen.findByRole('button', { name: /settings\.vault\.rebuild/ });
+    await userEvent.click(button);
+
+    await waitFor(() => expect(rebuildFromVault).toHaveBeenCalledOnce());
+    expect(loadNotes).toHaveBeenCalledOnce();
+    const status = await screen.findByRole('status');
+    expect(status.textContent).toContain('42');
+    expect(status.textContent).toContain('7');
+  });
+
+  it('surfaces rebuild errors without touching the note store', async () => {
+    getConfig.mockResolvedValue({ status: 'ok', data: BASE_CONFIG });
+    listObsidianVaults.mockResolvedValue({ status: 'ok', data: [] });
+    rebuildFromVault.mockResolvedValue({ status: 'error', error: 'disk full' });
+
+    render(<SettingsView />);
+
+    await userEvent.click(
+      await screen.findByRole('button', { name: /settings\.vault\.rebuild/ }),
+    );
+
+    const alert = await screen.findByRole('alert');
+    expect(alert.textContent).toContain('disk full');
+    expect(loadNotes).not.toHaveBeenCalled();
   });
 });

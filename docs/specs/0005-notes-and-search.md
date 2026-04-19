@@ -102,11 +102,31 @@ the same vault.
 
 ## Still open
 
-- `rebuild_from_vault` command + `kind` column on `notes` to
-  tag daily vs regular notes. Tracked with spec 0004 (DB
-  migrations) — doing it without a migrator is a landmine.
+- `kind` column on `notes` to tag daily vs regular notes.
+  Tracked with spec 0004 (DB migrations) — doing it without a
+  migrator is a landmine.
 - External-edit watcher (Obsidian saves same file) → spec 0018.
 - Snippet highlighting (`fts5 snippet()`) — deferred.
+
+## Shipped addendum (2026-04-19)
+
+- `storage::rebuild_from_vault()` — wipes `notes` / `notes_fts` /
+  `links`, walks `vault/notes/**/*.md` + `vault/daily/**/*.md`,
+  re-indexes each file (title from `# H1` or filename stem, tags
+  + wiki-links extracted, mtime preserved). UUIDs are
+  regenerated — nothing in the vault stores them, and nothing
+  cross-document references them by id.
+- `clear_all_note_data` in the DB layer as the transactional
+  wipe primitive.
+- IPC `rebuild_from_vault() -> RebuildStats { notes_indexed,
+  links_indexed }` exposed via specta.
+- Settings > Vault picker gets a "Rebuild index" button below
+  the save action; on success, the sidebar's note list is
+  refreshed via `loadNotes()`.
+- 7 round-trip tests (indexes notes + daily, replaces existing
+  index, idempotent on repeat, skips non-`.md` and `meetings/`,
+  tolerates missing `daily/`, derives title from path when
+  heading absent, preserves wiki-link backlinks).
 
 ## Open questions
 - Day cutover: local midnight vs 4am Logseq-style? (Start with

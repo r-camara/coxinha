@@ -85,6 +85,71 @@ impl Storage {
         Ok(updated)
     }
 
+    /// Wipe the index and rebuild it by walking the vault. The
+    /// filesystem stays the source of truth (CLAUDE.md invariant):
+    /// a `.md` file in `vault/notes/` or `vault/daily/` becomes a
+    /// `notes` row + FTS entry + extracted links. Everything else
+    /// (attachments, meetings) is ignored.
+    ///
+    /// Repeated calls are idempotent on the file contents: running
+    /// twice on the same vault yields the same index (new UUIDs,
+    /// same title/path/tags/links). UUIDs are not preserved across
+    /// rebuilds on purpose — nothing in the vault stores them, and
+    /// the only cross-table keys (links) resolve by text.
+    pub async fn rebuild_from_vault(&self) -> Result<RebuildStats> {
+        self.db.clear_all_note_data()?;
+
+        let mut note_files = Vec::new();
+        for sub in &["notes", "daily"] {
+            collect_md_files(&self.vault.join(sub), &mut note_files).await?;
+        }
+
+        let mut notes_indexed = 0u32;
+        let mut links_indexed = 0u32;
+        for abs_path in note_files {
+            let Ok(rel_raw) = abs_path.strip_prefix(&self.vault) else {
+                continue;
+            };
+            let rel_path = rel_raw.to_string_lossy().replace('\\', "/");
+
+            let content = fs::read_to_string(&abs_path).await?;
+            let metadata = fs::metadata(&abs_path).await?;
+            let updated_at: chrono::DateTime<Utc> = metadata
+                .modified()
+                .ok()
+                .map(Into::into)
+                .unwrap_or_else(Utc::now);
+            let created_at: chrono::DateTime<Utc> = metadata
+                .created()
+                .ok()
+                .map(Into::into)
+                .unwrap_or(updated_at);
+
+            let title = first_heading(&content)
+                .or_else(|| path_stem(&rel_path))
+                .unwrap_or_else(|| "(untitled)".to_string());
+
+            let wikilinks = extract_wikilinks(&content);
+            let note = Note {
+                id: Uuid::new_v4(),
+                title,
+                path: rel_path,
+                tags: extract_tags(&content),
+                created_at,
+                updated_at,
+            };
+            self.db.upsert_note(&note, &content)?;
+            self.db.replace_links(note.id, &wikilinks)?;
+            links_indexed += wikilinks.len() as u32;
+            notes_indexed += 1;
+        }
+
+        Ok(RebuildStats {
+            notes_indexed,
+            links_indexed,
+        })
+    }
+
     /// Notes that contain a `[[…]]` pointing at this note. The
     /// match is resolved at query time (case-insensitive) against
     /// the note's current title **and** its filename stem — either
@@ -197,6 +262,30 @@ impl Storage {
         fs::write(&abs, &final_bytes).await?;
         Ok(rel)
     }
+}
+
+/// Recursively collect every `.md` file under `dir`. A missing
+/// directory is treated as empty (no error) — vaults that don't
+/// yet contain `daily/` should still rebuild cleanly.
+async fn collect_md_files(dir: &Path, out: &mut Vec<PathBuf>) -> Result<()> {
+    let mut stack = vec![dir.to_path_buf()];
+    while let Some(current) = stack.pop() {
+        let mut entries = match fs::read_dir(&current).await {
+            Ok(e) => e,
+            Err(e) if e.kind() == io::ErrorKind::NotFound => continue,
+            Err(e) => return Err(e.into()),
+        };
+        while let Some(entry) = entries.next_entry().await? {
+            let path = entry.path();
+            let ft = entry.file_type().await?;
+            if ft.is_dir() {
+                stack.push(path);
+            } else if ft.is_file() && path.extension().and_then(|s| s.to_str()) == Some("md") {
+                out.push(path);
+            }
+        }
+    }
+    Ok(())
 }
 
 /// Write `content` to `abs` via `<abs>.coxinha-tmp` + rename so a
@@ -518,7 +607,7 @@ mod tests {
 
     async fn fresh_storage() -> (tempfile::TempDir, Storage) {
         let dir = tempfile::tempdir().expect("tempdir");
-        for sub in &["notes", "meetings", "attachments"] {
+        for sub in &["notes", "meetings", "attachments", "daily"] {
             tokio::fs::create_dir_all(dir.path().join(sub))
                 .await
                 .expect("mkdir subdir");
@@ -622,6 +711,159 @@ mod tests {
 
         let backlinks = storage.backlinks(target.id).await.unwrap();
         assert_eq!(backlinks.len(), 1);
+    }
+
+    #[tokio::test]
+    async fn rebuild_from_vault_indexes_all_markdown_under_notes_and_daily() {
+        let (tmp, storage) = fresh_storage().await;
+        // Seed the filesystem directly, bypassing the API.
+        tokio::fs::write(tmp.path().join("notes/alpha.md"), "# Alpha\n\nbody")
+            .await
+            .unwrap();
+        tokio::fs::write(
+            tmp.path().join("notes/beta.md"),
+            "# Beta\n\nLinks to [[Alpha]].",
+        )
+        .await
+        .unwrap();
+        tokio::fs::write(
+            tmp.path().join("daily/2026-04-19.md"),
+            "# 2026-04-19\n\n## Notes\n",
+        )
+        .await
+        .unwrap();
+
+        let stats = storage.rebuild_from_vault().await.unwrap();
+
+        assert_eq!(stats.notes_indexed, 3);
+        assert_eq!(stats.links_indexed, 1);
+
+        let all = storage.list_notes().await.unwrap();
+        assert_eq!(all.len(), 3);
+        let titles: std::collections::HashSet<String> =
+            all.iter().map(|n| n.title.clone()).collect();
+        assert!(titles.contains("Alpha"));
+        assert!(titles.contains("Beta"));
+        assert!(titles.contains("2026-04-19"));
+    }
+
+    #[tokio::test]
+    async fn rebuild_from_vault_replaces_existing_index() {
+        let (tmp, storage) = fresh_storage().await;
+        // Start with a note created via the API.
+        let original = storage.create_note("Old", "# Old\n").await.unwrap();
+
+        // Write a different set of files directly, then rebuild.
+        tokio::fs::remove_file(tmp.path().join(&original.path))
+            .await
+            .unwrap();
+        tokio::fs::write(tmp.path().join("notes/fresh.md"), "# Fresh\n")
+            .await
+            .unwrap();
+
+        let stats = storage.rebuild_from_vault().await.unwrap();
+        assert_eq!(stats.notes_indexed, 1);
+
+        let all = storage.list_notes().await.unwrap();
+        assert_eq!(all.len(), 1);
+        assert_eq!(all[0].title, "Fresh");
+        // Old UUID no longer resolves — the rebuild minted a fresh one.
+        assert_ne!(all[0].id, original.id);
+    }
+
+    #[tokio::test]
+    async fn rebuild_from_vault_idempotent_on_repeat() {
+        let (tmp, storage) = fresh_storage().await;
+        tokio::fs::write(tmp.path().join("notes/one.md"), "# One\n[[Two]]")
+            .await
+            .unwrap();
+        tokio::fs::write(tmp.path().join("notes/two.md"), "# Two\n[[One]]")
+            .await
+            .unwrap();
+
+        let first = storage.rebuild_from_vault().await.unwrap();
+        let second = storage.rebuild_from_vault().await.unwrap();
+
+        assert_eq!(first.notes_indexed, 2);
+        assert_eq!(first.links_indexed, 2);
+        assert_eq!(first.notes_indexed, second.notes_indexed);
+        assert_eq!(first.links_indexed, second.links_indexed);
+        assert_eq!(storage.list_notes().await.unwrap().len(), 2);
+    }
+
+    #[tokio::test]
+    async fn rebuild_from_vault_skips_non_markdown_and_meetings() {
+        let (tmp, storage) = fresh_storage().await;
+        // .md under notes — indexed.
+        tokio::fs::write(tmp.path().join("notes/keep.md"), "# Keep")
+            .await
+            .unwrap();
+        // Non-.md under notes — ignored.
+        tokio::fs::write(tmp.path().join("notes/README.txt"), "unrelated")
+            .await
+            .unwrap();
+        // Files under meetings/ — ignored (not part of the notes walk).
+        tokio::fs::create_dir_all(tmp.path().join("meetings/abc"))
+            .await
+            .unwrap();
+        tokio::fs::write(tmp.path().join("meetings/abc/transcript.md"), "oops")
+            .await
+            .unwrap();
+
+        let stats = storage.rebuild_from_vault().await.unwrap();
+        assert_eq!(stats.notes_indexed, 1);
+    }
+
+    #[tokio::test]
+    async fn rebuild_from_vault_tolerates_missing_daily_dir() {
+        let (tmp, storage) = fresh_storage().await;
+        // Delete daily/ entirely. rebuild_from_vault must treat this
+        // as "no daily notes" instead of erroring.
+        tokio::fs::remove_dir_all(tmp.path().join("daily"))
+            .await
+            .unwrap();
+        tokio::fs::write(tmp.path().join("notes/x.md"), "# X")
+            .await
+            .unwrap();
+
+        let stats = storage.rebuild_from_vault().await.unwrap();
+        assert_eq!(stats.notes_indexed, 1);
+    }
+
+    #[tokio::test]
+    async fn rebuild_from_vault_derives_title_from_path_when_heading_missing() {
+        let (tmp, storage) = fresh_storage().await;
+        tokio::fs::write(
+            tmp.path().join("notes/my-titleless-note.md"),
+            "no heading here",
+        )
+        .await
+        .unwrap();
+
+        storage.rebuild_from_vault().await.unwrap();
+        let all = storage.list_notes().await.unwrap();
+        assert_eq!(all[0].title, "my-titleless-note");
+    }
+
+    #[tokio::test]
+    async fn rebuild_from_vault_preserves_wikilink_backlinks() {
+        let (tmp, storage) = fresh_storage().await;
+        tokio::fs::write(tmp.path().join("notes/target.md"), "# Target")
+            .await
+            .unwrap();
+        tokio::fs::write(
+            tmp.path().join("notes/source.md"),
+            "# Source\n\nSee [[Target]].",
+        )
+        .await
+        .unwrap();
+
+        storage.rebuild_from_vault().await.unwrap();
+        let all = storage.list_notes().await.unwrap();
+        let target = all.iter().find(|n| n.title == "Target").expect("target");
+        let backlinks = storage.backlinks(target.id).await.unwrap();
+        assert_eq!(backlinks.len(), 1);
+        assert_eq!(backlinks[0].title, "Source");
     }
 
     #[tokio::test]
