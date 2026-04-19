@@ -166,6 +166,19 @@ async getOrCreateDailyNote(date: string | null) : Promise<Result<Note, string>> 
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
 }
+},
+/**
+ * Notes that `[[…]]`-link to this one. Match is resolved
+ * against the target's current title and filename stem, so
+ * renames don't orphan backlinks (spec 0013).
+ */
+async getBacklinks(id: string) : Promise<Result<Note[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_backlinks", { id }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
 }
 }
 

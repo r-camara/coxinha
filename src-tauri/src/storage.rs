@@ -60,6 +60,7 @@ impl Storage {
             updated_at: now,
         };
         self.db.upsert_note(&note, content)?;
+        self.db.replace_links(note.id, &extract_wikilinks(content))?;
         Ok(note)
     }
 
@@ -78,7 +79,26 @@ impl Storage {
             ..note
         };
         self.db.upsert_note(&updated, content)?;
+        self.db.replace_links(updated.id, &extract_wikilinks(content))?;
         Ok(updated)
+    }
+
+    /// Notes that contain a `[[…]]` pointing at this note. The
+    /// match is resolved at query time (case-insensitive) against
+    /// the note's current title **and** its filename stem — either
+    /// spelling of the wiki-link works.
+    pub async fn backlinks(&self, id: Uuid) -> Result<Vec<Note>> {
+        let note = self
+            .db
+            .get_note(id)?
+            .with_context(|| format!("note {} not found", id))?;
+        let mut keys = vec![note.title.clone()];
+        if let Some(stem) = path_stem(&note.path) {
+            if stem != note.title {
+                keys.push(stem);
+            }
+        }
+        self.db.backlinks_for_keys(&keys)
     }
 
     /// Returns today's (or `date`'s) daily note, creating the file
@@ -307,6 +327,54 @@ fn extract_tags(markdown: &str) -> Vec<String> {
     tags
 }
 
+/// Returns the filename without extension (e.g. `notes/foo-abc123.md`
+/// → `foo-abc123`). Used as a secondary wiki-link key so
+/// `[[foo-abc123]]` can link even when the user never set a title.
+fn path_stem(rel_path: &str) -> Option<String> {
+    Path::new(rel_path)
+        .file_stem()
+        .and_then(|s| s.to_str())
+        .map(|s| s.to_string())
+}
+
+/// Pulls `[[target]]` spans out of a markdown document. Supports
+/// Obsidian's `[[target|alias]]` form — we keep the target, drop
+/// the alias (backlinks index by target, aliases are display-only).
+/// Byte-level scan to avoid pulling in a regex dep for one pattern.
+fn extract_wikilinks(markdown: &str) -> Vec<String> {
+    let bytes = markdown.as_bytes();
+    let mut out = Vec::new();
+    let mut i = 0;
+    while i + 1 < bytes.len() {
+        if bytes[i] == b'[' && bytes[i + 1] == b'[' {
+            let start = i + 2;
+            let mut j = start;
+            while j + 1 < bytes.len() {
+                if bytes[j] == b']' && bytes[j + 1] == b']' {
+                    break;
+                }
+                // Linebreaks end a candidate wiki-link — Obsidian
+                // won't render `[[foo\nbar]]` as a link either.
+                if bytes[j] == b'\n' {
+                    break;
+                }
+                j += 1;
+            }
+            if j + 1 < bytes.len() && bytes[j] == b']' && bytes[j + 1] == b']' {
+                let raw = &markdown[start..j];
+                let target = raw.split('|').next().unwrap_or("").trim();
+                if !target.is_empty() {
+                    out.push(target.to_string());
+                }
+                i = j + 2;
+                continue;
+            }
+        }
+        i += 1;
+    }
+    out
+}
+
 fn first_heading(markdown: &str) -> Option<String> {
     for line in markdown.lines() {
         let trimmed = line.trim_start();
@@ -369,6 +437,66 @@ mod tests {
             first_heading("## Subsection\n").as_deref(),
             Some("Subsection")
         );
+    }
+
+    #[test]
+    fn extract_wikilinks_finds_plain_targets() {
+        let md = "Link to [[Daily Notes]] and [[Projects]].";
+        assert_eq!(
+            extract_wikilinks(md),
+            vec!["Daily Notes".to_string(), "Projects".to_string()]
+        );
+    }
+
+    #[test]
+    fn extract_wikilinks_strips_aliases() {
+        let md = "See [[Daily Notes|today]] or [[People/Alice|Alice]].";
+        assert_eq!(
+            extract_wikilinks(md),
+            vec!["Daily Notes".to_string(), "People/Alice".to_string()]
+        );
+    }
+
+    #[test]
+    fn extract_wikilinks_ignores_malformed_and_empty() {
+        let md = "[[ empty:   ]][[]][[unclosed\n[[good]] [[across\nlines]]";
+        let out = extract_wikilinks(md);
+        // `[[ empty:   ]]` trims to "empty:" → kept.
+        // `[[]]` is empty → dropped.
+        // `[[unclosed` has no closer on the same line → dropped.
+        // `[[across\nlines]]` has a newline → dropped.
+        assert_eq!(out, vec!["empty:".to_string(), "good".to_string()]);
+    }
+
+    #[test]
+    fn extract_wikilinks_handles_adjacent_and_nested() {
+        let md = "[[A]][[B]] and text then [[C]].";
+        assert_eq!(
+            extract_wikilinks(md),
+            vec!["A".to_string(), "B".to_string(), "C".to_string()]
+        );
+    }
+
+    #[test]
+    fn extract_wikilinks_tolerates_unicode_targets() {
+        let md = "[[Reunião semanal]] e [[coração]]";
+        assert_eq!(
+            extract_wikilinks(md),
+            vec!["Reunião semanal".to_string(), "coração".to_string()]
+        );
+    }
+
+    #[test]
+    fn path_stem_returns_filename_without_extension() {
+        assert_eq!(
+            path_stem("notes/my-note-abc123.md"),
+            Some("my-note-abc123".to_string())
+        );
+        assert_eq!(
+            path_stem("daily/2026-04-19.md"),
+            Some("2026-04-19".to_string())
+        );
+        assert_eq!(path_stem(""), None);
     }
 
     #[test]
@@ -440,6 +568,58 @@ mod tests {
 
         assert!(!abs.exists(), "file should be removed");
         assert!(storage.list_notes().await.unwrap().is_empty());
+    }
+
+    #[tokio::test]
+    async fn create_note_indexes_wikilinks_for_backlinks() {
+        let (_tmp, storage) = fresh_storage().await;
+        let target = storage.create_note("Daily Notes", "# Daily Notes\n").await.unwrap();
+        let _source = storage
+            .create_note("Today", "# Today\n\nSee [[Daily Notes]] for more.")
+            .await
+            .unwrap();
+
+        let backlinks = storage.backlinks(target.id).await.unwrap();
+        assert_eq!(backlinks.len(), 1);
+        assert_eq!(backlinks[0].title, "Today");
+    }
+
+    #[tokio::test]
+    async fn update_note_removes_stale_wikilinks() {
+        let (_tmp, storage) = fresh_storage().await;
+        let target = storage
+            .create_note("Projects", "# Projects\n")
+            .await
+            .unwrap();
+        let source = storage
+            .create_note("Journal", "# Journal\n\n[[Projects]]")
+            .await
+            .unwrap();
+        assert_eq!(storage.backlinks(target.id).await.unwrap().len(), 1);
+
+        // Rewrite the source, dropping the link.
+        storage
+            .update_note(source.id, "# Journal\n\nNo more mention.")
+            .await
+            .unwrap();
+
+        assert!(storage.backlinks(target.id).await.unwrap().is_empty());
+    }
+
+    #[tokio::test]
+    async fn backlinks_match_by_filename_stem_when_title_differs() {
+        let (_tmp, storage) = fresh_storage().await;
+        // Emulate a note whose file stem differs from its title.
+        let target = storage
+            .create_note("Human Title", "body")
+            .await
+            .unwrap();
+        let stem = path_stem(&target.path).expect("stem");
+        let linker = format!("[[{}]]", stem);
+        let _ = storage.create_note("Linker", &linker).await.unwrap();
+
+        let backlinks = storage.backlinks(target.id).await.unwrap();
+        assert_eq!(backlinks.len(), 1);
     }
 
     #[tokio::test]

@@ -29,6 +29,8 @@ file. Lean format (look at any existing ADR as a template).
 | 0011 | [Mermaid and Excalidraw deferred to F1.5](./0011-diagram-blocks-f15.md) | Accepted |
 | 0012 | [i18n with react-i18next + rust-i18n](./0012-i18n.md)     | Accepted |
 | 0013 | [Accessibility baseline (WCAG 2.1 AA)](./0013-a11y-baseline.md) | Accepted |
+| 0014 | [Audio toolkit ported from Handy](./0014-audio-toolkit-from-handy.md) | Accepted |
+| 0015 | [Layered architecture — Knowledge vs Memory](./0015-layered-knowledge-memory.md) | Accepted |
 
 ## Template
 

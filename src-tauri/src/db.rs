@@ -63,6 +63,22 @@ impl Db {
                 ON notes(updated_at DESC);
             CREATE INDEX IF NOT EXISTS idx_meetings_started
                 ON meetings(started_at DESC);
+
+            -- Wiki-links (spec 0013). `target_text` is the raw string
+            -- inside `[[…]]`, `target_lc` is the lowercased lookup key.
+            -- Resolution is done at query time against current note
+            -- titles + path stems — no stale target_id to re-resolve
+            -- on rename.
+            CREATE TABLE IF NOT EXISTS links (
+                source_id    TEXT NOT NULL,
+                target_text  TEXT NOT NULL,
+                target_lc    TEXT NOT NULL,
+                FOREIGN KEY (source_id) REFERENCES notes(id) ON DELETE CASCADE
+            );
+            CREATE INDEX IF NOT EXISTS idx_links_source
+                ON links(source_id);
+            CREATE INDEX IF NOT EXISTS idx_links_target_lc
+                ON links(target_lc);
             "#,
         )?;
         Ok(())
@@ -149,6 +165,62 @@ impl Db {
             Some(r) => Ok(Some(r?)),
             None => Ok(None),
         }
+    }
+
+    // ---- Links (wiki-links, spec 0013) ----
+
+    /// Replace all outgoing links from `source_id` with `targets`
+    /// (raw `[[…]]` texts). Called on every note save — idempotent
+    /// by construction because the old rows are wiped first.
+    pub fn replace_links(&self, source_id: Uuid, targets: &[String]) -> Result<()> {
+        let mut conn = self.conn.lock().unwrap();
+        let tx = conn.transaction()?;
+        let source = source_id.to_string();
+        tx.execute("DELETE FROM links WHERE source_id = ?1", params![source])?;
+        {
+            let mut stmt = tx.prepare(
+                "INSERT INTO links (source_id, target_text, target_lc)
+                 VALUES (?1, ?2, ?3)",
+            )?;
+            for target in targets {
+                let trimmed = target.trim();
+                if trimmed.is_empty() {
+                    continue;
+                }
+                stmt.execute(params![source, trimmed, trimmed.to_lowercase()])?;
+            }
+        }
+        tx.commit()?;
+        Ok(())
+    }
+
+    /// Notes that link to any of the given lowercased lookup keys
+    /// (typically the target note's title + path stem). Ordered by
+    /// recency so the sidebar lists the most recent linker first.
+    pub fn backlinks_for_keys(&self, keys: &[String]) -> Result<Vec<Note>> {
+        if keys.is_empty() {
+            return Ok(Vec::new());
+        }
+        let conn = self.conn.lock().unwrap();
+        let placeholders = (0..keys.len())
+            .map(|i| format!("?{}", i + 1))
+            .collect::<Vec<_>>()
+            .join(", ");
+        let sql = format!(
+            "SELECT DISTINCT n.id, n.path, n.title, n.tags_json,
+                    n.created_at, n.updated_at
+             FROM links l
+             JOIN notes n ON n.id = l.source_id
+             WHERE l.target_lc IN ({})
+             ORDER BY n.updated_at DESC",
+            placeholders
+        );
+        let lowered: Vec<String> = keys.iter().map(|k| k.to_lowercase()).collect();
+        let params: Vec<&dyn rusqlite::ToSql> =
+            lowered.iter().map(|k| k as &dyn rusqlite::ToSql).collect();
+        let mut stmt = conn.prepare(&sql)?;
+        let rows = stmt.query_map(params.as_slice(), row_to_note)?;
+        rows.collect::<Result<_, _>>().map_err(Into::into)
     }
 
     pub fn search_notes(&self, query: &str) -> Result<Vec<Note>> {
@@ -361,6 +433,103 @@ mod tests {
         assert_eq!(hits[0].id, note.id);
 
         assert!(db.search_notes("nonexistent").unwrap().is_empty());
+    }
+
+    // ---- Links ----
+
+    fn upsert_sample(db: &Db, title: &str, path: &str, body: &str) -> Uuid {
+        let note = sample_note(title, path, "2026-04-18T10:00:00Z");
+        db.upsert_note(&note, body).unwrap();
+        note.id
+    }
+
+    #[test]
+    fn replace_links_inserts_then_overwrites() {
+        let (_tmp, db) = fresh_db();
+        let source = upsert_sample(&db, "Source", "notes/source.md", "body");
+
+        db.replace_links(source, &["Daily Notes".into(), "Meetings".into()])
+            .unwrap();
+        // Second call replaces, doesn't append.
+        db.replace_links(source, &["Meetings".into(), "Projects".into()])
+            .unwrap();
+
+        let backlinks = db.backlinks_for_keys(&["Meetings".into()]).unwrap();
+        assert_eq!(backlinks.len(), 1);
+
+        // Daily Notes no longer tracked → no backlinks by that key.
+        assert!(db
+            .backlinks_for_keys(&["Daily Notes".into()])
+            .unwrap()
+            .is_empty());
+    }
+
+    #[test]
+    fn backlinks_are_case_insensitive_and_deduped() {
+        let (_tmp, db) = fresh_db();
+        let source = upsert_sample(&db, "Source", "notes/source.md", "body");
+        // Same target repeated — linker shows up once.
+        db.replace_links(
+            source,
+            &["Daily".into(), "daily".into(), "DAILY".into()],
+        )
+        .unwrap();
+
+        let hits = db.backlinks_for_keys(&["Daily".into()]).unwrap();
+        assert_eq!(hits.len(), 1);
+        assert_eq!(hits[0].title, "Source");
+    }
+
+    #[test]
+    fn backlinks_matches_any_of_multiple_keys() {
+        let (_tmp, db) = fresh_db();
+        let src1 = upsert_sample(&db, "One", "notes/one.md", "");
+        let src2 = upsert_sample(&db, "Two", "notes/two.md", "");
+        db.replace_links(src1, &["my-note".into()]).unwrap();
+        db.replace_links(src2, &["My Note".into()]).unwrap();
+
+        let hits = db
+            .backlinks_for_keys(&["my-note".into(), "My Note".into()])
+            .unwrap();
+        assert_eq!(hits.len(), 2);
+    }
+
+    #[test]
+    fn backlinks_empty_keys_returns_empty() {
+        let (_tmp, db) = fresh_db();
+        let _src = upsert_sample(&db, "One", "notes/one.md", "");
+        assert!(db.backlinks_for_keys(&[]).unwrap().is_empty());
+    }
+
+    #[test]
+    fn deleting_note_cascades_its_links() {
+        let (_tmp, db) = fresh_db();
+        let src = upsert_sample(&db, "Source", "notes/source.md", "body");
+        db.replace_links(src, &["Target".into()]).unwrap();
+        db.delete_note(src).unwrap();
+        assert!(db
+            .backlinks_for_keys(&["Target".into()])
+            .unwrap()
+            .is_empty());
+    }
+
+    #[test]
+    fn replace_links_ignores_empty_and_whitespace_targets() {
+        let (_tmp, db) = fresh_db();
+        let src = upsert_sample(&db, "Source", "notes/source.md", "");
+        db.replace_links(
+            src,
+            &["".into(), "   ".into(), "Real".into()],
+        )
+        .unwrap();
+        assert!(db
+            .backlinks_for_keys(&["".into()])
+            .unwrap()
+            .is_empty());
+        assert_eq!(
+            db.backlinks_for_keys(&["Real".into()]).unwrap().len(),
+            1
+        );
     }
 
     #[test]

@@ -57,6 +57,9 @@ The on-disk contracts and failure semantics are already frozen:
 - **Daily notes**: `~/coxinha/daily/YYYY-MM-DD.md` template,
   path-probe idempotency, Agenda view renders today's daily on
   mount
+- **Wiki-links** (`[[target]]` / `[[target|alias]]`): parsed on
+  every note save, stored in `links` table, backlinks panel on
+  the right of the editor (spec 0013)
 - **Obsidian vault detection** (Windows): `obsidian.json` parsed,
   surfaced in Settings with radio-pick + custom-path input;
   Save updates `vault_path` (restart still required for
@@ -96,12 +99,11 @@ The on-disk contracts and failure semantics are already frozen:
 
 ## 🧪 Test suite
 
-- **Rust: 46 tests** — 44 unit (storage, db, config, obsidian,
-  transcriber, VAD smoothed + silero) + 1 boot smoke (spawns
-  binary, asserts `Coxinha ready` within 5 s) + 1 perf smoke
-  (RSS < 200 MB, CPU < 25 %, idle growth < 30 MB over 5 s)
-- **Frontend: 22 tests** — locale catalog, `sortByUpdated`,
-  theme helpers, `SettingsView`, `Sidebar`
+- **Rust: 61 tests** — 59 unit (storage, db, config, obsidian,
+  transcriber, VAD smoothed + silero, wiki-link extractor,
+  backlinks query) + 1 boot smoke + 1 perf smoke
+- **Frontend: 28 tests** — locale catalog, `sortByUpdated`,
+  theme helpers, `SettingsView`, `Sidebar`, `BacklinksPanel`
 - **Baselines today**: boot ~800 ms, idle RSS ~38 MB, idle CPU
   0 %, idle growth ~0 MB, vitest suite ~3 s
 
