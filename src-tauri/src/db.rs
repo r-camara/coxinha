@@ -237,6 +237,45 @@ impl Db {
         Ok(())
     }
 
+    // ---- Tags (spec 0014) ----
+
+    /// Flatten every note's `tags_json` via SQLite's `json_each`
+    /// and return `(tag, count)` ordered by count desc, then tag
+    /// asc so the sidebar has a stable, "most-used first" order.
+    pub fn list_tags(&self) -> Result<Vec<TagCount>> {
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn.prepare(
+            "SELECT j.value AS tag, COUNT(*) AS cnt
+             FROM notes, json_each(notes.tags_json) j
+             GROUP BY j.value
+             ORDER BY cnt DESC, j.value ASC",
+        )?;
+        let rows = stmt.query_map([], |r| {
+            Ok(TagCount {
+                tag: r.get::<_, String>(0)?,
+                count: r.get::<_, i64>(1)? as u32,
+            })
+        })?;
+        rows.collect::<Result<_, _>>().map_err(Into::into)
+    }
+
+    /// Notes whose `tags_json` contains an exact match for `tag`.
+    /// Case-sensitive on purpose — `#Project` and `#project` are
+    /// distinct in our extractor, and we don't want the filter
+    /// rewriting the user's markdown.
+    pub fn list_notes_by_tag(&self, tag: &str) -> Result<Vec<Note>> {
+        let conn = self.conn.lock().unwrap();
+        let mut stmt = conn.prepare(
+            "SELECT DISTINCT n.id, n.path, n.title, n.tags_json,
+                    n.created_at, n.updated_at
+             FROM notes n, json_each(n.tags_json) j
+             WHERE j.value = ?1
+             ORDER BY n.updated_at DESC",
+        )?;
+        let rows = stmt.query_map(params![tag], row_to_note)?;
+        rows.collect::<Result<_, _>>().map_err(Into::into)
+    }
+
     pub fn search_notes(&self, query: &str) -> Result<Vec<Note>> {
         let conn = self.conn.lock().unwrap();
         let q = format!("\"{}\"", query.replace('"', ""));
@@ -447,6 +486,66 @@ mod tests {
         assert_eq!(hits[0].id, note.id);
 
         assert!(db.search_notes("nonexistent").unwrap().is_empty());
+    }
+
+    // ---- Tags ----
+
+    #[test]
+    fn list_tags_aggregates_counts_and_orders_by_popularity() {
+        let (_tmp, db) = fresh_db();
+        let mut a = sample_note("a", "notes/a.md", "2026-04-19T00:00:00Z");
+        a.tags = vec!["project".into(), "work".into()];
+        db.upsert_note(&a, "").unwrap();
+        let mut b = sample_note("b", "notes/b.md", "2026-04-19T00:00:00Z");
+        b.tags = vec!["work".into(), "personal".into()];
+        db.upsert_note(&b, "").unwrap();
+        let mut c = sample_note("c", "notes/c.md", "2026-04-19T00:00:00Z");
+        c.tags = vec!["work".into()];
+        db.upsert_note(&c, "").unwrap();
+
+        let tags = db.list_tags().unwrap();
+        assert_eq!(tags.len(), 3);
+        assert_eq!(tags[0].tag, "work");
+        assert_eq!(tags[0].count, 3);
+        // "personal" and "project" tie at 1 → alphabetical.
+        assert_eq!(tags[1].tag, "personal");
+        assert_eq!(tags[2].tag, "project");
+    }
+
+    #[test]
+    fn list_tags_empty_vault_returns_empty() {
+        let (_tmp, db) = fresh_db();
+        assert!(db.list_tags().unwrap().is_empty());
+    }
+
+    #[test]
+    fn list_notes_by_tag_returns_matching_notes_most_recent_first() {
+        let (_tmp, db) = fresh_db();
+        let mut older = sample_note("old", "notes/old.md", "2026-01-01T00:00:00Z");
+        older.tags = vec!["work".into()];
+        db.upsert_note(&older, "").unwrap();
+        let mut newer = sample_note("new", "notes/new.md", "2026-04-01T00:00:00Z");
+        newer.tags = vec!["work".into(), "urgent".into()];
+        db.upsert_note(&newer, "").unwrap();
+        let mut other = sample_note("other", "notes/other.md", "2026-04-02T00:00:00Z");
+        other.tags = vec!["personal".into()];
+        db.upsert_note(&other, "").unwrap();
+
+        let hits = db.list_notes_by_tag("work").unwrap();
+        assert_eq!(hits.len(), 2);
+        assert_eq!(hits[0].title, "new");
+        assert_eq!(hits[1].title, "old");
+    }
+
+    #[test]
+    fn list_notes_by_tag_is_case_sensitive() {
+        let (_tmp, db) = fresh_db();
+        let mut note = sample_note("n", "notes/n.md", "2026-04-19T00:00:00Z");
+        note.tags = vec!["Project".into()];
+        db.upsert_note(&note, "").unwrap();
+
+        assert_eq!(db.list_notes_by_tag("Project").unwrap().len(), 1);
+        assert_eq!(db.list_notes_by_tag("project").unwrap().len(), 0);
     }
 
     // ---- Links ----

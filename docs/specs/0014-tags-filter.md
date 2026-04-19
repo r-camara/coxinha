@@ -1,6 +1,6 @@
 # Spec 0014: Tags `#project` with filter
 
-- **Status:** draft
+- **Status:** shipped (2026-04-19, PR #8 — autocomplete deferred)
 - **Phase:** F1.5
 - **Owner:** Rodolfo
 - **Depends on:** spec 0005
@@ -34,3 +34,21 @@ need to be surfaced in the UI.
 ## Open questions
 - Normalization: `#Idea` == `#idea`? (Yes — lowercase)
 - Restrict to `[a-z0-9_-]` or allow unicode?
+
+## Shipped
+- `db::list_tags` aggregates via `json_each(tags_json)` with
+  `GROUP BY` sorted by count DESC then tag ASC.
+- `db::list_notes_by_tag` returns distinct notes ordered by
+  `updated_at` DESC.
+- `shared::TagCount { tag, count }` exposed over specta.
+- Sidebar "Tags" section renders wrap of pill buttons (`#tag count`)
+  with `aria-pressed` for the active filter; clicking an active
+  pill toggles it off. Typing in search drops any active filter —
+  last interaction wins (matches Obsidian).
+- Acceptance covered by 4 Rust tests (`list_tags_aggregates…`,
+  `list_tags_empty_vault_returns_empty`, `list_notes_by_tag_returns…`,
+  `list_notes_by_tag_is_case_sensitive`) and 3 React tests
+  (`renders tag pills with counts`, `filters the list when a pill
+  is clicked`, `clears the tag filter`).
+- **Deferred:** tag autocomplete on `#` inside the editor (separate
+  follow-up spec — requires BlockNote inline suggestion plumbing).

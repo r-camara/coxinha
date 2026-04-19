@@ -28,6 +28,15 @@ vi.mock('../lib/store', () => ({
   useAppStore: <T,>(selector: (s: typeof storeState) => T) => selector(storeState),
 }));
 
+const listTags = vi.fn();
+const listNotesByTag = vi.fn();
+vi.mock('../lib/bindings', () => ({
+  commands: {
+    listTags: (...a: unknown[]) => listTags(...a),
+    listNotesByTag: (...a: unknown[]) => listNotesByTag(...a),
+  },
+}));
+
 import { Sidebar } from './Sidebar';
 
 function note(id: string, title: string, updated = '2026-04-18T00:00:00Z') {
@@ -47,6 +56,11 @@ beforeEach(() => {
   storeState.setActiveNote.mockReset();
   storeState.newNote.mockReset();
   storeState.searchNotes.mockReset();
+  listTags.mockReset();
+  listNotesByTag.mockReset();
+  // Default: no tags, no tag notes. Per-test overrides as needed.
+  listTags.mockResolvedValue({ status: 'ok', data: [] });
+  listNotesByTag.mockResolvedValue({ status: 'ok', data: [] });
 });
 
 describe('Sidebar — search', () => {
@@ -106,5 +120,67 @@ describe('Sidebar — search', () => {
     await new Promise((r) => setTimeout(r, 200));
 
     expect(storeState.searchNotes).not.toHaveBeenCalled();
+  });
+});
+
+describe('Sidebar — tags', () => {
+  it('renders tag pills with counts fetched from the backend', async () => {
+    listTags.mockResolvedValue({
+      status: 'ok',
+      data: [
+        { tag: 'project', count: 3 },
+        { tag: 'idea', count: 1 },
+      ],
+    });
+
+    render(<Sidebar current="notes" onNavigate={() => {}} />);
+
+    expect(await screen.findByRole('button', { name: /#project/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /#idea/ })).toBeInTheDocument();
+    // Counts render next to the tag name.
+    expect(screen.getByRole('button', { name: /#project/ }).textContent).toContain('3');
+  });
+
+  it('filters the list to tag-matching notes when a pill is clicked', async () => {
+    const user = userEvent.setup();
+    listTags.mockResolvedValue({
+      status: 'ok',
+      data: [{ tag: 'project', count: 2 }],
+    });
+    listNotesByTag.mockResolvedValue({
+      status: 'ok',
+      data: [note('p1', 'Project plan')],
+    });
+
+    render(<Sidebar current="notes" onNavigate={() => {}} />);
+    const pill = await screen.findByRole('button', { name: /#project/ });
+    await user.click(pill);
+
+    await waitFor(() => expect(listNotesByTag).toHaveBeenCalledWith('project'));
+    expect(await screen.findByText('Project plan')).toBeInTheDocument();
+    // Recent items swapped out for tag-filtered list.
+    expect(screen.queryByText('Alpha')).not.toBeInTheDocument();
+    expect(pill).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('clears the tag filter when the clear button is clicked', async () => {
+    const user = userEvent.setup();
+    listTags.mockResolvedValue({
+      status: 'ok',
+      data: [{ tag: 'project', count: 1 }],
+    });
+    listNotesByTag.mockResolvedValue({
+      status: 'ok',
+      data: [note('p1', 'Project plan')],
+    });
+
+    render(<Sidebar current="notes" onNavigate={() => {}} />);
+    await user.click(await screen.findByRole('button', { name: /#project/ }));
+    await screen.findByText('Project plan');
+
+    await user.click(screen.getByRole('button', { name: 'sidebar.tagClear' }));
+
+    expect(screen.getByText('Alpha')).toBeInTheDocument();
+    expect(screen.queryByText('Project plan')).not.toBeInTheDocument();
   });
 });

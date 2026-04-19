@@ -60,6 +60,10 @@ The on-disk contracts and failure semantics are already frozen:
 - **Wiki-links** (`[[target]]` / `[[target|alias]]`): parsed on
   every note save, stored in `links` table, backlinks panel on
   the right of the editor (spec 0013)
+- **Tags filter** (spec 0014): sidebar tag cloud with counts
+  from `json_each(tags_json)`, click a pill to filter the note
+  list, `aria-pressed` on the active pill; autocomplete on `#`
+  deferred to a future spec
 - **Obsidian vault detection** (Windows): `obsidian.json` parsed,
   surfaced in Settings with radio-pick + custom-path input;
   Save updates `vault_path` (restart still required for
@@ -99,11 +103,12 @@ The on-disk contracts and failure semantics are already frozen:
 
 ## 🧪 Test suite
 
-- **Rust: 61 tests** — 59 unit (storage, db, config, obsidian,
+- **Rust: 71 tests** — 69 unit (storage, db, config, obsidian,
   transcriber, VAD smoothed + silero, wiki-link extractor,
-  backlinks query) + 1 boot smoke + 1 perf smoke
-- **Frontend: 28 tests** — locale catalog, `sortByUpdated`,
-  theme helpers, `SettingsView`, `Sidebar`, `BacklinksPanel`
+  backlinks query, tag aggregation) + 1 boot smoke + 1 perf smoke
+- **Frontend: 30 tests** — locale catalog, `sortByUpdated`,
+  theme helpers, `SettingsView`, `Sidebar` (search + tags),
+  `BacklinksPanel`
 - **Baselines today**: boot ~800 ms, idle RSS ~38 MB, idle CPU
   0 %, idle growth ~0 MB, vitest suite ~3 s
 

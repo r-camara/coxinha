@@ -72,6 +72,8 @@ pub fn run() {
             commands::get_or_create_daily_note,
             commands::get_backlinks,
             commands::rebuild_from_vault,
+            commands::list_tags,
+            commands::list_notes_by_tag,
         ])
         .events(tauri_specta::collect_events![
             events::CallDetected,
@@ -423,5 +425,28 @@ mod commands {
             .rebuild_from_vault()
             .await
             .map_err(|e| e.to_string())
+    }
+
+    /// Every distinct tag in the vault, with how many notes carry
+    /// it. Ordered most-popular-first (spec 0014).
+    #[tauri::command]
+    #[specta::specta]
+    pub async fn list_tags(
+        state: tauri::State<'_, Arc<Mutex<AppState>>>,
+    ) -> Result<Vec<TagCount>, String> {
+        let state = state.lock().await;
+        state.db.list_tags().map_err(|e| e.to_string())
+    }
+
+    /// Notes tagged with `tag` (exact, case-sensitive), most
+    /// recent first.
+    #[tauri::command]
+    #[specta::specta]
+    pub async fn list_notes_by_tag(
+        state: tauri::State<'_, Arc<Mutex<AppState>>>,
+        tag: String,
+    ) -> Result<Vec<Note>, String> {
+        let state = state.lock().await;
+        state.db.list_notes_by_tag(&tag).map_err(|e| e.to_string())
     }
 }

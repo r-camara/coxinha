@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAppStore } from '../lib/store';
-import type { Note } from '../lib/bindings';
-import { Calendar, FileText, Mic, Search, Settings, X } from 'lucide-react';
+import { commands, type Note, type TagCount } from '../lib/bindings';
+import { Calendar, FileText, Mic, Search, Settings, Tag, X } from 'lucide-react';
 import clsx from 'clsx';
 
 type View = 'notes' | 'agenda' | 'meetings' | 'settings';
@@ -22,6 +22,9 @@ export function Sidebar({ current, onNavigate }: Props) {
 
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<Note[] | null>(null);
+  const [tags, setTags] = useState<TagCount[]>([]);
+  const [tagFilter, setTagFilter] = useState<string | null>(null);
+  const [tagNotes, setTagNotes] = useState<Note[]>([]);
 
   useEffect(() => {
     const q = query.trim();
@@ -29,20 +32,49 @@ export function Sidebar({ current, onNavigate }: Props) {
       setResults(null);
       return;
     }
+    // Typing in search drops any active tag filter — last
+    // interaction wins, matches Obsidian's behaviour.
+    setTagFilter(null);
     const handle = setTimeout(async () => {
       try {
         setResults(await searchNotes(q));
       } catch {
-        // Backend errors surface as empty — the user sees
-        // "Nothing found"; no toast while they're mid-typing.
         setResults([]);
       }
     }, 150);
     return () => clearTimeout(handle);
   }, [query, searchNotes]);
 
+  useEffect(() => {
+    // Refresh tag cloud whenever the notes list changes — a save
+    // can introduce a new tag, a delete can drop the last
+    // occurrence of one.
+    let cancelled = false;
+    commands.listTags().then((r) => {
+      if (!cancelled && r.status === 'ok') setTags(r.data);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [notes]);
+
+  useEffect(() => {
+    if (!tagFilter) {
+      setTagNotes([]);
+      return;
+    }
+    let cancelled = false;
+    commands.listNotesByTag(tagFilter).then((r) => {
+      if (!cancelled && r.status === 'ok') setTagNotes(r.data);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [tagFilter, notes]);
+
   const searching = results !== null;
-  const listItems = results ?? notes;
+  const filteringByTag = tagFilter !== null;
+  const listItems = searching ? results! : filteringByTag ? tagNotes : notes;
 
   return (
     <aside className="w-72 border-r border-border flex flex-col bg-muted/50">
@@ -114,11 +146,25 @@ export function Sidebar({ current, onNavigate }: Props) {
           </div>
 
           <div>
-            <h2 className="text-xs uppercase text-muted-foreground px-2 mb-1">
-              {searching
-                ? t('sidebar.searchResultsHeading')
-                : t('sidebar.recentHeading')}
-            </h2>
+            <div className="flex items-center justify-between px-2 mb-1">
+              <h2 className="text-xs uppercase text-muted-foreground">
+                {searching
+                  ? t('sidebar.searchResultsHeading')
+                  : filteringByTag
+                    ? t('sidebar.tagFilteredHeading', { tag: tagFilter })
+                    : t('sidebar.recentHeading')}
+              </h2>
+              {filteringByTag && (
+                <button
+                  type="button"
+                  onClick={() => setTagFilter(null)}
+                  aria-label={t('sidebar.tagClear')}
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  <X size={12} aria-hidden="true" />
+                </button>
+              )}
+            </div>
             <ul aria-label={t('a11y.noteList')} className="space-y-0.5">
               {listItems.map((n) => (
                 <li key={n.id}>
@@ -130,7 +176,7 @@ export function Sidebar({ current, onNavigate }: Props) {
                       'w-full text-left px-2 py-1.5 rounded text-sm truncate focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2',
                       activeNoteId === n.id
                         ? 'bg-accent text-accent-foreground'
-                        : 'hover:bg-accent/50'
+                        : 'hover:bg-accent/50',
                     )}
                   >
                     {n.title || t('sidebar.untitled')}
@@ -143,12 +189,50 @@ export function Sidebar({ current, onNavigate }: Props) {
                 {t('sidebar.searchNoResults')}
               </p>
             )}
-            {!searching && notes.length === 0 && (
+            {!searching && !filteringByTag && notes.length === 0 && (
               <p className="px-2 text-sm text-muted-foreground">
                 {t('sidebar.emptyState')}
               </p>
             )}
           </div>
+
+          {!searching && (
+            <div>
+              <h2 className="text-xs uppercase text-muted-foreground px-2 mb-1 flex items-center gap-1.5">
+                <Tag size={12} aria-hidden="true" />
+                {t('sidebar.tagsHeading')}
+              </h2>
+              {tags.length === 0 ? (
+                <p className="px-2 text-xs text-muted-foreground">
+                  {t('sidebar.tagsEmpty')}
+                </p>
+              ) : (
+                <ul className="flex flex-wrap gap-1 px-2">
+                  {tags.map((t2) => (
+                    <li key={t2.tag}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setQuery('');
+                          setTagFilter((prev) => (prev === t2.tag ? null : t2.tag));
+                        }}
+                        aria-pressed={tagFilter === t2.tag}
+                        className={clsx(
+                          'text-xs px-2 py-0.5 rounded-full border focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
+                          tagFilter === t2.tag
+                            ? 'bg-primary text-primary-foreground border-primary'
+                            : 'border-border hover:bg-accent/50',
+                        )}
+                      >
+                        #{t2.tag}
+                        <span className="ml-1 opacity-70">{t2.count}</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
         </div>
       )}
 

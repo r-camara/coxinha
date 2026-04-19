@@ -16,6 +16,10 @@
     "searchNoResults": "Nothing found",
     "searchResultsHeading": "Results",
     "recentHeading": "Recent",
+    "tagsHeading": "Tags",
+    "tagsEmpty": "No tags yet — add `#tag` in any note.",
+    "tagFilteredHeading": "Tagged \"{{tag}}\"",
+    "tagClear": "Clear tag filter",
     "emptyState": "No notes yet.",
     "untitled": "(untitled)"
   },

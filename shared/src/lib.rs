@@ -157,6 +157,14 @@ pub struct AppConfig {
     pub shortcuts: ShortcutsConfig,
 }
 
+// -- Tag aggregates (spec 0014) --
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Type)]
+pub struct TagCount {
+    pub tag: String,
+    pub count: u32,
+}
+
 // -- Rebuild stats (spec 0005) --
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Type)]
