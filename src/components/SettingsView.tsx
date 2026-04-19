@@ -275,42 +275,37 @@ function AppearanceSection() {
   const options: ThemePreference[] = ['auto', 'light', 'dark'];
 
   return (
-    <section aria-labelledby="appearance-heading" className="space-y-3">
-      <h2 id="appearance-heading" className="text-lg font-semibold">
+    <fieldset aria-labelledby="appearance-heading" className="space-y-3">
+      <legend id="appearance-heading" className="text-lg font-semibold">
         {t('settings.appearance.heading')}
-      </h2>
-      <fieldset className="space-y-1">
-        <legend className="text-sm font-medium">
-          {t('settings.appearance.themeLabel')}
-        </legend>
-        <p className="text-xs text-muted-foreground">
-          {t('settings.appearance.themeHint')}
-        </p>
-        <div role="radiogroup" aria-labelledby="appearance-heading" className="flex gap-2 mt-2">
-          {options.map((opt) => (
-            <label
-              key={opt}
-              className={
-                'cursor-pointer text-sm px-3 py-1.5 rounded border focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-ring ' +
-                (pref === opt
-                  ? 'bg-primary text-primary-foreground border-primary'
-                  : 'border-border hover:bg-accent/50')
-              }
-            >
-              <input
-                type="radio"
-                name="theme-pref"
-                value={opt}
-                checked={pref === opt}
-                onChange={() => choose(opt)}
-                className="sr-only"
-              />
-              {t(`settings.appearance.theme.${opt}`)}
-            </label>
-          ))}
-        </div>
-      </fieldset>
-    </section>
+      </legend>
+      <p className="text-xs text-muted-foreground">
+        {t('settings.appearance.themeHint')}
+      </p>
+      <div className="flex gap-2">
+        {options.map((opt) => (
+          <label
+            key={opt}
+            className={
+              'cursor-pointer text-sm px-3 py-1.5 rounded border focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-ring ' +
+              (pref === opt
+                ? 'bg-primary text-primary-foreground border-primary'
+                : 'border-border hover:bg-accent/50')
+            }
+          >
+            <input
+              type="radio"
+              name="theme-pref"
+              value={opt}
+              checked={pref === opt}
+              onChange={() => choose(opt)}
+              className="sr-only"
+            />
+            {t(`settings.appearance.theme.${opt}`)}
+          </label>
+        ))}
+      </div>
+    </fieldset>
   );
 }
 

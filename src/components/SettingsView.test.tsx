@@ -35,6 +35,7 @@ vi.mock('../lib/store', () => ({
 }));
 
 import { SettingsView } from './SettingsView';
+import { THEME_STORAGE_KEY } from '../lib/theme';
 
 const BASE_CONFIG = {
   vault_path: 'C:/Users/me/coxinha',
@@ -205,7 +206,7 @@ describe('SettingsView — appearance panel', () => {
       await screen.findByRole('radio', { name: 'settings.appearance.theme.dark' }),
     );
 
-    expect(localStorage.getItem('coxinha.themePref')).toBe('dark');
+    expect(localStorage.getItem(THEME_STORAGE_KEY)).toBe('dark');
     expect(events).toEqual(['dark']);
 
     window.removeEventListener('coxinha:theme-pref-changed', listener);
@@ -213,13 +214,13 @@ describe('SettingsView — appearance panel', () => {
 
   it('clears the stored value when Auto is chosen after an override', async () => {
     const user = userEvent.setup();
-    localStorage.setItem('coxinha.themePref', 'light');
+    localStorage.setItem(THEME_STORAGE_KEY, 'light');
     render(<SettingsView />);
 
     await user.click(
       await screen.findByRole('radio', { name: 'settings.appearance.theme.auto' }),
     );
 
-    expect(localStorage.getItem('coxinha.themePref')).toBeNull();
+    expect(localStorage.getItem(THEME_STORAGE_KEY)).toBeNull();
   });
 });

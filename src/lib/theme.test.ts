@@ -1,11 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   applyTheme,
-  followSystemTheme,
   followThemePreference,
   getThemePreference,
   setThemePreference,
   systemTheme,
+  THEME_STORAGE_KEY,
 } from './theme';
 
 type MqListener = (e: MediaQueryListEvent) => void;
@@ -60,20 +60,20 @@ describe('theme helpers', () => {
     expect(systemTheme()).toBe('light');
   });
 
-  it('followSystemTheme applies the current value immediately', () => {
+  it('followThemePreference("auto") applies the current value immediately', () => {
     const mq = fakeMatchMedia(true);
     vi.stubGlobal('matchMedia', vi.fn(() => mq));
 
-    const cleanup = followSystemTheme(root);
+    const cleanup = followThemePreference('auto', root);
     expect(root.classList.contains('dark')).toBe(true);
     cleanup();
   });
 
-  it('followSystemTheme reacts when the OS flips the preference', () => {
+  it('followThemePreference("auto") reacts when the OS flips the preference', () => {
     const mq = fakeMatchMedia(false);
     vi.stubGlobal('matchMedia', vi.fn(() => mq));
 
-    const cleanup = followSystemTheme(root);
+    const cleanup = followThemePreference('auto', root);
     expect(root.classList.contains('dark')).toBe(false);
 
     mq.dispatch(true);
@@ -89,7 +89,7 @@ describe('theme helpers', () => {
     const mq = fakeMatchMedia(false);
     vi.stubGlobal('matchMedia', vi.fn(() => mq));
 
-    const cleanup = followSystemTheme(root);
+    const cleanup = followThemePreference('auto', root);
     cleanup();
 
     mq.dispatch(true);
@@ -123,7 +123,7 @@ describe('theme preference', () => {
   it('"auto" clears the stored value so next session re-reads the OS', () => {
     setThemePreference('dark');
     setThemePreference('auto');
-    expect(localStorage.getItem('coxinha.themePref')).toBeNull();
+    expect(localStorage.getItem(THEME_STORAGE_KEY)).toBeNull();
     expect(getThemePreference()).toBe('auto');
   });
 
@@ -152,18 +152,6 @@ describe('theme preference', () => {
     mq.dispatch(true);
     // OS went dark but preference is light — stays light.
     expect(root.classList.contains('dark')).toBe(false);
-    cleanup();
-  });
-
-  it('followThemePreference("auto") behaves like followSystemTheme', () => {
-    const mq = fakeMatchMedia(false);
-    vi.stubGlobal('matchMedia', vi.fn(() => mq));
-
-    const cleanup = followThemePreference('auto', root);
-    expect(root.classList.contains('dark')).toBe(false);
-
-    mq.dispatch(true);
-    expect(root.classList.contains('dark')).toBe(true);
     cleanup();
   });
 });

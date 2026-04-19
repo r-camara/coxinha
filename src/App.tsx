@@ -7,28 +7,27 @@ import { SettingsView } from './components/SettingsView';
 import { Sidebar } from './components/Sidebar';
 import type { CallDetected } from './lib/bindings';
 import { useAppStore } from './lib/store';
-import {
-  followThemePreference,
-  getThemePreference,
-  THEME_PREF_EVENT,
-  type ThemePreference,
-} from './lib/theme';
+import { followThemePreference, getThemePreference, THEME_PREF_EVENT } from './lib/theme';
 
 type View = 'notes' | 'agenda' | 'meetings' | 'settings';
 
 export default function App() {
   const [view, setView] = useState<View>('notes');
-  const [themePref, setThemePref] = useState<ThemePreference>(() => getThemePreference());
   const loadNotes = useAppStore((s) => s.loadNotes);
   const activeNoteId = useAppStore((s) => s.activeNoteId);
   const newNote = useAppStore((s) => s.newNote);
 
-  useEffect(() => followThemePreference(themePref), [themePref]);
-
   useEffect(() => {
-    const handle = () => setThemePref(getThemePreference());
+    let cleanup = followThemePreference(getThemePreference());
+    const handle = () => {
+      cleanup();
+      cleanup = followThemePreference(getThemePreference());
+    };
     window.addEventListener(THEME_PREF_EVENT, handle);
-    return () => window.removeEventListener(THEME_PREF_EVENT, handle);
+    return () => {
+      cleanup();
+      window.removeEventListener(THEME_PREF_EVENT, handle);
+    };
   }, []);
 
   useEffect(() => {
