@@ -194,6 +194,30 @@ async rebuildFromVault() : Promise<Result<RebuildStats, string>> {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
 }
+},
+/**
+ * Every distinct tag in the vault, with how many notes carry
+ * it. Ordered most-popular-first (spec 0014).
+ */
+async listTags() : Promise<Result<TagCount[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("list_tags") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Notes tagged with `tag` (exact, case-sensitive), most
+ * recent first.
+ */
+async listNotesByTag(tag: string) : Promise<Result<Note[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("list_notes_by_tag", { tag }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
 }
 }
 
@@ -264,6 +288,7 @@ export type RebuildStats = { notes_indexed: number; links_indexed: number;
 notes_skipped: number }
 export type RecordingProgress = { meeting_id: string; duration_seconds: number; level_db: number }
 export type ShortcutsConfig = { new_note: string; open_app: string; agenda: string; meetings: string; toggle_recording: string }
+export type TagCount = { tag: string; count: number }
 export type TranscriberConfig = 
 /**
  * No transcription engine. The app still records audio and

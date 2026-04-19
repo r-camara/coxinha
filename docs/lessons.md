@@ -14,6 +14,56 @@ paragraphs — not prose.
 
 ---
 
+## 2026-04-19 — Wipe-before-populate needs per-item error resilience
+
+**Context:** `rebuild_from_vault` v1 did `clear_all_note_data` →
+walk → re-upsert in a loop with `?` on every step. A single
+unreadable `.md` (invalid UTF-8, locked file, directory named
+`.md`) propagated its error through the walk, leaving the user
+with a freshly-wiped, half-empty index until they hand-fixed the
+offender.
+
+**Lesson:** any operation shaped as *delete-the-truth-then-rebuild*
+— rebuild_from_vault, migration backfills, cache warmers — must
+wrap per-item work in a scope that catches, logs, counts, and
+continues. Abort-on-first-error leaves the system worse than
+before the operation started. Return a stats record with a
+`skipped` count so the UI can surface partial success without
+pretending everything worked. Tests: feed a corrupt item and
+assert `indexed < input_count`, not just "didn't panic".
+
+**Reference:** PR #7 `fix(0005): resilient rebuild + symlink skip`,
+diff against PR #6 for the before/after.
+
+---
+
+## 2026-04-19 — Multi-angle simplify review finds disjoint bugs
+
+**Context:** the three review agents (reuse, quality, efficiency)
+were used as a single "simplify" pass. Early intuition said two
+of them would overlap heavily; the 2026-04-19 passes (wiki-links
+PR #5 + rebuild PR #6 follow-up) disproved it:
+- Efficiency agent caught the **React timer leak** in
+  `NoteEditor.debouncedSave` (closure-captured setTimeout, no
+  unmount cleanup). Neither quality nor reuse agent surfaced it.
+- Quality agent caught the **per-file error abort** in
+  `rebuild_from_vault` that leaves the user with a wiped index.
+  Efficiency agent (who should have seen it as a robustness
+  issue) missed it both times.
+- Reuse agent correctly pointed to a `useAsync<T>` extraction
+  opportunity the other two ignored as "fine because it compiles".
+
+**Lesson:** don't collapse the three angles into one prompt. The
+roles are different mental models (is this code wasteful? is it
+hacky? is it reinventing something?) and the categories of bug
+each one spots rarely overlap. Running all three in parallel
+costs ~3 min of wall-clock agent time and ~3 KB of context; skip
+at your peril.
+
+**Reference:** simplify passes 2026-04-19 (PRs #5, #6, #7).
+
+---
+
 ## 2026-04-18 — Postmortem: the four boot failures that unit tests missed
 
 **Context:** in one afternoon of real integration the skeleton

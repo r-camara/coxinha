@@ -72,6 +72,8 @@ pub fn run() {
             commands::get_or_create_daily_note,
             commands::get_backlinks,
             commands::rebuild_from_vault,
+            commands::list_tags,
+            commands::list_notes_by_tag,
         ])
         .events(tauri_specta::collect_events![
             events::CallDetected,
@@ -421,6 +423,29 @@ mod commands {
         state
             .storage
             .rebuild_from_vault()
+            .await
+            .map_err(|e| e.to_string())
+    }
+
+    #[tauri::command]
+    #[specta::specta]
+    pub async fn list_tags(
+        state: tauri::State<'_, Arc<Mutex<AppState>>>,
+    ) -> Result<Vec<TagCount>, String> {
+        let state = state.lock().await;
+        state.storage.list_tags().await.map_err(|e| e.to_string())
+    }
+
+    #[tauri::command]
+    #[specta::specta]
+    pub async fn list_notes_by_tag(
+        state: tauri::State<'_, Arc<Mutex<AppState>>>,
+        tag: String,
+    ) -> Result<Vec<Note>, String> {
+        let state = state.lock().await;
+        state
+            .storage
+            .list_notes_by_tag(&tag)
             .await
             .map_err(|e| e.to_string())
     }
