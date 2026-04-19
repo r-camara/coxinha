@@ -109,10 +109,10 @@ The on-disk contracts and failure semantics are already frozen:
 - **Rust: 71 tests** — 69 unit (storage, db, config, obsidian,
   transcriber, VAD smoothed + silero, wiki-link extractor,
   backlinks query, tag aggregation) + 1 boot smoke + 1 perf smoke
-- **Frontend: 42 tests** — locale catalog, `sortByUpdated`,
+- **Frontend: 44 tests** — locale catalog, `sortByUpdated`,
   theme helpers (incl. Auto/Light/Dark preference), `SettingsView`
-  (Vault + Appearance), `Sidebar` (search + tags),
-  `BacklinksPanel`
+  (Vault + Appearance + Shortcuts read-only), `Sidebar` (search +
+  tags), `BacklinksPanel`
 - **Baselines today**: boot ~800 ms, idle RSS ~38 MB, idle CPU
   0 %, idle growth ~0 MB, vitest suite ~3 s
 

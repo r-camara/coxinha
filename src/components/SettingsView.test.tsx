@@ -224,3 +224,51 @@ describe('SettingsView — appearance panel', () => {
     expect(localStorage.getItem(THEME_STORAGE_KEY)).toBeNull();
   });
 });
+
+describe('SettingsView — shortcuts panel', () => {
+  beforeEach(() => {
+    listObsidianVaults.mockResolvedValue({ status: 'ok', data: [] });
+  });
+
+  it('lists all five global shortcuts from the config', async () => {
+    getConfig.mockResolvedValue({ status: 'ok', data: BASE_CONFIG });
+
+    render(<SettingsView />);
+
+    // One <kbd> per binding, all visible after config loads.
+    expect(await screen.findByText('Ctrl+Alt+N')).toBeInTheDocument();
+    expect(screen.getByText('Ctrl+Alt+C')).toBeInTheDocument();
+    expect(screen.getByText('Ctrl+Alt+A')).toBeInTheDocument();
+    expect(screen.getByText('Ctrl+Alt+M')).toBeInTheDocument();
+    expect(screen.getByText('Ctrl+Alt+R')).toBeInTheDocument();
+
+    // Action labels from the i18n table.
+    expect(screen.getByText('settings.shortcuts.action.new_note')).toBeInTheDocument();
+    expect(screen.getByText('settings.shortcuts.action.toggle_recording')).toBeInTheDocument();
+  });
+
+  it('reflects a non-default binding from the saved config', async () => {
+    getConfig.mockResolvedValue({
+      status: 'ok',
+      data: {
+        ...BASE_CONFIG,
+        shortcuts: { ...BASE_CONFIG.shortcuts, new_note: 'Ctrl+Shift+Space' },
+      },
+    });
+
+    render(<SettingsView />);
+
+    expect(await screen.findByText('Ctrl+Shift+Space')).toBeInTheDocument();
+    expect(screen.queryByText('Ctrl+Alt+N')).not.toBeInTheDocument();
+  });
+
+  it('surfaces the "rebind coming soon" hint', async () => {
+    getConfig.mockResolvedValue({ status: 'ok', data: BASE_CONFIG });
+
+    render(<SettingsView />);
+
+    expect(
+      await screen.findByText('settings.shortcuts.rebindComingSoon'),
+    ).toBeInTheDocument();
+  });
+});

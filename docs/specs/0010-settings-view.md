@@ -1,6 +1,6 @@
 # Spec 0010: Settings view UI
 
-- **Status:** in-progress (Vault + Rebuild + Appearance → theme shipped)
+- **Status:** in-progress (Vault + Rebuild + Appearance→theme + Shortcuts→read-only shipped)
 - **Phase:** F1
 - **Owner:** Rodolfo
 - **Depends on:** —
@@ -91,7 +91,13 @@ without editing `~/coxinha/.coxinha/config.toml` by hand.
   `CustomEvent('coxinha:theme-pref-changed')` so `App.tsx`
   re-applies without a reload. Config file untouched — theme is
   a per-install UI affordance, not a vault setting.
-- **Still out**: Transcription, Diarization, LLM, Shortcuts,
-  Models panels, Locale override, Reset-to-defaults, atomic
-  config writes with `.bak` rollback (the spec's Handy #1262
-  item).
+- **Shortcuts → read-only** (PR #12): Settings panel lists all
+  five global bindings as `<kbd>` elements driven off
+  `config.shortcuts`. An inline hint points users at
+  `~/coxinha/.coxinha/config.toml` for rebinds until the capture
+  UI lands. i18n keys cover each action label +
+  `rebindComingSoon`.
+- **Still out**: Transcription, Diarization, LLM, Shortcuts→
+  rebind-capture (with conflict surfacing), Models panel,
+  Locale override, Reset-to-defaults, atomic config writes with
+  `.bak` rollback (Handy #1262).
