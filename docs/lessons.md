@@ -14,6 +14,39 @@ paragraphs — not prose.
 
 ---
 
+## 2026-04-19 — `useEffect` on a frequently-churning array reference
+
+**Context:** Zustand's `saveNote` action rebuilds the `notes` array
+on every keystroke-debounced save (via `sortByUpdated([...])`),
+so `useEffect(() => { fetchBackend() }, [notes])` re-fires on
+every edit — even when nothing the effect cares about actually
+changed. Found during PR #8 simplify pass on the sidebar tag
+cloud: typing in a note body round-tripped `listTags()` to SQLite
+per save-tick.
+
+**Lesson:** when the dep is a store array whose identity is
+cheaper to invalidate than its content, derive a cheap signature
+from the properties the effect actually uses and use that as the
+dep instead. For the tags effect:
+
+```ts
+const tagSignature = useMemo(
+  () => notes.map((n) => `${n.id}:${[...n.tags].sort().join(',')}`).join('|'),
+  [notes],
+);
+useEffect(() => { ... }, [tagSignature]);
+```
+
+Costs O(N·tags) in string work per render but trades that for
+avoiding an IPC round-trip on every save. Same trick applies to
+any component that watches `notes` but only cares about a subset
+(backlinks, tag cloud, outline).
+
+**Reference:** PR #8 refactor commit `refactor(0014): simplify
+pass on tags filter`.
+
+---
+
 ## 2026-04-19 — Wipe-before-populate needs per-item error resilience
 
 **Context:** `rebuild_from_vault` v1 did `clear_all_note_data` →
