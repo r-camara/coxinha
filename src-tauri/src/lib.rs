@@ -403,10 +403,6 @@ mod commands {
         id: Uuid,
     ) -> Result<Vec<Note>, String> {
         let state = state.lock().await;
-        state
-            .storage
-            .backlinks(id)
-            .await
-            .map_err(|e| e.to_string())
+        state.storage.backlinks(id).await.map_err(|e| e.to_string())
     }
 }

@@ -60,7 +60,8 @@ impl Storage {
             updated_at: now,
         };
         self.db.upsert_note(&note, content)?;
-        self.db.replace_links(note.id, &extract_wikilinks(content))?;
+        self.db
+            .replace_links(note.id, &extract_wikilinks(content))?;
         Ok(note)
     }
 
@@ -79,7 +80,8 @@ impl Storage {
             ..note
         };
         self.db.upsert_note(&updated, content)?;
-        self.db.replace_links(updated.id, &extract_wikilinks(content))?;
+        self.db
+            .replace_links(updated.id, &extract_wikilinks(content))?;
         Ok(updated)
     }
 
@@ -573,7 +575,10 @@ mod tests {
     #[tokio::test]
     async fn create_note_indexes_wikilinks_for_backlinks() {
         let (_tmp, storage) = fresh_storage().await;
-        let target = storage.create_note("Daily Notes", "# Daily Notes\n").await.unwrap();
+        let target = storage
+            .create_note("Daily Notes", "# Daily Notes\n")
+            .await
+            .unwrap();
         let _source = storage
             .create_note("Today", "# Today\n\nSee [[Daily Notes]] for more.")
             .await
@@ -610,10 +615,7 @@ mod tests {
     async fn backlinks_match_by_filename_stem_when_title_differs() {
         let (_tmp, storage) = fresh_storage().await;
         // Emulate a note whose file stem differs from its title.
-        let target = storage
-            .create_note("Human Title", "body")
-            .await
-            .unwrap();
+        let target = storage.create_note("Human Title", "body").await.unwrap();
         let stem = path_stem(&target.path).expect("stem");
         let linker = format!("[[{}]]", stem);
         let _ = storage.create_note("Linker", &linker).await.unwrap();

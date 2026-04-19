@@ -469,11 +469,8 @@ mod tests {
         let (_tmp, db) = fresh_db();
         let source = upsert_sample(&db, "Source", "notes/source.md", "body");
         // Same target repeated — linker shows up once.
-        db.replace_links(
-            source,
-            &["Daily".into(), "daily".into(), "DAILY".into()],
-        )
-        .unwrap();
+        db.replace_links(source, &["Daily".into(), "daily".into(), "DAILY".into()])
+            .unwrap();
 
         let hits = db.backlinks_for_keys(&["Daily".into()]).unwrap();
         assert_eq!(hits.len(), 1);
@@ -517,19 +514,10 @@ mod tests {
     fn replace_links_ignores_empty_and_whitespace_targets() {
         let (_tmp, db) = fresh_db();
         let src = upsert_sample(&db, "Source", "notes/source.md", "");
-        db.replace_links(
-            src,
-            &["".into(), "   ".into(), "Real".into()],
-        )
-        .unwrap();
-        assert!(db
-            .backlinks_for_keys(&["".into()])
-            .unwrap()
-            .is_empty());
-        assert_eq!(
-            db.backlinks_for_keys(&["Real".into()]).unwrap().len(),
-            1
-        );
+        db.replace_links(src, &["".into(), "   ".into(), "Real".into()])
+            .unwrap();
+        assert!(db.backlinks_for_keys(&["".into()]).unwrap().is_empty());
+        assert_eq!(db.backlinks_for_keys(&["Real".into()]).unwrap().len(), 1);
     }
 
     #[test]
