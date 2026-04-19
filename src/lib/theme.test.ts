@@ -1,5 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { applyTheme, followSystemTheme, systemTheme } from './theme';
+import {
+  applyTheme,
+  followSystemTheme,
+  followThemePreference,
+  getThemePreference,
+  setThemePreference,
+  systemTheme,
+} from './theme';
 
 type MqListener = (e: MediaQueryListEvent) => void;
 
@@ -29,6 +36,7 @@ describe('theme helpers', () => {
 
   beforeEach(() => {
     root = document.createElement('html');
+    localStorage.clear();
   });
 
   afterEach(() => {
@@ -85,7 +93,77 @@ describe('theme helpers', () => {
     cleanup();
 
     mq.dispatch(true);
-    // Class should NOT flip after cleanup removed the listener.
     expect(root.classList.contains('dark')).toBe(false);
+  });
+});
+
+describe('theme preference', () => {
+  let root: Element;
+
+  beforeEach(() => {
+    root = document.createElement('html');
+    localStorage.clear();
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('defaults to "auto" when nothing is stored', () => {
+    expect(getThemePreference()).toBe('auto');
+  });
+
+  it('persists explicit light/dark choices to localStorage', () => {
+    setThemePreference('dark');
+    expect(getThemePreference()).toBe('dark');
+    setThemePreference('light');
+    expect(getThemePreference()).toBe('light');
+  });
+
+  it('"auto" clears the stored value so next session re-reads the OS', () => {
+    setThemePreference('dark');
+    setThemePreference('auto');
+    expect(localStorage.getItem('coxinha.themePref')).toBeNull();
+    expect(getThemePreference()).toBe('auto');
+  });
+
+  it('followThemePreference("dark") applies dark and ignores OS', () => {
+    const mq = fakeMatchMedia(false);
+    vi.stubGlobal('matchMedia', vi.fn(() => mq));
+
+    const cleanup = followThemePreference('dark', root);
+    expect(root.classList.contains('dark')).toBe(true);
+
+    mq.dispatch(true);
+    // The OS flipped to dark — already dark, stays dark. Flip OS back:
+    mq.dispatch(false);
+    // Preference "dark" ignores OS — still dark.
+    expect(root.classList.contains('dark')).toBe(true);
+    cleanup();
+  });
+
+  it('followThemePreference("light") applies light and ignores OS', () => {
+    const mq = fakeMatchMedia(true);
+    vi.stubGlobal('matchMedia', vi.fn(() => mq));
+
+    const cleanup = followThemePreference('light', root);
+    expect(root.classList.contains('dark')).toBe(false);
+
+    mq.dispatch(true);
+    // OS went dark but preference is light — stays light.
+    expect(root.classList.contains('dark')).toBe(false);
+    cleanup();
+  });
+
+  it('followThemePreference("auto") behaves like followSystemTheme', () => {
+    const mq = fakeMatchMedia(false);
+    vi.stubGlobal('matchMedia', vi.fn(() => mq));
+
+    const cleanup = followThemePreference('auto', root);
+    expect(root.classList.contains('dark')).toBe(false);
+
+    mq.dispatch(true);
+    expect(root.classList.contains('dark')).toBe(true);
+    cleanup();
   });
 });
