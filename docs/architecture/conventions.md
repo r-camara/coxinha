@@ -1,0 +1,61 @@
+# Conventions
+
+Code conventions for Coxinha. These are defaults — exceptions must
+be justified in the PR, and if one becomes a recurring pattern it
+graduates into an ADR.
+
+## Rust
+
+- Tauri commands return `Result<T, String>`; map `anyhow::Error` with
+  `.map_err(|e| e.to_string())`
+- Internally: `anyhow::Result` for generic flow, `thiserror` for
+  custom error types when it pays off
+- Logging: `tracing` + `tracing-subscriber`; never `println!` in
+  production paths
+- Async: `tokio` (ships with Tauri); never `block_on` inside the
+  Tauri `setup` closure (it panics — see lessons)
+- Tests: `#[cfg(test)]` inline with the module under test
+- No new macros — reach for existing ones
+
+## Frontend
+
+- Function components, strict TypeScript
+- Zustand for global state (keeps Redux/Context boilerplate out)
+- shadcn components copy-pasted into the tree, not installed as a
+  dependency
+- Tailwind; no CSS modules
+
+## i18n
+
+- **Zero hardcoded UI strings.** Every visible text resolves through
+  `t('key')` (frontend: `useTranslation()`; Rust: `t!("key")` macro)
+- Locale files:
+  - Frontend: `src/locales/<lang>.json`
+  - Rust: `src-tauri/locales/<lang>.yml`
+- Keys grouped semantically (`nav.*`, `sidebar.*`, `tray.*`, ...)
+- Brand string `"Coxinha"` is the only allowed literal
+- Error/log messages (developer-facing) stay in English prose; they
+  are not i18n-tracked
+
+## Accessibility
+
+- **Semantic HTML first.** `<button>`, `<nav>`, `<main>`, `<aside>`,
+  `<header>`, `<footer>` — not `<div onClick>`
+- **Every icon-only control has an `aria-label`** (or visible text)
+- Keyboard reachability: every interactive element works with
+  Tab + Enter/Space; no mouse-only paths
+- Focus ring visible; never removed without a replacement
+- Respect `prefers-reduced-motion`
+- Color contrast: text ≥ 4.5:1, UI components ≥ 3:1
+- Dialogs trap focus while open and return focus on close
+
+## Anti-patterns in this project
+
+- Treating the DB as the source of truth (the filesystem is)
+- Making external calls without explicit user configuration
+- Enabling auto-update or analytics by default
+- Duplicating `shared::*` types on the frontend instead of using
+  the generated bindings
+- Hardcoded UI strings in JSX or Rust — always i18n
+- `<div onClick>` when a `<button>` would do
+- Icon-only buttons without an `aria-label`
