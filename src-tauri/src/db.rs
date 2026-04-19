@@ -92,7 +92,10 @@ impl Db {
         )?;
 
         // FTS: delete + insert (simpler than upsert)
-        conn.execute("DELETE FROM notes_fts WHERE id = ?1", params![note.id.to_string()])?;
+        conn.execute(
+            "DELETE FROM notes_fts WHERE id = ?1",
+            params![note.id.to_string()],
+        )?;
         conn.execute(
             "INSERT INTO notes_fts (id, title, body) VALUES (?1, ?2, ?3)",
             params![note.id.to_string(), note.title, body],
@@ -229,7 +232,9 @@ fn row_to_note(r: &rusqlite::Row) -> rusqlite::Result<Note> {
     let updated_at: String = r.get(5)?;
     let tags_json: String = r.get(3)?;
     Ok(Note {
-        id: Uuid::parse_str(&id).map_err(|e| rusqlite::Error::FromSqlConversionFailure(0, rusqlite::types::Type::Text, Box::new(e)))?,
+        id: Uuid::parse_str(&id).map_err(|e| {
+            rusqlite::Error::FromSqlConversionFailure(0, rusqlite::types::Type::Text, Box::new(e))
+        })?,
         path: r.get(1)?,
         title: r.get(2)?,
         tags: serde_json::from_str(&tags_json).unwrap_or_default(),
@@ -247,7 +252,9 @@ fn row_to_meeting(r: &rusqlite::Row) -> rusqlite::Result<Meeting> {
     let has_summary: i32 = r.get(8)?;
 
     Ok(Meeting {
-        id: Uuid::parse_str(&id).map_err(|e| rusqlite::Error::FromSqlConversionFailure(0, rusqlite::types::Type::Text, Box::new(e)))?,
+        id: Uuid::parse_str(&id).map_err(|e| {
+            rusqlite::Error::FromSqlConversionFailure(0, rusqlite::types::Type::Text, Box::new(e))
+        })?,
         title: r.get(1)?,
         started_at: parse_dt(&started_at),
         ended_at: ended_at.map(|s| parse_dt(&s)),
@@ -284,9 +291,7 @@ mod tests {
             path: path.to_string(),
             tags: vec![],
             created_at: Utc::now(),
-            updated_at: updated
-                .parse::<DateTime<Utc>>()
-                .expect("rfc3339 timestamp"),
+            updated_at: updated.parse::<DateTime<Utc>>().expect("rfc3339 timestamp"),
         }
     }
 
@@ -348,7 +353,8 @@ mod tests {
     fn search_matches_body_via_fts() {
         let (_tmp, db) = fresh_db();
         let note = sample_note("Journal", "notes/journal.md", "2026-04-18T10:00:00Z");
-        db.upsert_note(&note, "meeting with the robotics team").unwrap();
+        db.upsert_note(&note, "meeting with the robotics team")
+            .unwrap();
 
         let hits = db.search_notes("robotics").unwrap();
         assert_eq!(hits.len(), 1);

@@ -365,7 +365,10 @@ mod tests {
     #[test]
     fn first_heading_reads_h1_and_h2() {
         assert_eq!(first_heading("# Title\n\nbody").as_deref(), Some("Title"));
-        assert_eq!(first_heading("## Subsection\n").as_deref(), Some("Subsection"));
+        assert_eq!(
+            first_heading("## Subsection\n").as_deref(),
+            Some("Subsection")
+        );
     }
 
     #[test]

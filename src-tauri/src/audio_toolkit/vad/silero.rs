@@ -25,8 +25,7 @@ use super::{VadFrame, FRAME_SIZE, SAMPLE_RATE};
 /// ~2.3 MB of ONNX goes into `.rodata`. Acceptable cost — spec 0017
 /// already plans larger model downloads for Whisper/Parakeet; VAD is
 /// small enough to embed.
-static MODEL_BYTES: &[u8] =
-    include_bytes!("../../../resources/silero_vad.onnx");
+static MODEL_BYTES: &[u8] = include_bytes!("../../../resources/silero_vad.onnx");
 
 pub struct SileroVad {
     session: Session,

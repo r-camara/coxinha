@@ -153,10 +153,7 @@ fn sample(pid: Pid, window: Duration, interval: Duration) -> Report {
 
     let first = rss_mb_samples.first().copied().unwrap_or(0.0);
     let last = rss_mb_samples.last().copied().unwrap_or(0.0);
-    let peak = rss_mb_samples
-        .iter()
-        .copied()
-        .fold(0.0f64, f64::max);
+    let peak = rss_mb_samples.iter().copied().fold(0.0f64, f64::max);
     let avg_cpu = if cpu_pct_samples.is_empty() {
         0.0
     } else {
@@ -186,11 +183,7 @@ fn pump_lines<R: Read + Send + 'static>(stream: R, tx: mpsc::Sender<String>) {
     });
 }
 
-fn wait_for_marker(
-    rx: &mpsc::Receiver<String>,
-    marker: &str,
-    budget: Duration,
-) -> Option<Instant> {
+fn wait_for_marker(rx: &mpsc::Receiver<String>, marker: &str, budget: Duration) -> Option<Instant> {
     let deadline = Instant::now() + budget;
     loop {
         let remaining = deadline.saturating_duration_since(Instant::now());

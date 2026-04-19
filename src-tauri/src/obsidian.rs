@@ -24,8 +24,8 @@ pub fn detect_vaults() -> Result<Vec<ObsidianVault>> {
         // installed. Settings shows an empty state.
         return Ok(Vec::new());
     }
-    let raw = std::fs::read_to_string(&path)
-        .with_context(|| format!("reading {}", path.display()))?;
+    let raw =
+        std::fs::read_to_string(&path).with_context(|| format!("reading {}", path.display()))?;
     parse_vaults(&raw)
 }
 

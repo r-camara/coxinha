@@ -158,7 +158,13 @@ mod tests {
 }
 
 fn bootstrap_vault(root: &std::path::Path) -> Result<()> {
-    for sub in &["notes", "meetings", "attachments", "daily", ".coxinha/models"] {
+    for sub in &[
+        "notes",
+        "meetings",
+        "attachments",
+        "daily",
+        ".coxinha/models",
+    ] {
         std::fs::create_dir_all(root.join(sub))?;
     }
     Ok(())

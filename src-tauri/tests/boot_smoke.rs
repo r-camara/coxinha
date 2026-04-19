@@ -48,9 +48,8 @@ fn app_boots_and_emits_ready_within_budget() {
     let _ = child.kill();
     let _ = child.wait();
 
-    let ready = ready_at.expect(
-        "binary never emitted 'Coxinha ready' — check stdout/stderr dumped above",
-    );
+    let ready =
+        ready_at.expect("binary never emitted 'Coxinha ready' — check stdout/stderr dumped above");
     eprintln!("boot-ready elapsed: {:?}", ready);
 
     assert!(

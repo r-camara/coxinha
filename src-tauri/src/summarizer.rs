@@ -93,10 +93,7 @@ fn format_transcript(t: &Transcript) -> String {
     let mut out = String::new();
     for seg in &t.segments {
         let speaker = seg.speaker.as_deref().unwrap_or("Speaker");
-        out.push_str(&format!(
-            "[{:.1}s] {}: {}\n",
-            seg.start, speaker, seg.text
-        ));
+        out.push_str(&format!("[{:.1}s] {}: {}\n", seg.start, speaker, seg.text));
     }
     out
 }
