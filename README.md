@@ -63,6 +63,52 @@ The intersection of both problems, solved together:
 Windows-first. Keyboard-first. Tray-resident. MIT-licensed.
 Subscription: none.
 
+## Where this is going
+
+F1 is a notetaker + bot-less meeting recorder. The architecture
+underneath is deliberately a **layered knowledge system**, so the
+same pipeline that ingests a markdown note today can feed a richer
+reasoning loop tomorrow without a rewrite.
+
+```
+Inputs → Raw → Processing → Knowledge (truth) → Graph → Reasoning
+                                   │
+                                   ↓
+                          Memory (AI-derived, suggestion)
+                                   │
+                                   ↓
+                    Outputs: search · related · insights · actions
+                                   │
+                                   ↓
+                            Agents (MCP / API / CLI)
+```
+
+Two invariants survive across every phase:
+
+- **Knowledge is the source of truth.** Plain files under
+  `~/coxinha/` — markdown notes, meeting recordings + transcripts,
+  canvases, attachments. The SQLite index (`notes_fts`, `links`,
+  `meetings`, …) is a derived view that must always be rebuildable
+  from the files.
+- **Memory is derived, never authoritative.** Facts, preferences,
+  decisions, and embeddings Coxinha learns over time are labelled
+  as *suggestions* and kept separate from the source corpus. A user
+  can reject a memory; nothing in the app can reject a note the
+  user actually wrote.
+
+The memory layer arrives in F4 (see [roadmap](./docs/roadmap.md)),
+drawing from projects in the Hindsight / memory-palace space:
+extract structured facts from the knowledge corpus, keep them
+linked to their source documents, and surface them as hints on the
+margins of relevant notes — never as ground truth.
+
+Today maps onto the diagram cleanly: `notes` + `meetings` + future
+`canvases` are the knowledge; wiki-links (`[[…]]`) + tags form the
+graph; FTS5 search + related-content are the first outputs. See
+[ADR-0015](./docs/architecture/decisions/0015-layered-knowledge-memory.md)
+for the decision in full, and [`docs/specs/`](./docs/specs/) for
+the per-feature plan.
+
 ## Features (F1 — MVP)
 
 - ⚡ Tray-resident; `Ctrl+Alt+N` opens the app in <50ms

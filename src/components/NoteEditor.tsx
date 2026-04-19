@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useCreateBlockNote } from '@blocknote/react';
 import { BlockNoteView } from '@blocknote/shadcn';
@@ -8,6 +8,7 @@ import { invoke } from '@tauri-apps/api/core';
 
 import type { NoteContent } from '../lib/bindings';
 import { useAppStore } from '../lib/store';
+import { BacklinksPanel } from './BacklinksPanel';
 
 interface Props {
   noteId: string;
@@ -77,28 +78,45 @@ function EditorInner({
     })();
   }, [editor, initialMarkdown]);
 
-  const debouncedSave = useMemo(() => {
-    let timer: ReturnType<typeof setTimeout> | null = null;
-    return () => {
-      if (timer) clearTimeout(timer);
-      timer = setTimeout(async () => {
+  // Timer lives in a ref so the unmount cleanup below can cancel it.
+  // Without this, switching notes during the 500 ms window fires a
+  // save against a torn-down BlockNote instance.
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const debouncedSave = useMemo(
+    () => () => {
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+      saveTimerRef.current = setTimeout(async () => {
         const md = await editor.blocksToMarkdownLossy(editor.document);
         onSave(md);
       }, 500);
+    },
+    [editor, onSave],
+  );
+
+  useEffect(() => {
+    return () => {
+      if (saveTimerRef.current) {
+        clearTimeout(saveTimerRef.current);
+        saveTimerRef.current = null;
+      }
     };
-  }, [editor, onSave]);
+  }, []);
 
   return (
-    <section
-      className="h-full overflow-auto bn-container"
-      aria-label={t('editor.region')}
-    >
-      <BlockNoteView
-        editor={editor}
-        onChange={debouncedSave}
-        data-note-id={noteId}
-      />
-    </section>
+    <div className="h-full flex">
+      <section
+        className="flex-1 min-w-0 overflow-auto bn-container"
+        aria-label={t('editor.region')}
+      >
+        <BlockNoteView
+          editor={editor}
+          onChange={debouncedSave}
+          data-note-id={noteId}
+        />
+      </section>
+      <BacklinksPanel noteId={noteId} />
+    </div>
   );
 }
 

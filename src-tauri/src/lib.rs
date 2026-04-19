@@ -70,6 +70,7 @@ pub fn run() {
             commands::update_config,
             commands::list_obsidian_vaults,
             commands::get_or_create_daily_note,
+            commands::get_backlinks,
         ])
         .events(tauri_specta::collect_events![
             events::CallDetected,
@@ -390,5 +391,18 @@ mod commands {
             .get_or_create_daily_note(date.as_deref())
             .await
             .map_err(|e| e.to_string())
+    }
+
+    /// Notes that `[[…]]`-link to this one. Match is resolved
+    /// against the target's current title and filename stem, so
+    /// renames don't orphan backlinks (spec 0013).
+    #[tauri::command]
+    #[specta::specta]
+    pub async fn get_backlinks(
+        state: tauri::State<'_, Arc<Mutex<AppState>>>,
+        id: Uuid,
+    ) -> Result<Vec<Note>, String> {
+        let state = state.lock().await;
+        state.storage.backlinks(id).await.map_err(|e| e.to_string())
     }
 }

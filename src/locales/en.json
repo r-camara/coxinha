@@ -62,5 +62,12 @@
     "mainNavigation": "Main navigation",
     "noteList": "Note list",
     "newNote": "Create new note"
+  },
+  "backlinks": {
+    "region": "Backlinks",
+    "heading": "Linked from",
+    "loading": "Loading…",
+    "empty": "No backlinks yet.",
+    "error": "Could not load backlinks: {{error}}"
   }
 }

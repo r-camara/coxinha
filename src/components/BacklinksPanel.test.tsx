@@ -1,0 +1,107 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+
+vi.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    t: (key: string, vars?: Record<string, string>) =>
+      vars ? `${key}:${JSON.stringify(vars)}` : key,
+  }),
+}));
+
+const getBacklinks = vi.fn();
+vi.mock('../lib/bindings', () => ({
+  commands: {
+    getBacklinks: (...a: unknown[]) => getBacklinks(...a),
+  },
+}));
+
+const setActiveNote = vi.fn();
+vi.mock('../lib/store', () => ({
+  useAppStore: <T,>(selector: (s: { setActiveNote: typeof setActiveNote }) => T) =>
+    selector({ setActiveNote }),
+}));
+
+import { BacklinksPanel } from './BacklinksPanel';
+
+function note(id: string, title: string) {
+  return {
+    id,
+    title,
+    path: `notes/${id}.md`,
+    tags: [],
+    created_at: '2026-04-19T00:00:00Z',
+    updated_at: '2026-04-19T00:00:00Z',
+  };
+}
+
+beforeEach(() => {
+  getBacklinks.mockReset();
+  setActiveNote.mockReset();
+});
+
+describe('BacklinksPanel', () => {
+  it('renders the empty state when no backlinks come back', async () => {
+    getBacklinks.mockResolvedValue({ status: 'ok', data: [] });
+
+    render(<BacklinksPanel noteId="target" />);
+
+    expect(await screen.findByText('backlinks.empty')).toBeInTheDocument();
+    expect(getBacklinks).toHaveBeenCalledWith('target');
+  });
+
+  it('lists linker notes with title text', async () => {
+    getBacklinks.mockResolvedValue({
+      status: 'ok',
+      data: [note('a', 'Alpha'), note('b', 'Beta')],
+    });
+
+    render(<BacklinksPanel noteId="target" />);
+
+    expect(await screen.findByText('Alpha')).toBeInTheDocument();
+    expect(screen.getByText('Beta')).toBeInTheDocument();
+  });
+
+  it('opens the linker note on click via store.setActiveNote', async () => {
+    const user = userEvent.setup();
+    getBacklinks.mockResolvedValue({
+      status: 'ok',
+      data: [note('a', 'Alpha')],
+    });
+
+    render(<BacklinksPanel noteId="target" />);
+    await user.click(await screen.findByRole('button', { name: 'Alpha' }));
+
+    expect(setActiveNote).toHaveBeenCalledWith('a');
+  });
+
+  it('surfaces backend errors in an alert', async () => {
+    getBacklinks.mockResolvedValue({ status: 'error', error: 'boom' });
+
+    render(<BacklinksPanel noteId="target" />);
+
+    const alert = await screen.findByRole('alert');
+    expect(alert.textContent).toContain('boom');
+  });
+
+  it('falls back to "(untitled)" when the linker has no title', async () => {
+    getBacklinks.mockResolvedValue({
+      status: 'ok',
+      data: [note('a', '')],
+    });
+
+    render(<BacklinksPanel noteId="target" />);
+
+    expect(await screen.findByText('sidebar.untitled')).toBeInTheDocument();
+  });
+
+  it('refetches when the active noteId changes', async () => {
+    getBacklinks.mockResolvedValue({ status: 'ok', data: [] });
+
+    const { rerender } = render(<BacklinksPanel noteId="first" />);
+    await waitFor(() => expect(getBacklinks).toHaveBeenCalledWith('first'));
+
+    rerender(<BacklinksPanel noteId="second" />);
+    await waitFor(() => expect(getBacklinks).toHaveBeenCalledWith('second'));
+  });
+});

@@ -4,6 +4,12 @@
 
 - **Filesystem is canonical.** Notes/audio/attachments live under
   `~/coxinha/`; SQLite is a rebuildable index only.
+- **Knowledge vs Memory.** User-authored + unambiguous-derived data
+  lives in *Knowledge* (the vault files + SQLite view). AI-derived
+  facts / preferences / embeddings live in *Memory* — always
+  labelled as suggestion, always linked back to source, always
+  dismissible. See
+  [ADR-0015](./docs/architecture/decisions/0015-layered-knowledge-memory.md).
 - **Windows-first.** Validate on Windows before mac/Linux.
 - **Zero network in F1.** No sync, OAuth, analytics, or auto-update
   without explicit user opt-in.
