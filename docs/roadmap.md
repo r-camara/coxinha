@@ -28,6 +28,8 @@ F1's reason to exist and block everything else:
 - [ ] Filesystem-backed storage, `~/coxinha/notes/*.md` (spec 0001)
 - [ ] SQLite FTS5 search (spec 0010)
 - [ ] Automatic daily notes (spec 0002)
+- [ ] Meetings list view (spec 0035)
+- [ ] Settings view UI (spec 0036)
 
 ### Optional STT engine
 
@@ -43,14 +45,25 @@ F1's reason to exist and block everything else:
 
 - [ ] i18n infrastructure in place (spec 0033)
 - [ ] Accessibility baseline (spec 0034)
+- [ ] Testing & reliability baseline — smoke tests for `db.rs` /
+      `storage.rs`, rebuild-index test, crash-recovery test,
+      Windows CI (spec 0038)
+- [ ] Database migrations formalized (spec 0041)
+- [ ] Dependency hardening — pin RC/unstable crates before F1 ship
+      (`tauri-specta`, `specta-typescript`, `ort`, `transcribe-rs`,
+      `pyannote-rs`)
 
-## F1.5 — Rich blocks (post-MVP)
+## F1.5 — Rich blocks and real-product polish
 
 - [ ] Mermaid block (~60 lines of a custom BlockNote block)
 - [ ] Excalidraw block (fullscreen modal, VS Code-extension style)
-- [ ] `[[note]]` wiki-links with autocomplete
-- [ ] `#project` tag filter
+- [ ] `[[note]]` wiki-links with autocomplete (spec 0013)
+- [ ] `#project` tag filter (spec 0014)
 - [ ] Diarization upgrade: `SpeakrsDiarizer`
+- [ ] Vault import from existing Obsidian/Logseq folders (spec 0037)
+- [ ] Vault backup & export (spec 0039)
+- [ ] Installer & first-run onboarding (spec 0040)
+- [ ] External edit conflict resolution (spec 0042)
 
 ## F2 — Multi-PC via optional sync
 

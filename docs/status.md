@@ -47,14 +47,23 @@ secondary.
 - **GitHub Actions** CI + release
 - **Scripts** for model download and WSL setup
 
-## ❓ Might need adjustment
+## ❓ Needs pinning before F1 ships
 
-- **`transcriber/parakeet.rs`** — the `transcribe-rs 0.3` API was
-  used per public docs, but `result.segments` and `result.language`
-  fields may differ. Validate with `cargo check --features stt-parakeet`.
-- **`tauri-specta 2.0.0-rc`** — RC version, API may have moved
-  since generation. If `cargo build` complains, pin an exact
-  `=2.0.0-rc.X`.
+All the dependencies below are on RC tracks or were added under
+imperfect knowledge of their real API. Spec 0038 (testing
+baseline) + a one-time `cargo check --workspace` pass will surface
+whatever broke; pin the exact version next to any fix.
+
+- **`tauri-specta 2.0.0-rc`** + **`specta-typescript 0.0.9`** —
+  RC versions, API may have moved since generation. Expect to pin
+  `=2.0.0-rc.X` once something compiles green.
+- **`ort 2.0.0-rc`** (pulled transitively via `transcribe-rs`) —
+  still RC; breaking changes likely.
+- **`transcribe-rs 0.3`** — Parakeet impl uses `ParakeetModel::load`,
+  `ParakeetParams`, `set_ort_accelerator` per public docs, but
+  `result.segments` / `result.language` field names may differ.
+- **`pyannote-rs 0.3`** — latest on crates.io may actually be
+  `0.2.x`; confirm and pin exactly.
 - **`capabilities/default.json`** — minimal permissions. Add as
   you use more Tauri APIs.
 - **`icons/`** — only a README. Generate real icons:
@@ -66,11 +75,16 @@ secondary.
 
 - `eslint.config.js` (referenced by `pnpm lint`). Create one or
   drop the script from `package.json`.
-- Tests — none yet. F1 should at least include smoke tests in
-  `db.rs` and `storage.rs`.
+- Tests — none yet. Tracked in spec 0038.
 - `src/components/MeetingsList.tsx`, `Agenda.tsx`,
-  `CallDetectedToast.tsx` — `App.tsx` has inline placeholders only.
+  `CallDetectedToast.tsx`, `Settings.tsx` — `App.tsx` has inline
+  placeholders only. Tracked in specs 0035 (meetings list), 0036
+  (settings view); agenda + call toast are in specs 0002 and 0005.
 - Formal DB migrations (today it's inline SQL in `Db::migrate`).
+  Tracked in spec 0041.
+- Installer + first-run onboarding — tracked in spec 0040.
+- Vault import / backup / external-edit handling — tracked in
+  specs 0037, 0039, 0042 (all F1.5).
 
 ## Recommended first run
 

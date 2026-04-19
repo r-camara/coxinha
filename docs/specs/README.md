@@ -56,6 +56,10 @@ around something the user cannot yet feel.
 | 0008 | [Diarization](./0008-diarization.md)                     | draft       |
 | 0009 | [LLM summarization](./0009-summarization.md)             | draft       |
 | 0010 | [FTS5 full-text search](./0010-search-fts.md)            | draft       |
+| 0035 | [Meetings list view](./0035-meetings-list.md)            | in-progress |
+| 0036 | [Settings view UI](./0036-settings-view.md)              | draft       |
+| 0038 | [Testing & reliability baseline](./0038-testing-baseline.md) | in-progress |
+| 0041 | [Database migrations](./0041-db-migrations.md)           | draft       |
 | 0033 | [Internationalization (i18n + l10n)](./0033-i18n.md)     | in-progress |
 | 0034 | [Accessibility baseline](./0034-a11y-baseline.md)        | in-progress |
 
@@ -67,6 +71,10 @@ around something the user cannot yet feel.
 | 0012 | [Excalidraw block](./0012-excalidraw-block.md)           | draft  |
 | 0013 | [Wiki-links `[[note]]`](./0013-wiki-links.md)            | draft  |
 | 0014 | [Tags `#project`](./0014-tags-filter.md)                 | draft  |
+| 0037 | [Vault import](./0037-vault-import.md)                   | draft  |
+| 0039 | [Vault backup & export](./0039-backup-and-export.md)     | draft  |
+| 0040 | [Installer & first-run onboarding](./0040-installer-onboarding.md) | draft |
+| 0042 | [External edit conflicts](./0042-external-edit-conflicts.md) | draft |
 
 ### F2 — Optional sync
 
