@@ -50,6 +50,17 @@
         "dark": "Dark"
       }
     },
+    "shortcuts": {
+      "heading": "Global shortcuts",
+      "rebindComingSoon": "Rebinding lands in a later update — edit ~/coxinha/.coxinha/config.toml to change these for now.",
+      "action": {
+        "new_note": "New note",
+        "open_app": "Show / hide Coxinha",
+        "agenda": "Open today's agenda",
+        "meetings": "Open meetings list",
+        "toggle_recording": "Start / stop recording"
+      }
+    },
     "vault": {
       "heading": "Vault",
       "currentPath": "Current vault",
