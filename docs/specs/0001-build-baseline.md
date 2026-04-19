@@ -89,3 +89,16 @@ G5400 — no fallback, hard crash. Prevent that here:
 - Whether to bundle placeholder icons in the repo or point
   `tauri.conf.json` at absent paths — bundle, so `tauri build`
   works for anyone.
+
+## Shipped so far
+- `cargo fmt --all -- --check` gates every PR (CI `lint-rust`).
+- `cargo clippy --workspace --all-targets --no-default-features
+  -- -D warnings` gates every PR (PR #10). Pre-existing lints
+  fixed: identical-if branches in `slug()`, `map_or(false, ..)`
+  replaced by `is_some_and`, and `config.rs` helper fns moved
+  above the test module.
+- `pnpm typecheck` gates every PR (CI `lint-frontend`).
+- All RC deps pinned via `Cargo.lock` (done in earlier PRs).
+
+Still out: eslint or drop `pnpm lint`, Windows CI runner, CPU-
+feature runtime guard, placeholder icons check.
