@@ -57,6 +57,7 @@
       "rebuild": "Rebuild index",
       "rebuilding": "Rebuilding…",
       "rebuiltSuccess": "Rebuilt: {{notes}} notes, {{links}} links indexed.",
+      "rebuiltWithSkips": "Rebuilt: {{notes}} notes, {{links}} links; {{skipped}} skipped (see log).",
       "rebuildError": "Could not rebuild: {{error}}"
     }
   },

@@ -255,7 +255,13 @@ last_opened_ms: number | null;
  * the folder.
  */
 exists: boolean }
-export type RebuildStats = { notes_indexed: number; links_indexed: number }
+export type RebuildStats = { notes_indexed: number; links_indexed: number; 
+/**
+ * Files the walker found but couldn't index (unreadable, invalid
+ * UTF-8, symlink loop). Shown in the UI only when non-zero so
+ * the happy path stays quiet.
+ */
+notes_skipped: number }
 export type RecordingProgress = { meeting_id: string; duration_seconds: number; level_db: number }
 export type ShortcutsConfig = { new_note: string; open_app: string; agenda: string; meetings: string; toggle_recording: string }
 export type TranscriberConfig = 
