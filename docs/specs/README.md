@@ -37,7 +37,7 @@ on purpose — measured early, tracked on every PR from then on.
 | #    | Feature                                                                    | Status      |
 |------|----------------------------------------------------------------------------|-------------|
 | 0001 | [Build & dependency baseline](./0001-build-baseline.md)                    | in-progress |
-| 0002 | [Testing & reliability baseline](./0002-testing-baseline.md)               | in-progress |
+| 0002 | [Testing & reliability baseline](./0002-testing-baseline.md)               | done        |
 | 0003 | [Cold-start + load benchmarks](./0003-cold-start-load.md)                  | draft       |
 | 0004 | [Database migrations](./0004-db-migrations.md)                             | draft       |
 | 0005 | [Notes, daily notes, and search](./0005-notes-and-search.md)               | in-progress |
@@ -92,6 +92,13 @@ on purpose — measured early, tracked on every PR from then on.
 | 0034 | [Long-term memories](./0034-long-term-memory.md)         | draft  |
 | 0035 | [Pre-meeting briefing](./0035-pre-meeting-briefing.md)   | draft  |
 | 0036 | [Auto-tag + auto-link](./0036-auto-tag-link.md)          | draft  |
+
+### F1.5 addendum
+
+| #    | Feature                                                      | Status |
+|------|--------------------------------------------------------------|--------|
+| 0037 | [Obsidian vault adoption](./0037-obsidian-vault-adoption.md) | draft  |
+| 0038 | [Embedded dictation (hold-to-talk)](./0038-embedded-dictation.md) | draft  |
 
 ## Template
 

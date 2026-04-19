@@ -93,7 +93,10 @@ impl Recorder {
     }
 
     pub async fn stop(&mut self) -> Result<Meeting> {
-        let rec = self.current.take().ok_or_else(|| anyhow::anyhow!("not recording"))?;
+        let rec = self
+            .current
+            .take()
+            .ok_or_else(|| anyhow::anyhow!("not recording"))?;
         let ended = Utc::now();
         let meeting_id = rec.meeting_id;
 
@@ -104,14 +107,16 @@ impl Recorder {
             .get_meeting(meeting_id)?
             .ok_or_else(|| anyhow::anyhow!("meeting vanished"))?;
         m.ended_at = Some(ended);
-        m.duration_seconds =
-            Some((ended - m.started_at).num_seconds().max(0) as u32);
+        m.duration_seconds = Some((ended - m.started_at).num_seconds().max(0) as u32);
         self.db.upsert_meeting(&m)?;
 
         tracing::info!("stopped recording meeting {}", meeting_id);
         Ok(m)
     }
 
+    /// Used by the tray toggle (spec 0007) to decide whether
+    /// `Ctrl+Alt+R` should start or stop a recording.
+    #[allow(dead_code)]
     pub fn is_recording(&self) -> bool {
         self.current.is_some()
     }

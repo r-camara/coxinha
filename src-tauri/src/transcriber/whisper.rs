@@ -77,15 +77,21 @@ impl Transcriber for WhisperTranscriber {
                 .full(p, &samples)
                 .map_err(|e| anyhow::anyhow!("whisper full: {:?}", e))?;
 
-            let n = state.full_n_segments().map_err(|e| anyhow::anyhow!("{:?}", e))?;
+            let n = state
+                .full_n_segments()
+                .map_err(|e| anyhow::anyhow!("{:?}", e))?;
             let mut segments = Vec::with_capacity(n as usize);
             for i in 0..n {
                 let text = state
                     .full_get_segment_text(i)
                     .map_err(|e| anyhow::anyhow!("{:?}", e))?;
-                let t0 = state.full_get_segment_t0(i).map_err(|e| anyhow::anyhow!("{:?}", e))? as f32
+                let t0 = state
+                    .full_get_segment_t0(i)
+                    .map_err(|e| anyhow::anyhow!("{:?}", e))? as f32
                     / 100.0;
-                let t1 = state.full_get_segment_t1(i).map_err(|e| anyhow::anyhow!("{:?}", e))? as f32
+                let t1 = state
+                    .full_get_segment_t1(i)
+                    .map_err(|e| anyhow::anyhow!("{:?}", e))? as f32
                     / 100.0;
                 segments.push(TranscriptSegment {
                     start: t0,
@@ -109,7 +115,10 @@ fn read_wav_16k_mono(path: &Path) -> Result<Vec<f32>> {
     let mut reader = hound::WavReader::open(path)?;
     let spec = reader.spec();
     if spec.sample_rate != 16_000 {
-        anyhow::bail!("wav must be 16kHz (got {}); convert upstream", spec.sample_rate);
+        anyhow::bail!(
+            "wav must be 16kHz (got {}); convert upstream",
+            spec.sample_rate
+        );
     }
     let samples: Result<Vec<i16>, _> = reader.samples::<i16>().collect();
     let samples = samples?;

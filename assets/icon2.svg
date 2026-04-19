@@ -1,0 +1,44 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <clipPath id="coxinha-outer">
+      <path d="M 386 222 L 289 86 Q 256 40 223 86 L 126 222 A 160 160 0 1 0 386 222 Z"/>
+    </clipPath>
+    <clipPath id="coxinha-inner">
+      <path d="M 345 254 L 278 161 Q 256 130 234 161 L 167 254 A 110 110 0 1 0 345 254 Z"/>
+    </clipPath>
+  </defs>
+
+  <rect x="0" y="0" width="512" height="512" fill="#FBA950" clip-path="url(#coxinha-outer)"/>
+  <rect x="256" y="0" width="256" height="512" fill="#E0852F" clip-path="url(#coxinha-outer)"/>
+
+  <rect x="0" y="0" width="512" height="512" fill="#0D1F2D" clip-path="url(#coxinha-inner)"/>
+  <rect x="256" y="0" width="256" height="512" fill="#071421" clip-path="url(#coxinha-inner)"/>
+
+  <g clip-path="url(#coxinha-inner)" stroke="#30DCEC" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M 175 230 L 340 230" stroke-width="1.5" opacity="0.75"/>
+    <path d="M 175 300 L 340 300" stroke-width="1.5" opacity="0.75"/>
+    <path d="M 190 370 L 325 370" stroke-width="1.5" opacity="0.75"/>
+    <path d="M 220 170 L 220 395" stroke-width="1.2" opacity="0.5"/>
+    <path d="M 290 170 L 290 395" stroke-width="1.2" opacity="0.5"/>
+    <path d="M 256 140 L 256 200 L 290 200" stroke-width="1.5" opacity="0.7"/>
+  </g>
+
+  <g clip-path="url(#coxinha-inner)" fill="#30DCEC">
+    <circle cx="220" cy="230" r="3"/>
+    <circle cx="290" cy="230" r="3"/>
+    <circle cx="220" cy="300" r="3"/>
+    <circle cx="220" cy="370" r="3"/>
+    <circle cx="290" cy="370" r="3"/>
+  </g>
+
+  <path d="M 345 254 L 278 161 Q 256 130 234 161 L 167 254 A 110 110 0 1 0 345 254 Z"
+        fill="none" stroke="#30DCEC" stroke-width="2"/>
+
+  <circle cx="287" cy="282" r="14" fill="#30DCEC" opacity="0.2"/>
+  <circle cx="287" cy="282" r="9" fill="#30DCEC" opacity="0.5"/>
+  <circle cx="287" cy="282" r="5" fill="#D0F4FA"/>
+
+  <circle cx="315" cy="317" r="14" fill="#FF3D9C" opacity="0.2"/>
+  <circle cx="315" cy="317" r="9" fill="#FF3D9C" opacity="0.5"/>
+  <circle cx="315" cy="317" r="5" fill="#FFD4E8"/>
+</svg>

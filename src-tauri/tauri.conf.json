@@ -27,20 +27,9 @@
     ],
     "security": {
       "csp": null
-    },
-    "trayIcon": {
-      "id": "main-tray",
-      "iconPath": "icons/icon.png",
-      "iconAsTemplate": true,
-      "tooltip": "Coxinha",
-      "menuOnLeftClick": false
     }
   },
-  "plugins": {
-    "autostart": {
-      "args": ["--hidden"]
-    }
-  },
+  "plugins": {},
   "bundle": {
     "active": true,
     "targets": ["msi", "nsis", "dmg", "deb", "appimage"],

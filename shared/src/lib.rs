@@ -102,6 +102,11 @@ impl LlmProvider {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Type)]
 #[serde(tag = "engine", rename_all = "snake_case")]
 pub enum TranscriberConfig {
+    /// No transcription engine. The app still records audio and
+    /// stores meetings — transcription commands return an explicit
+    /// "engine not configured" error. This is the default for fresh
+    /// installs so the app boots without a model on disk.
+    None,
     Whisper {
         model_path: String,
         accelerator: Accelerator,
@@ -150,6 +155,27 @@ pub struct AppConfig {
     pub llm: LlmProvider,
     pub autostart: bool,
     pub shortcuts: ShortcutsConfig,
+}
+
+// -- Obsidian vault detection (spec 0037) --
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Type)]
+pub struct ObsidianVault {
+    /// Stable id Obsidian itself assigns in `obsidian.json` — used
+    /// only to round-trip selections from the UI.
+    pub id: String,
+    /// Folder name (leaf of `path`), shown in the Settings list.
+    pub name: String,
+    /// Absolute filesystem path.
+    pub path: String,
+    /// Last time Obsidian opened this vault, ms since epoch. `None`
+    /// when the config has no timestamp — some older installs omit
+    /// the field.
+    pub last_opened_ms: Option<i64>,
+    /// Whether `path` actually exists today. A `false` here means
+    /// Obsidian still lists the vault but the user deleted or moved
+    /// the folder.
+    pub exists: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Type)]

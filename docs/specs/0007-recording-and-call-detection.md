@@ -95,6 +95,39 @@ experience we're trying to avoid.
 - Level meter: RMS over recent samples
 - macOS/Linux: mic only for F1 (loopback has its own story)
 
+## Lessons from Handy (enforced here)
+
+These are regressions Handy shipped to users; they do not get
+shipped from Coxinha — acceptance tests cover each.
+
+- **Always-on input stream** (Handy #1283). A lazy mic stream
+  loses the first ~500ms of speech. Keep the `cpal::InputStream`
+  opened as soon as the app is ready; `start_recording` only
+  flips a "begin writing samples to disk" flag. The stream can
+  idle-close after N minutes of no recording activity, but it
+  must wake back warm (pre-allocated buffers, device already
+  enumerated).
+- **Sleep / resume recovery** (Handy #1213). On Windows, the
+  audio device goes stale after the machine resumes from sleep,
+  and the recorder leaks RAM trying to pump to a dead stream.
+  - Listen to `WM_POWERBROADCAST` (`PBT_APMRESUMEAUTOMATIC`,
+    `PBT_APMRESUMESUSPEND`) via the `windows` crate.
+  - On resume: close + re-open the input stream before the next
+    `start_recording`; abort any in-flight recording with an
+    explicit error that the frontend can surface.
+  - Also listen to `WM_SESSIONCHANGE` for lock/unlock — global
+    shortcuts sometimes de-register after session lock and must
+    be re-registered.
+- **Event throttling on level meter** (Handy #1279). The 200ms
+  progress event in "In — recording" above is the ceiling, not
+  the floor. If the frontend has no visible level meter,
+  collapse to 1s or suppress entirely. Target the event to the
+  recording view (`emit_to`), never broadcast globally.
+- **Long-session memory ceiling**. A meeting over 2h must keep
+  app RSS under 500MB. Endurance test belongs in spec 0002; this
+  spec's acceptance adds: "recording a 2h synthetic track with
+  the real pipeline does not grow RSS more than 50MB/h".
+
 ## Open questions
 - Linear resampling vs `rubato` — start with linear (fine for
   48k→16k voice), upgrade if quality bites us

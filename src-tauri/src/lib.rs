@@ -6,11 +6,18 @@
 //! - Registers global shortcuts
 //! - Exposes typed IPC commands (specta)
 
+// Port from Handy (ADR-0014). Items stay `pub` so spec 0007 wires
+// the recorder into them directly — the whole module is dead code
+// in the crate today and `#[allow(dead_code)]` here keeps the port
+// faithful without sprinkling the allow attribute on every symbol.
+#[allow(dead_code)]
+mod audio_toolkit;
 mod call_detector;
 mod config;
 mod db;
 mod diarizer;
 mod events;
+mod obsidian;
 mod recorder;
 mod shortcuts;
 mod storage;
@@ -61,6 +68,8 @@ pub fn run() {
             commands::save_attachment,
             commands::get_config,
             commands::update_config,
+            commands::list_obsidian_vaults,
+            commands::get_or_create_daily_note,
         ])
         .events(tauri_specta::collect_events![
             events::CallDetected,
@@ -68,11 +77,17 @@ pub fn run() {
             events::TranscriptionProgress,
         ]);
 
+    // The generated file re-imports `Channel` from Tauri whether we
+    // use channel types or not, which trips TypeScript's
+    // `noUnusedLocals`. `@ts-nocheck` is the accepted pattern for
+    // machine-generated code — consumers still get the types because
+    // they flow through re-exports, not through the file's own check.
     #[cfg(debug_assertions)]
     specta_builder
         .export(
             specta_typescript::Typescript::default()
-                .bigint(specta_typescript::BigIntExportBehavior::Number),
+                .bigint(specta_typescript::BigIntExportBehavior::Number)
+                .header("// @ts-nocheck\n/* eslint-disable */\n"),
             "../src/lib/bindings.ts",
         )
         .expect("Failed to export TS bindings");
@@ -349,5 +364,31 @@ mod commands {
     ) -> Result<(), String> {
         let mut state = state.lock().await;
         state.update_config(config).await.map_err(|e| e.to_string())
+    }
+
+    /// Settings (spec 0037) calls this to populate the "Adopt an
+    /// Obsidian vault" picker. Returns `[]` when Obsidian isn't
+    /// installed — never an error in that case.
+    #[tauri::command]
+    #[specta::specta]
+    pub async fn list_obsidian_vaults() -> Result<Vec<ObsidianVault>, String> {
+        crate::obsidian::detect_vaults().map_err(|e| e.to_string())
+    }
+
+    /// Returns today's daily note (or `date`'s, `YYYY-MM-DD`),
+    /// creating the file from the default template on first use.
+    /// Idempotent — the same day always resolves to the same `Note`.
+    #[tauri::command]
+    #[specta::specta]
+    pub async fn get_or_create_daily_note(
+        state: tauri::State<'_, Arc<Mutex<AppState>>>,
+        date: Option<String>,
+    ) -> Result<Note, String> {
+        let state = state.lock().await;
+        state
+            .storage
+            .get_or_create_daily_note(date.as_deref())
+            .await
+            .map_err(|e| e.to_string())
     }
 }

@@ -1,0 +1,19 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <clipPath id="coxinha-outer">
+      <path d="M 386 222 L 289 86 Q 256 40 223 86 L 126 222 A 160 160 0 1 0 386 222 Z"/>
+    </clipPath>
+    <clipPath id="coxinha-inner">
+      <path d="M 345 254 L 278 161 Q 256 130 234 161 L 167 254 A 110 110 0 1 0 345 254 Z"/>
+    </clipPath>
+  </defs>
+
+  <rect x="0" y="0" width="512" height="512" fill="#FBBF80" clip-path="url(#coxinha-outer)"/>
+  <rect x="256" y="0" width="256" height="512" fill="#F7A660" clip-path="url(#coxinha-outer)"/>
+
+  <rect x="0" y="0" width="512" height="512" fill="#FDF0D5" clip-path="url(#coxinha-inner)"/>
+  <rect x="256" y="0" width="256" height="512" fill="#F0DCB0" clip-path="url(#coxinha-inner)"/>
+
+  <rect x="280" y="275" width="14" height="14" fill="#FFD770"/>
+  <rect x="308" y="310" width="14" height="14" fill="#FFD770"/>
+</svg>

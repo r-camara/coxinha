@@ -25,8 +25,18 @@ friend can't run".
   2. Prompt to download Whisper base (~150MB) with progress +
      resumable download + sha256 verify
   3. Offer Parakeet (opt-in, +550MB, mentions speed trade-off)
-  4. Create `~/coxinha/` tree + default `config.toml`
-  5. Welcome screen: new-note shortcut reminder + "Record a test
+  4. **Test microphone** (Handy #1283 + #1284 addendum): open
+     the configured input device, measure cold-start latency
+     from "click Start" to first non-silent sample, ask the user
+     to say a short phrase, confirm samples were captured. If
+     latency > 300ms or capture is silent, show a clear error
+     with device picker + "try again" — never silently proceed.
+     On Windows, detect `0x80070005` (WASAPI access denied) and
+     link to the mic privacy settings.
+  5. Detect existing Obsidian vaults (spec 0037); if any, offer
+     to adopt one as the Coxinha vault root
+  6. Create `~/coxinha/` tree + default `config.toml`
+  7. Welcome screen: new-note shortcut reminder + "Record a test
      meeting" CTA
 - GPU detection: if the CUDA installer is running on a machine
   without NVIDIA GPU, wizard warns and links to the CPU installer

@@ -14,6 +14,106 @@ paragraphs — not prose.
 
 ---
 
+## 2026-04-18 — Postmortem: the four boot failures that unit tests missed
+
+**Context:** in one afternoon of real integration the skeleton
+hit four distinct boot failures that the existing unit suite
+couldn't have caught. Each one lived in plugin config, feature
+flags, or runtime setup — none of it in pure functions:
+
+1. `tauri.conf.json` declared `plugins.autostart: { args: [...] }`
+   while the v2 plugin expects `null` — deserialization panic on
+   `generate_context!()`. Fix: remove the key (the Rust `init()`
+   already passes args).
+2. `src-tauri/Cargo.toml` had `default = ["stt-whisper"]`, which
+   pulls `whisper-rs-sys`, which runs `bindgen` at build time and
+   needs `libclang` on the host. Fresh Windows devs with no LLVM
+   installed couldn't even `cargo check`. Fix: `default = []`,
+   engines opt-in via `stt-*` features or the `full-release`
+   bundle.
+3. After (2) landed, a stale `config.toml` from the previous
+   failed boot pointed at `engine = "whisper"`, so the setup hook
+   panicked with "stt-whisper feature not enabled". Fix: added
+   `TranscriberConfig::None` (new default) + a resilient factory
+   that falls back to a `NoopTranscriber` with a warning instead
+   of failing app startup.
+4. `tauri.conf.json` had an `app.trayIcon` block AND
+   `tray::setup` built another one — two tray icons in the tray
+   for the same process. Fix: keep the programmatic one (needs
+   `on_menu_event` + `on_tray_icon_event` handlers the JSON path
+   can't express), drop the JSON block.
+
+**Lesson:** a pure-function test suite (storage, db, helpers)
+gives false confidence against regressions in **plugin config,
+feature-gated builds, persisted-config compatibility, and runtime
+setup hooks**. Add a boot smoke test that actually spawns the
+binary and waits for the `Coxinha ready` marker **before** any
+other feature lands. Any of the four failures above would have
+been caught on the first run. Budget: ~800 ms boot-to-ready today;
+perf smoke enforces < 5 s so a regression is loud.
+
+**Reference:** `src-tauri/tests/boot_smoke.rs`,
+`src-tauri/tests/perf_smoke.rs`, spec 0002 (testing baseline).
+
+---
+
+## 2026-04-18 — `ort` v2-rc needs the `std` feature for anyhow
+
+**Context:** adding `ort = "2.0.0-rc.10"` with
+`default-features = false` to save binary size led to a cascade
+of `?`-conversion errors: `ort::Error: StdError is not
+satisfied`. `ort` gates `impl std::error::Error for Error` behind
+a `std` feature that the default set enables — stripping it
+removes the trait impl, and `anyhow::Error: From<E>` stops
+accepting it.
+
+**Lesson:** when dropping `default-features = false` on a crate,
+re-enable `std` explicitly (`features = ["std", ...]`) unless
+the crate is genuinely `no_std`-friendly and you're chasing that
+target. The error message points at anyhow, not at the missing
+feature — a five-second read of the crate's `Cargo.toml` feature
+list is the fastest way to diagnose.
+
+**Reference:** `src-tauri/Cargo.toml` — `ort` dep.
+
+---
+
+## 2026-04-18 — Review findings deferred (centralization + pagination)
+
+Items flagged by the simplify pass on 2026-04-18 that we
+consciously skipped for this PR and that **should not** be
+re-raised as "found a bug" next session:
+
+- **Stringly-typed route strings** (`/notes/new`, `/agenda`, etc.)
+  duplicated between `src-tauri/src/shortcuts.rs` and
+  `src/App.tsx` event listener. Centralizing via a shared const
+  (specta-exported, Rust source of truth) is worth doing once we
+  cross five routes or add a route inside the shortcut flow that
+  doesn't match `App.tsx`. Today: 5 routes, 1 match per side.
+- **`.map_err(|e| e.to_string())` in every IPC command**: 15
+  occurrences, intentionally kept as local idiom. A helper would
+  save ~30 chars per command and centralize if we ever add
+  structured error types. Revisit when we have a reason (e.g.,
+  surfacing error codes to the UI for toasts).
+- **`list_notes` returns everything**: fine up to ~10 k notes;
+  revisit for F2 (sync) where latency compounds with network.
+- **`call_detector` mutex lock every 3 s** regardless of change:
+  flagged, not changed in this PR because the code path wasn't
+  touched here. Add a cheap "prev set == new set" comparison
+  outside the lock. Tracked in spec 0007 acceptance.
+- **`Sidebar.tsx` nested `px-2`**: children (search input, h2
+  headings) re-apply `px-2` under an already-padded parent. Looks
+  consistent on-screen so the refactor is deferred until the
+  visual regression test exists.
+
+**Lesson:** record deferred findings in one place so a future
+review doesn't re-propose the same change. Each entry needs
+**why not now** and **the trigger that should make us reconsider**.
+
+**Reference:** simplify pass 2026-04-18 transcripts.
+
+---
+
 ## 2026-04-18 — Spec numbers are identity, not priority
 
 **Context:** started with a "never renumber" rule and fixed spec

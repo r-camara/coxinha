@@ -83,7 +83,7 @@ impl Summarizer {
             .await
             .map_err(|e| anyhow::anyhow!("LLM error: {:?}", e))?;
 
-        res.content_text_as_str()
+        res.first_text()
             .map(|s| s.to_string())
             .ok_or_else(|| anyhow::anyhow!("empty LLM response"))
     }
@@ -93,10 +93,7 @@ fn format_transcript(t: &Transcript) -> String {
     let mut out = String::new();
     for seg in &t.segments {
         let speaker = seg.speaker.as_deref().unwrap_or("Speaker");
-        out.push_str(&format!(
-            "[{:.1}s] {}: {}\n",
-            seg.start, speaker, seg.text
-        ));
+        out.push_str(&format!("[{:.1}s] {}: {}\n", seg.start, speaker, seg.text));
     }
     out
 }

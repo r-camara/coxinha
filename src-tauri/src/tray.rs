@@ -12,8 +12,7 @@ use crate::window::show_main;
 
 pub fn setup(app: &AppHandle) -> Result<()> {
     let open_item = MenuItem::with_id(app, "open", t!("tray.open"), true, None::<&str>)?;
-    let new_note_item =
-        MenuItem::with_id(app, "new-note", t!("tray.newNote"), true, None::<&str>)?;
+    let new_note_item = MenuItem::with_id(app, "new-note", t!("tray.newNote"), true, None::<&str>)?;
     let sep = PredefinedMenuItem::separator(app)?;
     let settings_item =
         MenuItem::with_id(app, "settings", t!("tray.settings"), true, None::<&str>)?;
@@ -21,13 +20,7 @@ pub fn setup(app: &AppHandle) -> Result<()> {
 
     let menu = Menu::with_items(
         app,
-        &[
-            &open_item,
-            &new_note_item,
-            &sep,
-            &settings_item,
-            &quit_item,
-        ],
+        &[&open_item, &new_note_item, &sep, &settings_item, &quit_item],
     )?;
 
     let _tray = TrayIconBuilder::with_id("main-tray")

@@ -50,11 +50,8 @@ impl ParakeetTranscriber {
             Accelerator::CoreMl => OrtAccelerator::CoreMl,
         });
 
-        let model = ParakeetModel::load(
-            &self.model_dir,
-            &transcribe_rs::onnx::Quantization::Int8,
-        )
-        .with_context(|| format!("loading parakeet from {}", self.model_dir.display()))?;
+        let model = ParakeetModel::load(&self.model_dir, &transcribe_rs::onnx::Quantization::Int8)
+            .with_context(|| format!("loading parakeet from {}", self.model_dir.display()))?;
         *guard = Some(model);
         Ok(())
     }
