@@ -5,9 +5,11 @@ use rust_i18n::t;
 use tauri::{
     menu::{Menu, MenuItem, PredefinedMenuItem},
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
-    AppHandle, Emitter,
+    AppHandle,
 };
+use tauri_specta::Event;
 
+use crate::events::{Navigate, Route};
 use crate::window::show_main;
 
 pub fn setup(app: &AppHandle) -> Result<()> {
@@ -30,11 +32,17 @@ pub fn setup(app: &AppHandle) -> Result<()> {
             "open" => show_main(app),
             "new-note" => {
                 show_main(app);
-                let _ = app.emit("navigate", "/notes/new");
+                let _ = Navigate {
+                    route: Route::NotesNew,
+                }
+                .emit(app);
             }
             "settings" => {
                 show_main(app);
-                let _ = app.emit("navigate", "/settings");
+                let _ = Navigate {
+                    route: Route::Settings,
+                }
+                .emit(app);
             }
             "quit" => {
                 app.exit(0);

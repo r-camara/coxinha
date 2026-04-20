@@ -159,6 +159,7 @@ pub fn build_specta() -> tauri_specta::Builder<tauri::Wry> {
             commands::list_notes_by_tag,
         ])
         .events(tauri_specta::collect_events![
+            events::Navigate,
             events::CallDetected,
             events::RecordingProgress,
             events::TranscriptionProgress,
