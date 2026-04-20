@@ -8,12 +8,13 @@
 
 ## Why
 Coxinha's whole pitch is "keyboard shortcut → typing in <50ms"
-(default `Win+Shift+N` after spec 0042 — the pre-0042 default
-`Ctrl+Alt+N` was intercepted by OneNote on Windows; a
-transitional `Ctrl+Alt+Shift+N` also failed in the field,
-likely because `config.toml` held stale values and the new
-`Default` impl doesn't apply to existing installs without
-migration). That promise only holds if we measure it. Same for
+(default `Win+Y` after spec 0042 — picked after two earlier
+defaults failed: `Ctrl+Alt+N` was intercepted by OneNote and
+`Ctrl+Alt+Shift+N` / `Super+Shift+N` also failed in dev
+because `config.toml` held stale values and the new `Default`
+impl doesn't apply to existing installs without migration;
+that migration now lives in `config.rs`). That promise only
+holds if we measure it. Same for
 the vault at realistic sizes — a 10k-note user shouldn't feel
 a lag that a 100-note user doesn't.
 

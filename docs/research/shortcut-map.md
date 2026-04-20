@@ -130,24 +130,30 @@ utility on the user's machine. Either way, we avoid every
 
 Defaults ship as:
 
-| Action | Chord |
-|---|---|
-| new_note | `Super+Shift+N` (Win+Shift+N) |
-| open_app | `Super+Shift+C` |
-| agenda | `Super+Shift+A` |
-| meetings | `Super+Shift+M` |
-| toggle_recording | `Super+Shift+R` |
+| Action | Chord | Notes |
+|---|---|---|
+| new_note | `Super+Y` (Win+Y) | Two-key hero chord. Microsoft lists Win+Y as "Switch Mixed Reality/desktop"; WMR discontinued 2024, so the slot is effectively free on >99% of machines. |
+| open_app | `Super+Shift+C` | `Win+C` = Copilot. `Win+Shift+C` not listed. |
+| agenda | `Super+Shift+A` | `Win+A` = Action Center. `Win+Shift+A` = "set focus to a Windows tip" — minor accessibility affordance we accept overriding. |
+| meetings | `Super+Shift+M` | `Win+M` = minimize all. `Win+Shift+M` = restore minimized windows — rare user action, acknowledged collision. |
+| toggle_recording | `Super+Shift+R` | `Win+R` = Run. `Win+Shift+R` = record screen region — rare, acknowledged collision. |
 
-Why `Super+Shift+<letter>`:
+Why `Super+Y` for the hero shortcut:
 
-- None of `N`, `C`, `A`, `M`, `R` appears in the Microsoft
-  Win+Shift+* list above.
-- Mnemonic (N = New, C = Coxinha, A = Agenda, M = Meetings,
-  R = Record) matches the existing `nav` keys, so muscle
-  memory transfers from the previous default.
-- Ergonomic: pinky on Win + thumb on Shift + index on letter.
-  Three-finger chord is fine for a global hotkey that fires
-  once per intent.
+- Two-key chord — user's explicit ask for "no Shift/Ctrl".
+- Microsoft still lists `Win+Y` but its target (Mixed
+  Reality desktop switch) has been retired since WMR was
+  discontinued in December 2024. The chord is effectively
+  an unused slot on every non-HoloLens machine.
+- `Y` is not a typing-muscle-memory mnemonic, but new_note
+  is the one action users will wire into reflex fastest —
+  a cheap chord pays off there.
+- Remaining four keep `Super+Shift+<letter>` because the
+  remaining free Win+letter slots (`Win+J` Recall on
+  Copilot+PCs, `Win+O` orientation on tablets) are
+  lottery-ticket safe: works until the hardware says
+  otherwise. Hero deserves the gamble; supporting actions
+  don't.
 
 ### Acknowledged collisions
 

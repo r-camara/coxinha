@@ -209,14 +209,16 @@ pub struct ShortcutsConfig {
 
 impl Default for ShortcutsConfig {
     fn default() -> Self {
-        // Super+Shift+<letter> on Windows uses the Win key. Verified
-        // free of Microsoft's documented Win11 bindings (see
-        // docs/research/shortcut-map.md): Win+N is the notification
-        // center, Win+Alt+N is OneNote Quick Note — both intercepted
-        // globally. Win+Shift+<letter> is not listed, and the chord
-        // is ergonomic (thumb + pinky + index).
+        // `new_note` is the hero shortcut — we burn the cheapest
+        // remaining two-key chord on it. `Super+Y` maps to Win+Y,
+        // which Microsoft still documents as "Switch Mixed
+        // Reality/desktop"; WMR was discontinued in 2024 so on
+        // >99% of machines the chord is effectively free.
+        // The other four keep `Super+Shift+<letter>` — less
+        // frequent, Win+Shift+<letter> not listed by Microsoft.
+        // See docs/research/shortcut-map.md.
         Self {
-            new_note: "Super+Shift+N".into(),
+            new_note: "Super+Y".into(),
             open_app: "Super+Shift+C".into(),
             agenda: "Super+Shift+A".into(),
             meetings: "Super+Shift+M".into(),

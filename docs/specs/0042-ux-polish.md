@@ -36,23 +36,35 @@ preserves ADR-0002 (local-first) and the current perf budgets
 
 **Global shortcut change.**
 
-Revised after field testing (see `docs/research/shortcut-map.md`):
+Revised twice after field testing (see `docs/research/shortcut-map.md`):
 
-- Defaults move to `Super+Shift+<letter>` (Win+Shift+*), using
-  the Windows key. Rationale: `Win+Shift+<letter>` does not
-  appear in Microsoft's Win11 shortcuts list for any of the
-  letters we use; the pre-0042 `Ctrl+Alt+*` was intercepted in
-  the field (OneNote) and the transitional `Ctrl+Alt+Shift+*`
-  also failed — likely because users had stale `config.toml`
-  values and the `Default` impl doesn't apply on upgrades.
-  - `new_note`: `Super+Shift+N`
+- `new_note` is the hero shortcut and deserves the cheapest
+  chord. Ships as `Super+Y` (Win+Y) — two keys, no Shift, no
+  Ctrl. Microsoft still lists Win+Y as "switch Mixed Reality",
+  a retired feature (WMR shut down 2024) so the slot is
+  effectively free on >99% of machines.
+- The remaining four keep `Super+Shift+<letter>`. Win+Shift+*
+  for these letters is not in Microsoft's Win11 shortcut list,
+  the chord pattern is muscle-memory-consistent across the
+  four, and they are less frequently triggered so a three-key
+  chord is acceptable.
+  - `new_note`: `Super+Y`
   - `open_app`: `Super+Shift+C`
   - `agenda`: `Super+Shift+A`
   - `meetings`: `Super+Shift+M` (collides with Windows' "restore
-    minimized windows" — acknowledged, letter may change if it
-    surfaces in use)
+    minimized windows" — acknowledged, rare user action)
   - `toggle_recording`: `Super+Shift+R` (collides with
     Windows 11's "record screen region" — same trade-off)
+
+Trajectory for the migration logic (see `config.rs`):
+
+1. `Ctrl+Alt+*` — original default, intercepted by OneNote
+2. `Ctrl+Alt+Shift+*` — first fix attempt, also failed in dev
+3. `Super+Shift+*` — interim PR #22 state, never field-validated
+4. `Super+Y` + `Super+Shift+{C,A,M,R}` — current default
+
+All three earlier sets migrate forward on boot if `config.toml`
+matches exactly; user customizations pass through.
 - **Config migration.** `config.rs::migrate_stale_shortcut_defaults`
   rewrites any `config.toml` whose shortcuts exactly match
   either pre-0042 default set (`Ctrl+Alt+*` or `Ctrl+Alt+Shift+*`)
@@ -128,11 +140,11 @@ Every item is test-covered (Vitest for frontend, Rust test for
 shortcut registration, existing perf gates unchanged).
 
 1. **Shortcut fires on cold boot.** After a restart, pressing
-   `Win+Shift+N` shows the window and lands the cursor in the
+   `Win+Y` shows the window and lands the cursor in the
    editor within the 2 s UX budget. Backend test in
    `shortcuts.rs` asserts the new chord parses and regression-
    guards against documented-broken combos (Ctrl+Alt+N,
-   Ctrl+Alt+Shift+N, Win+N, Win+Alt+N).
+   Ctrl+Alt+Shift+N, Super+Shift+N, Win+N, Win+Alt+N).
 2. **Shortcut survives Windows default conflicts.** Manual test
    row: cross-check Windows 11 + Office 365 + OneNote installed;
    the new chord is not intercepted. Recorded in spec 0003's
@@ -169,23 +181,24 @@ shortcut registration, existing perf gates unchanged).
 
 ## Design notes
 
-**Why Win+Shift+N in the end.**
+**Why Win+Y for the hero.**
 
-Initial attempt was `Ctrl+Alt+Shift+N`; it failed in the field
-(likely because `config.toml` still carried the pre-0042
-default). On re-testing we mapped Microsoft's actual Windows 11
-shortcut list (`docs/research/shortcut-map.md`) and confirmed:
+After Win+Shift+N was chosen we pushed further on the "simpler,
+no Shift/Ctrl" ask. Two-key chords with Win+letter are almost
+all claimed (see shortcut-map.md), but a handful map to retired
+or niche features:
 
-- `Win+Shift+N` is **not** in Microsoft's documented list. Free.
-- `Win+N` is Notification Center — cannot touch.
-- `Win+Alt+N` is OneNote Quick Note (global, documented) —
-  this is the deep reason `Ctrl+Alt+N` behaved like it was
-  "eaten by OneNote": users often have OneNote registered.
-- `Ctrl+Shift+N` collides with Chrome / VS Code.
-- `Ctrl+Alt+Space` was the runner-up; rejected because the
-  user asked to use the Windows key and because launcher
-  apps (PowerToys Run, Alfred-equivalents) sometimes claim
-  `*+Space`.
+- `Win+Y` — Mixed Reality (WMR discontinued Dec 2024). Safest
+  two-key chord available on a typical Windows 11 install.
+- `Win+O` — orientation lock; fires on tablets/2-in-1 only.
+- `Win+J` — Recall; only on Copilot+PCs with NPU (minority of
+  hardware). Risky as a default because the install base for
+  that chord is growing.
+
+Verdict: `Win+Y` wins. Two keys, well-documented obsolete slot.
+The other four stay at `Super+Shift+<letter>` — a three-key chord
+is fine for infrequent actions and avoids burning through our
+remaining Win+letter inventory.
 
 **Empty-state draft lifecycle.**
 

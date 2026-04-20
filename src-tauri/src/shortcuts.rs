@@ -104,6 +104,7 @@ mod tests {
         let forbidden = [
             "Ctrl+Alt+N",        // OneNote in-app, caused the original bug
             "Ctrl+Alt+Shift+N",  // intermediate attempt that also failed in dev
+            "Super+Shift+N",     // interim PR #22 default, never field-validated
             "Win+N", "Super+N",  // Windows 11 notification center
             "Win+Alt+N", "Super+Alt+N", // OneNote Quick Note (global)
         ];
