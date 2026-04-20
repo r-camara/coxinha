@@ -144,3 +144,28 @@ path that has to keep working on every PR:
 - When do we add an endurance test (hours-long synthetic
   recording + transcription) to catch slow leaks per spec 0007
   RSS budget? Probably right after the recorder lands.
+
+## Visual evidence (addendum, 2026-04-20)
+
+The Tauri WebDriver UI smoke in the original scope stayed out
+for F1. The gap it left — "does the shell look right?" — is now
+filled by an on-demand capture script instead of regression
+gating:
+
+- `pnpm screenshots` runs a Playwright script under `tools/`
+  that connects to an already-running dev server on
+  `http://localhost:1420`, navigates to every root route at
+  three viewports (1440×900, 1024×768, 1920×1080), and saves
+  PNGs to `docs/research/ui-audit/screenshots/`.
+- The script writes a `README.md` beside the PNGs with a table
+  of what it captured and any console errors it observed.
+- Output is **evidence for review**, not a CI gate. No baseline
+  diffing, no approval workflow. We add regression gating if and
+  when a visual regression actually hurts us.
+- `playwright` is a devDep; browsers install via
+  `npx playwright install chromium` once per workstation.
+
+This keeps the testing baseline honest: "chrome renders without
+a runtime error" is already covered by the Vitest suite, and the
+screenshot script surfaces layout / token regressions visually
+without locking us into a brittle image-diff pipeline.

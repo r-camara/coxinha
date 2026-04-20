@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { commands, type Note } from '../lib/bindings';
-import { useAppStore } from '../lib/store';
+import { useNavigate } from '@tanstack/react-router';
+import { commands, type Note } from '../../lib/bindings';
 
 type State =
   | { kind: 'loading' }
@@ -14,7 +14,7 @@ interface Props {
 
 export function BacklinksPanel({ noteId }: Props) {
   const { t } = useTranslation();
-  const setActiveNote = useAppStore((s) => s.setActiveNote);
+  const navigate = useNavigate();
   const [state, setState] = useState<State>({ kind: 'loading' });
 
   useEffect(() => {
@@ -70,7 +70,9 @@ export function BacklinksPanel({ noteId }: Props) {
             <li key={b.id}>
               <button
                 type="button"
-                onClick={() => setActiveNote(b.id)}
+                onClick={() =>
+                  navigate({ to: '/notes/$noteId', params: { noteId: b.id } })
+                }
                 className="w-full text-left px-2 py-1 rounded text-sm truncate hover:bg-accent/50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
               >
                 {b.title || t('sidebar.untitled')}

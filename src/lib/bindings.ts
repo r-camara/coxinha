@@ -195,10 +195,6 @@ async rebuildFromVault() : Promise<Result<RebuildStats, string>> {
     else return { status: "error", error: e  as any };
 }
 },
-/**
- * Every distinct tag in the vault, with how many notes carry
- * it. Ordered most-popular-first (spec 0014).
- */
 async listTags() : Promise<Result<TagCount[], string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("list_tags") };
@@ -207,10 +203,6 @@ async listTags() : Promise<Result<TagCount[], string>> {
     else return { status: "error", error: e  as any };
 }
 },
-/**
- * Notes tagged with `tag` (exact, case-sensitive), most
- * recent first.
- */
 async listNotesByTag(tag: string) : Promise<Result<Note[], string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("list_notes_by_tag", { tag }) };
@@ -225,15 +217,15 @@ async listNotesByTag(tag: string) : Promise<Result<Note[], string>> {
 
 
 export const events = __makeEvents__<{
-navigate: Navigate,
 beforeQuit: BeforeQuit,
 callDetected: CallDetected,
+navigate: Navigate,
 recordingProgress: RecordingProgress,
 transcriptionProgress: TranscriptionProgress
 }>({
-navigate: "navigate",
 beforeQuit: "before-quit",
 callDetected: "call-detected",
+navigate: "navigate",
 recordingProgress: "recording-progress",
 transcriptionProgress: "transcription-progress"
 })
@@ -251,6 +243,13 @@ export type AppConfig = { vault_path: string;
  * BCP-47 language tag (e.g. "en", "pt-BR"). Empty means "use OS default".
  */
 locale?: string; transcriber: TranscriberConfig; diarizer: DiarizerConfig; llm: LlmProvider; autostart: boolean; shortcuts: ShortcutsConfig }
+/**
+ * Broadcast from both shutdown paths (tray Quit today,
+ * `window::close_for_quit` later). Components that hold
+ * pending work (editor debounced saves, drafts, etc.) listen
+ * and flush immediately — the host gives a ~600 ms window
+ * before calling `app.exit(0)`.
+ */
 export type BeforeQuit = null
 export type CallDetected = { app_name: string; process_name: string }
 export type DiarizerConfig = { engine: "none" } | { engine: "pyannote"; segmentation_model: string; embedding_model: string } | { engine: "speakrs"; model_dir: string; accelerator: Accelerator }
@@ -293,7 +292,25 @@ export type RebuildStats = { notes_indexed: number; links_indexed: number;
  */
 notes_skipped: number }
 export type RecordingProgress = { meeting_id: string; duration_seconds: number; level_db: number }
-export type Route = "notes-new" | "home" | "agenda" | "meetings" | "settings" | "toggle-recording"
+/**
+ * Routes the host can ask the frontend to navigate to. Kept as an
+ * enum (not a string) so both sides share the same closed set — a
+ * typo in tray/shortcut code becomes a compile error, not a silent
+ * ignore in `App.tsx`.
+ */
+export type Route = 
+/**
+ * Focus the main view and create a blank note.
+ */
+"notes-new" | 
+/**
+ * Show the main window as-is (last active view).
+ */
+"home" | "agenda" | "meetings" | "settings" | 
+/**
+ * Toggle recording — handled by the recorder, not a view.
+ */
+"toggle-recording"
 export type ShortcutsConfig = { new_note: string; open_app: string; agenda: string; meetings: string; toggle_recording: string }
 export type TagCount = { tag: string; count: number }
 export type TranscriberConfig = 

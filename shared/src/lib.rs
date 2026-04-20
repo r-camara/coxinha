@@ -209,12 +209,15 @@ pub struct ShortcutsConfig {
 
 impl Default for ShortcutsConfig {
     fn default() -> Self {
+        // Triple-modifier chord: Ctrl+Alt+Shift+* avoids the
+        // OneNote/Office 365 conflicts on Windows that made the
+        // old two-modifier defaults never reach the app.
         Self {
-            new_note: "Ctrl+Alt+N".into(),
-            open_app: "Ctrl+Alt+C".into(),
-            agenda: "Ctrl+Alt+A".into(),
-            meetings: "Ctrl+Alt+M".into(),
-            toggle_recording: "Ctrl+Alt+R".into(),
+            new_note: "Ctrl+Alt+Shift+N".into(),
+            open_app: "Ctrl+Alt+Shift+C".into(),
+            agenda: "Ctrl+Alt+Shift+A".into(),
+            meetings: "Ctrl+Alt+Shift+M".into(),
+            toggle_recording: "Ctrl+Alt+Shift+R".into(),
         }
     }
 }

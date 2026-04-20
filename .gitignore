@@ -62,4 +62,7 @@ dev-vault/
 # Logs
 *.log
 logs/
-.claude/settings.local.json
+
+# Claude Code / tooling caches
+.claude/
+.playwright-mcp/

@@ -10,7 +10,7 @@
   },
   "sidebar": {
     "newNoteButton": "+ New",
-    "newNoteTooltip": "New note (Ctrl+Alt+N)",
+    "newNoteTooltip": "New note (Ctrl+Alt+Shift+N)",
     "searchPlaceholder": "Search notes…",
     "searchClear": "Clear search",
     "searchNoResults": "Nothing found",
@@ -25,7 +25,8 @@
   },
   "empty": {
     "noNoteSelected": "No note selected.",
-    "newNoteCta": "New note (Ctrl+Alt+N)"
+    "newNoteCta": "New note (Ctrl+Alt+Shift+N)",
+    "placeholder": "Type to start."
   },
   "agenda": {
     "title": "Agenda",

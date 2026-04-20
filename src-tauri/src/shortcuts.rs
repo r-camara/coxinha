@@ -71,3 +71,47 @@ pub fn handle_shortcut(
 fn routes_lock() -> &'static Mutex<HashMap<Shortcut, Route>> {
     ROUTES.get_or_init(|| Mutex::new(HashMap::new()))
 }
+
+#[cfg(test)]
+mod tests {
+    use shared::ShortcutsConfig;
+    use tauri_plugin_global_shortcut::Shortcut;
+
+    #[test]
+    fn default_shortcuts_parse() {
+        // Guards spec 0042: the Ctrl+Alt+Shift+* defaults must
+        // parse into valid Shortcut values so the app doesn't
+        // boot with a broken global-shortcut registration.
+        let cfg = ShortcutsConfig::default();
+        for raw in [
+            &cfg.new_note,
+            &cfg.open_app,
+            &cfg.agenda,
+            &cfg.meetings,
+            &cfg.toggle_recording,
+        ] {
+            raw.parse::<Shortcut>()
+                .unwrap_or_else(|e| panic!("failed to parse default shortcut {raw:?}: {e:?}"));
+        }
+    }
+
+    #[test]
+    fn default_shortcuts_all_use_shift() {
+        // Guards against a partial downgrade — every default must
+        // carry Shift to stay out of the Office 365 / OneNote
+        // conflict zone on Windows (spec 0042).
+        let cfg = ShortcutsConfig::default();
+        for raw in [
+            &cfg.new_note,
+            &cfg.open_app,
+            &cfg.agenda,
+            &cfg.meetings,
+            &cfg.toggle_recording,
+        ] {
+            assert!(
+                raw.to_ascii_lowercase().contains("shift"),
+                "default shortcut {raw:?} missing Shift modifier"
+            );
+        }
+    }
+}

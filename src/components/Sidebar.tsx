@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from '@tanstack/react-router';
 import { useAppStore } from '../lib/store';
 import { commands, type Note, type TagCount } from '../lib/bindings';
 import { Calendar, FileText, Mic, Search, Settings, Tag, X } from 'lucide-react';
 import clsx from 'clsx';
 
-type View = 'notes' | 'agenda' | 'meetings' | 'settings';
+export type View = 'notes' | 'agenda' | 'meetings' | 'settings';
 
 interface Props {
   current: View;
@@ -14,9 +15,9 @@ interface Props {
 
 export function Sidebar({ current, onNavigate }: Props) {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const notes = useAppStore((s) => s.notes);
   const activeNoteId = useAppStore((s) => s.activeNoteId);
-  const setActiveNote = useAppStore((s) => s.setActiveNote);
   const newNote = useAppStore((s) => s.newNote);
   const searchNotes = useAppStore((s) => s.searchNotes);
 
@@ -32,8 +33,6 @@ export function Sidebar({ current, onNavigate }: Props) {
       setResults(null);
       return;
     }
-    // Typing in search drops any active tag filter — last
-    // interaction wins, matches Obsidian's behaviour.
     setTagFilter(null);
     const handle = setTimeout(async () => {
       try {
@@ -45,9 +44,6 @@ export function Sidebar({ current, onNavigate }: Props) {
     return () => clearTimeout(handle);
   }, [query, searchNotes]);
 
-  // Cheap signature that changes only when the tag set changes —
-  // lets the effects below skip re-fetching on body-only saves,
-  // which re-identity the `notes` array every keystroke.
   const tagSignature = useMemo(
     () => notes.map((n) => `${n.id}:${[...n.tags].sort().join(',')}`).join('|'),
     [notes],
@@ -80,18 +76,24 @@ export function Sidebar({ current, onNavigate }: Props) {
   const searching = results !== null;
   const listItems = searching ? results! : tagFilter !== null ? tagNotes : notes;
 
+  async function onNewNote() {
+    const note = await newNote();
+    await navigate({ to: '/notes/$noteId', params: { noteId: note.id } });
+  }
+
+  function openNote(id: string) {
+    navigate({ to: '/notes/$noteId', params: { noteId: id } });
+  }
+
   return (
     <aside className="w-72 border-r border-border flex flex-col bg-muted/50">
       <header className="p-4 flex items-center justify-between">
-        {/* The main page owns the document's <h1>; the sidebar's brand
-            stays a visual-only label so screen-reader headings don't
-            compete with view titles. */}
         <span className="font-bold text-lg" aria-label={t('brand.name')}>
           {t('brand.name')}
         </span>
         <button
           type="button"
-          onClick={() => newNote()}
+          onClick={onNewNote}
           className="text-xs px-2 py-1 rounded bg-primary text-primary-foreground hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
           title={t('sidebar.newNoteTooltip')}
           aria-label={t('a11y.newNote')}
@@ -174,7 +176,7 @@ export function Sidebar({ current, onNavigate }: Props) {
                 <li key={n.id}>
                   <button
                     type="button"
-                    onClick={() => setActiveNote(n.id)}
+                    onClick={() => openNote(n.id)}
                     aria-current={activeNoteId === n.id ? 'page' : undefined}
                     className={clsx(
                       'w-full text-left px-2 py-1.5 rounded text-sm truncate focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2',

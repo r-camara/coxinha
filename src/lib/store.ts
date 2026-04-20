@@ -11,7 +11,7 @@ interface AppStore {
 
   loadNotes: () => Promise<void>;
   setActiveNote: (id: string | null) => void;
-  newNote: () => Promise<void>;
+  newNote: () => Promise<Note>;
   saveNote: (id: string, markdown: string) => Promise<void>;
   deleteNote: (id: string) => Promise<void>;
   searchNotes: (query: string) => Promise<Note[]>;
@@ -36,7 +36,9 @@ export const useAppStore = create<AppStore>((set) => ({
     // cursor in the body so the user can just start typing. A title
     // gets derived from the first `#` heading on save (see
     // `storage::update_note`), and the sidebar falls back to
-    // "(untitled)" until then.
+    // "(untitled)" until then. Returns the created Note so callers
+    // can route to `/notes/$id` with the router — store stays
+    // data-only, navigation is the caller's concern (ADR-0016).
     mark('create-invoked');
     const note = await invoke<Note>('create_note', {
       title: '',
@@ -47,12 +49,10 @@ export const useAppStore = create<AppStore>((set) => ({
       notes: [note, ...state.notes],
       activeNoteId: note.id,
     }));
+    return note;
   },
 
   async saveNote(id, markdown) {
-    // `update_note` returns the updated Note so we can patch the
-    // single entry locally instead of re-fetching the whole list on
-    // every keystroke.
     const updated = await invoke<Note>('update_note', { id, content: markdown });
     set((state) => ({
       notes: sortByUpdated([
@@ -75,9 +75,6 @@ export const useAppStore = create<AppStore>((set) => ({
   },
 
   async openDailyNote(date) {
-    // Daily notes share the `notes` table — after the backend
-    // returns, upsert the entry into the local list so the sidebar
-    // reflects it without a round-trip to `list_notes`.
     const note = await invoke<Note>('get_or_create_daily_note', {
       date: date ?? null,
     });

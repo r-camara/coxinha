@@ -5,13 +5,13 @@ import {
   type AppConfig,
   type ObsidianVault,
   type RebuildStats,
-} from '../lib/bindings';
-import { useAppStore } from '../lib/store';
+} from '../../lib/bindings';
+import { useAppStore } from '../../lib/store';
 import {
   getThemePreference,
   setThemePreference,
   type ThemePreference,
-} from '../lib/theme';
+} from '../../lib/theme';
 
 type LoadState =
   | { kind: 'loading' }
@@ -51,7 +51,6 @@ export function SettingsView() {
         setState({ kind: 'error', message: cfgRes.error });
         return;
       }
-      // Missing Obsidian is not an error — the backend returns [].
       const vaults = vaultRes.status === 'ok' ? vaultRes.data : [];
       setState({ kind: 'ready', config: cfgRes.data, vaults });
       setSelectedPath(cfgRes.data.vault_path);
@@ -87,7 +86,6 @@ export function SettingsView() {
       return;
     }
     setRebuild({ kind: 'done', stats: res.data });
-    // Pull the freshly-indexed notes into the sidebar.
     await loadNotes();
   }
 

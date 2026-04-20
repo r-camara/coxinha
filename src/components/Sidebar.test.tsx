@@ -6,9 +6,15 @@ vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (k: string) => k }),
 }));
 
-// Minimal store mock — Sidebar reads notes + activeNoteId + four
-// actions. Each selector just picks from a single object we
-// mutate per test.
+const navigate = vi.fn();
+vi.mock('@tanstack/react-router', () => ({
+  useNavigate: () => navigate,
+}));
+
+// Minimal store mock — Sidebar reads notes + activeNoteId + the
+// two actions it still calls (`newNote`, `searchNotes`).
+// `setActiveNote` stays on the store API but the component now
+// routes directly, so it is not asserted here.
 const storeState = {
   notes: [] as Array<{
     id: string;
@@ -58,7 +64,7 @@ beforeEach(() => {
   storeState.searchNotes.mockReset();
   listTags.mockReset();
   listNotesByTag.mockReset();
-  // Default: no tags, no tag notes. Per-test overrides as needed.
+  navigate.mockReset();
   listTags.mockResolvedValue({ status: 'ok', data: [] });
   listNotesByTag.mockResolvedValue({ status: 'ok', data: [] });
 });
@@ -83,7 +89,6 @@ describe('Sidebar — search', () => {
     await waitFor(() => expect(storeState.searchNotes).toHaveBeenCalledWith('ze'));
     expect(await screen.findByText('Zeta match')).toBeInTheDocument();
     expect(screen.getByText('sidebar.searchResultsHeading')).toBeInTheDocument();
-    // Recent items hidden while the results view is active.
     expect(screen.queryByText('Alpha')).not.toBeInTheDocument();
   });
 
@@ -116,7 +121,6 @@ describe('Sidebar — search', () => {
     render(<Sidebar current="notes" onNavigate={() => {}} />);
 
     await user.type(screen.getByRole('searchbox'), '   ');
-    // Give the debounce window a chance to fire.
     await new Promise((r) => setTimeout(r, 200));
 
     expect(storeState.searchNotes).not.toHaveBeenCalled();
@@ -137,7 +141,6 @@ describe('Sidebar — tags', () => {
 
     expect(await screen.findByRole('button', { name: /#project/ })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /#idea/ })).toBeInTheDocument();
-    // Counts render next to the tag name.
     expect(screen.getByRole('button', { name: /#project/ }).textContent).toContain('3');
   });
 
@@ -158,7 +161,6 @@ describe('Sidebar — tags', () => {
 
     await waitFor(() => expect(listNotesByTag).toHaveBeenCalledWith('project'));
     expect(await screen.findByText('Project plan')).toBeInTheDocument();
-    // Recent items swapped out for tag-filtered list.
     expect(screen.queryByText('Alpha')).not.toBeInTheDocument();
     expect(pill).toHaveAttribute('aria-pressed', 'true');
   });
@@ -182,5 +184,34 @@ describe('Sidebar — tags', () => {
 
     expect(screen.getByText('Alpha')).toBeInTheDocument();
     expect(screen.queryByText('Project plan')).not.toBeInTheDocument();
+  });
+});
+
+describe('Sidebar — note click', () => {
+  it('navigates to /notes/$noteId when a note is clicked', async () => {
+    const user = userEvent.setup();
+    render(<Sidebar current="notes" onNavigate={() => {}} />);
+
+    await user.click(screen.getByRole('button', { name: 'Alpha' }));
+
+    expect(navigate).toHaveBeenCalledWith({
+      to: '/notes/$noteId',
+      params: { noteId: 'a' },
+    });
+  });
+
+  it('creates a draft and navigates on the "+ New" button', async () => {
+    const user = userEvent.setup();
+    storeState.newNote.mockResolvedValue(note('new-1', ''));
+
+    render(<Sidebar current="notes" onNavigate={() => {}} />);
+
+    await user.click(screen.getByRole('button', { name: 'a11y.newNote' }));
+
+    await waitFor(() => expect(storeState.newNote).toHaveBeenCalled());
+    expect(navigate).toHaveBeenCalledWith({
+      to: '/notes/$noteId',
+      params: { noteId: 'new-1' },
+    });
   });
 });
