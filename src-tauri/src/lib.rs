@@ -50,51 +50,15 @@ pub fn run() {
 
     info!("Coxinha starting...");
 
-    let specta_builder = tauri_specta::Builder::<tauri::Wry>::new()
-        .commands(tauri_specta::collect_commands![
-            commands::create_note,
-            commands::update_note,
-            commands::delete_note,
-            commands::list_notes,
-            commands::get_note,
-            commands::search_notes,
-            commands::list_meetings,
-            commands::get_meeting,
-            commands::start_recording,
-            commands::stop_recording,
-            commands::transcribe_meeting,
-            commands::summarize_meeting,
-            commands::get_active_calls,
-            commands::save_attachment,
-            commands::get_config,
-            commands::update_config,
-            commands::list_obsidian_vaults,
-            commands::get_or_create_daily_note,
-            commands::get_backlinks,
-            commands::rebuild_from_vault,
-            commands::list_tags,
-            commands::list_notes_by_tag,
-        ])
-        .events(tauri_specta::collect_events![
-            events::CallDetected,
-            events::RecordingProgress,
-            events::TranscriptionProgress,
-        ]);
+    let specta_builder = build_specta();
 
-    // The generated file re-imports `Channel` from Tauri whether we
-    // use channel types or not, which trips TypeScript's
-    // `noUnusedLocals`. `@ts-nocheck` is the accepted pattern for
-    // machine-generated code — consumers still get the types because
-    // they flow through re-exports, not through the file's own check.
+    // Regenera bindings.ts em dev, mas **só escreve se mudou**.
+    // O Vite observa src/; se `run()` sobrescrevesse o arquivo toda
+    // vez, HMR disparava a cada cargo run mesmo sem nenhuma mudança
+    // na superficie IPC (e podia correr com invocações em progresso,
+    // ver docs/architecture/debugged-helper.md → "debug traps").
     #[cfg(debug_assertions)]
-    specta_builder
-        .export(
-            specta_typescript::Typescript::default()
-                .bigint(specta_typescript::BigIntExportBehavior::Number)
-                .header("// @ts-nocheck\n/* eslint-disable */\n"),
-            "../src/lib/bindings.ts",
-        )
-        .expect("Failed to export TS bindings");
+    export_bindings_if_changed(&specta_builder);
 
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
@@ -149,6 +113,77 @@ pub fn run() {
         })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+}
+
+/// Build the specta Builder wired with every IPC command and event.
+///
+/// Extracted so `run()` and a potential stand-alone exporter share
+/// the same command list — if one drifts, both drift. Don't add a
+/// command here and forget the other; use this as the only source.
+pub fn build_specta() -> tauri_specta::Builder<tauri::Wry> {
+    tauri_specta::Builder::<tauri::Wry>::new()
+        .commands(tauri_specta::collect_commands![
+            commands::create_note,
+            commands::update_note,
+            commands::delete_note,
+            commands::list_notes,
+            commands::get_note,
+            commands::search_notes,
+            commands::list_meetings,
+            commands::get_meeting,
+            commands::start_recording,
+            commands::stop_recording,
+            commands::transcribe_meeting,
+            commands::summarize_meeting,
+            commands::get_active_calls,
+            commands::save_attachment,
+            commands::get_config,
+            commands::update_config,
+            commands::list_obsidian_vaults,
+            commands::get_or_create_daily_note,
+            commands::get_backlinks,
+            commands::rebuild_from_vault,
+            commands::list_tags,
+            commands::list_notes_by_tag,
+        ])
+        .events(tauri_specta::collect_events![
+            events::CallDetected,
+            events::RecordingProgress,
+            events::TranscriptionProgress,
+        ])
+}
+
+/// Write `src/lib/bindings.ts` from the specta Builder, but **only
+/// if the generated content differs from what's on disk**. A naive
+/// unconditional write fires Vite's HMR on every `cargo run` even
+/// when nothing changed — and during dev that can race with
+/// in-flight IPC calls by reloading types mid-flight.
+#[cfg(debug_assertions)]
+fn export_bindings_if_changed(builder: &tauri_specta::Builder<tauri::Wry>) {
+    use specta_typescript::{BigIntExportBehavior, Typescript};
+    use std::fs;
+    use std::path::Path;
+
+    let lang = Typescript::default()
+        .bigint(BigIntExportBehavior::Number)
+        .header("// @ts-nocheck\n/* eslint-disable */\n");
+    let new_content = match builder.export_str(lang) {
+        Ok(s) => s,
+        Err(e) => {
+            tracing::warn!("specta export failed: {e}");
+            return;
+        }
+    };
+
+    let path = Path::new("../src/lib/bindings.ts");
+    if let Ok(existing) = fs::read_to_string(path) {
+        if existing == new_content {
+            return;
+        }
+    }
+    if let Err(e) = fs::write(path, new_content) {
+        tracing::warn!("failed to write {}: {e}", path.display());
+    }
 }
 
 /// Seed `rust-i18n` with the OS locale before the tray menu or any
