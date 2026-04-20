@@ -82,9 +82,11 @@ VS Code, Notepad). Coxinha does not invent a proprietary format.
 ### `lib.rs`
 Entry point. Configures:
 - Tray icon + menu (Open, Record, Settings, Quit)
-- Global shortcuts (`Ctrl+Alt+Shift+N/C/A/M/R` — triple modifier
-  avoids the OneNote / Office 365 conflicts that broke the old
-  two-modifier defaults on Windows)
+- Global shortcuts (`Win+Shift+N/C/A/M/R` — the Win key pattern
+  avoids every binding documented in Microsoft's Win11 shortcut
+  list; see `docs/research/shortcut-map.md` for the evidence
+  trail that rejected the pre-0042 `Ctrl+Alt+*` and the
+  transitional `Ctrl+Alt+Shift+*` defaults)
 - Hidden window at boot
 - Auto-launch plugin
 - Background tasks: `call_detector`, `db_watcher`

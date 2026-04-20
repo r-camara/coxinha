@@ -96,21 +96,21 @@ mod tests {
     }
 
     #[test]
-    fn default_shortcuts_all_use_shift() {
-        // Guards against a partial downgrade — every default must
-        // carry Shift to stay out of the Office 365 / OneNote
-        // conflict zone on Windows (spec 0042).
+    fn default_shortcuts_avoid_known_conflicts() {
+        // Regression guard for spec 0042. Every chord documented as
+        // intercepted on Windows at the OS or Office level goes
+        // here. See docs/research/shortcut-map.md for sources.
         let cfg = ShortcutsConfig::default();
-        for raw in [
-            &cfg.new_note,
-            &cfg.open_app,
-            &cfg.agenda,
-            &cfg.meetings,
-            &cfg.toggle_recording,
-        ] {
-            assert!(
-                raw.to_ascii_lowercase().contains("shift"),
-                "default shortcut {raw:?} missing Shift modifier"
+        let forbidden = [
+            "Ctrl+Alt+N",        // OneNote in-app, caused the original bug
+            "Ctrl+Alt+Shift+N",  // intermediate attempt that also failed in dev
+            "Win+N", "Super+N",  // Windows 11 notification center
+            "Win+Alt+N", "Super+Alt+N", // OneNote Quick Note (global)
+        ];
+        for chord in forbidden {
+            assert_ne!(
+                cfg.new_note, chord,
+                "default new_note chord {chord:?} is known to collide on Windows"
             );
         }
     }

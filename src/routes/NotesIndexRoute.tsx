@@ -80,16 +80,13 @@ export function NotesIndexRoute() {
 
   return (
     <section
-      className="h-full overflow-auto bn-container relative"
+      className="h-full overflow-auto bn-container"
       aria-label={t('editor.region')}
       data-testid="notes-index-draft"
     >
-      <div
-        className="pointer-events-none absolute top-8 left-[calc(3rem+4px)] text-muted-foreground/60 text-base select-none"
-        aria-hidden="true"
-      >
-        {t('empty.placeholder')}
-      </div>
+      {/* BlockNote owns the placeholder ("type '/' for commands")
+          and reads the cursor — adding a sibling overlay doubled
+          the affordance in the 2026-04-20 screenshot pass. */}
       <BlockNoteView editor={editor} onChange={onChange} />
     </section>
   );

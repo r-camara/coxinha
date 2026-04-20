@@ -36,19 +36,31 @@ preserves ADR-0002 (local-first) and the current perf budgets
 
 **Global shortcut change.**
 
-- Add `Shift` to every current default in `shared::ShortcutsConfig`.
-  Concretely:
-  - `new_note`: `Ctrl+Alt+N` → `Ctrl+Alt+Shift+N`
-  - `open_app`: `Ctrl+Alt+C` → `Ctrl+Alt+Shift+C`
-  - `agenda`: `Ctrl+Alt+A` → `Ctrl+Alt+Shift+A`
-  - `meetings`: `Ctrl+Alt+M` → `Ctrl+Alt+Shift+M`
-  - `toggle_recording`: `Ctrl+Alt+R` → `Ctrl+Alt+Shift+R`
-- The config key itself is user-overridable — the change affects
-  defaults only. Existing users who customised their shortcut
-  pass through untouched.
-- Update `docs/architecture/overview.md` (shortcuts table) and
-  `docs/specs/0003-cold-start-load.md` (the test references the
-  key).
+Revised after field testing (see `docs/research/shortcut-map.md`):
+
+- Defaults move to `Super+Shift+<letter>` (Win+Shift+*), using
+  the Windows key. Rationale: `Win+Shift+<letter>` does not
+  appear in Microsoft's Win11 shortcuts list for any of the
+  letters we use; the pre-0042 `Ctrl+Alt+*` was intercepted in
+  the field (OneNote) and the transitional `Ctrl+Alt+Shift+*`
+  also failed — likely because users had stale `config.toml`
+  values and the `Default` impl doesn't apply on upgrades.
+  - `new_note`: `Super+Shift+N`
+  - `open_app`: `Super+Shift+C`
+  - `agenda`: `Super+Shift+A`
+  - `meetings`: `Super+Shift+M` (collides with Windows' "restore
+    minimized windows" — acknowledged, letter may change if it
+    surfaces in use)
+  - `toggle_recording`: `Super+Shift+R` (collides with
+    Windows 11's "record screen region" — same trade-off)
+- **Config migration.** `config.rs::migrate_stale_shortcut_defaults`
+  rewrites any `config.toml` whose shortcuts exactly match
+  either pre-0042 default set (`Ctrl+Alt+*` or `Ctrl+Alt+Shift+*`)
+  to the current defaults. Users who customized even one key
+  are left untouched. One-shot, persisted back to disk, logged.
+- Update `docs/architecture/overview.md` (shortcuts table),
+  `docs/specs/0003-cold-start-load.md`, and
+  `docs/research/shortcut-map.md`.
 
 **Empty-state redesign.**
 
@@ -116,14 +128,20 @@ Every item is test-covered (Vitest for frontend, Rust test for
 shortcut registration, existing perf gates unchanged).
 
 1. **Shortcut fires on cold boot.** After a restart, pressing
-   `Ctrl+Alt+Shift+N` shows the window and lands the cursor in
-   the editor within the 2 s UX budget. Backend test in
-   `shortcuts.rs` asserts the new chord parses and registers
-   without error.
+   `Win+Shift+N` shows the window and lands the cursor in the
+   editor within the 2 s UX budget. Backend test in
+   `shortcuts.rs` asserts the new chord parses and regression-
+   guards against documented-broken combos (Ctrl+Alt+N,
+   Ctrl+Alt+Shift+N, Win+N, Win+Alt+N).
 2. **Shortcut survives Windows default conflicts.** Manual test
    row: cross-check Windows 11 + Office 365 + OneNote installed;
    the new chord is not intercepted. Recorded in spec 0003's
    test plan notes.
+3. **Stale configs migrate.** A `config.toml` with the pre-0042
+   `Ctrl+Alt+*` defaults (or the transitional `Ctrl+Alt+Shift+*`
+   ones) is rewritten to current defaults on boot. A customized
+   set is left alone. Unit tests in `config.rs` cover both paths
+   plus the no-op on the current defaults.
 3. **Empty-state editor loads without CTA.** Cold boot on a
    vault with zero notes renders the editor (no button, no
    container card). Vitest snapshot asserts no `role="button"`
@@ -151,17 +169,23 @@ shortcut registration, existing perf gates unchanged).
 
 ## Design notes
 
-**Why Ctrl+Alt+Shift+N and not Win+Shift+N.**
+**Why Win+Shift+N in the end.**
 
-- `Ctrl+Alt+Shift+N` has no known default binding on stock
-  Windows 11, Office 365, or OneNote. Triple-modifier chords
-  are long but they are reliable — the whole reason hotkeys
-  break is that two-modifier chords are crowded.
-- `Win+Shift+N` works but feels intrusive (Windows treats `Win`
-  as reserved for OS UX); also conflicts vary across third-party
-  shell replacements. Rejected for F1 scope.
-- `Ctrl+Shift+N` conflicts with Chrome ("new incognito window")
-  and VS Code ("new window"). Rejected.
+Initial attempt was `Ctrl+Alt+Shift+N`; it failed in the field
+(likely because `config.toml` still carried the pre-0042
+default). On re-testing we mapped Microsoft's actual Windows 11
+shortcut list (`docs/research/shortcut-map.md`) and confirmed:
+
+- `Win+Shift+N` is **not** in Microsoft's documented list. Free.
+- `Win+N` is Notification Center — cannot touch.
+- `Win+Alt+N` is OneNote Quick Note (global, documented) —
+  this is the deep reason `Ctrl+Alt+N` behaved like it was
+  "eaten by OneNote": users often have OneNote registered.
+- `Ctrl+Shift+N` collides with Chrome / VS Code.
+- `Ctrl+Alt+Space` was the runner-up; rejected because the
+  user asked to use the Windows key and because launcher
+  apps (PowerToys Run, Alfred-equivalents) sometimes claim
+  `*+Space`.
 
 **Empty-state draft lifecycle.**
 

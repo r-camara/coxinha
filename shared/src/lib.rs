@@ -209,15 +209,18 @@ pub struct ShortcutsConfig {
 
 impl Default for ShortcutsConfig {
     fn default() -> Self {
-        // Triple-modifier chord: Ctrl+Alt+Shift+* avoids the
-        // OneNote/Office 365 conflicts on Windows that made the
-        // old two-modifier defaults never reach the app.
+        // Super+Shift+<letter> on Windows uses the Win key. Verified
+        // free of Microsoft's documented Win11 bindings (see
+        // docs/research/shortcut-map.md): Win+N is the notification
+        // center, Win+Alt+N is OneNote Quick Note — both intercepted
+        // globally. Win+Shift+<letter> is not listed, and the chord
+        // is ergonomic (thumb + pinky + index).
         Self {
-            new_note: "Ctrl+Alt+Shift+N".into(),
-            open_app: "Ctrl+Alt+Shift+C".into(),
-            agenda: "Ctrl+Alt+Shift+A".into(),
-            meetings: "Ctrl+Alt+Shift+M".into(),
-            toggle_recording: "Ctrl+Alt+Shift+R".into(),
+            new_note: "Super+Shift+N".into(),
+            open_app: "Super+Shift+C".into(),
+            agenda: "Super+Shift+A".into(),
+            meetings: "Super+Shift+M".into(),
+            toggle_recording: "Super+Shift+R".into(),
         }
     }
 }

@@ -8,11 +8,14 @@
 
 ## Why
 Coxinha's whole pitch is "keyboard shortcut → typing in <50ms"
-(default `Ctrl+Alt+Shift+N` after spec 0042 — the pre-0042
-default `Ctrl+Alt+N` was intercepted by OneNote on Windows and
-never reached the app). That promise only holds if we measure
-it. Same for the vault at realistic sizes — a 10k-note user
-shouldn't feel a lag that a 100-note user doesn't.
+(default `Win+Shift+N` after spec 0042 — the pre-0042 default
+`Ctrl+Alt+N` was intercepted by OneNote on Windows; a
+transitional `Ctrl+Alt+Shift+N` also failed in the field,
+likely because `config.toml` held stale values and the new
+`Default` impl doesn't apply to existing installs without
+migration). That promise only holds if we measure it. Same for
+the vault at realistic sizes — a 10k-note user shouldn't feel
+a lag that a 100-note user doesn't.
 
 Without budgets in CI, the next innocent-looking feature commit
 will quietly add 200ms to startup and nobody will notice until a

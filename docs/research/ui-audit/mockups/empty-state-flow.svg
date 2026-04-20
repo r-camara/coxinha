@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 420" width="1200" height="420" font-family="Inter, system-ui, sans-serif">
+  <!--
+    empty-state-flow.svg — draft lifecycle (spec 0042).
+  -->
+  <rect width="1200" height="420" fill="#ffffff" stroke="#e5e7eb"/>
+  <text x="24" y="36" font-size="16" font-weight="700" fill="#111827">Transient draft lifecycle</text>
+
+  <!-- 4 frames on a timeline -->
+  <!-- Frame 1: focus -->
+  <rect x="40" y="88" width="220" height="140" fill="#fafafa" stroke="#d1d5db"/>
+  <line x1="56" y1="108" x2="56" y2="132" stroke="#111827" stroke-width="1.5"/>
+  <text x="64" y="126" font-size="13" fill="#9ca3af" font-style="italic">Type to start.</text>
+  <text x="148" y="254" font-size="11" fill="#374151" text-anchor="middle">(1) Mount · focus · draft in memory</text>
+
+  <!-- Arrow -->
+  <line x1="268" y1="158" x2="308" y2="158" stroke="#6b7280" stroke-width="1.5"/>
+  <polygon points="302,154 312,158 302,162" fill="#6b7280"/>
+
+  <!-- Frame 2: typing -->
+  <rect x="318" y="88" width="220" height="140" fill="#fafafa" stroke="#d1d5db"/>
+  <text x="332" y="124" font-size="13" fill="#111827">Untitled</text>
+  <line x1="398" y1="108" x2="398" y2="132" stroke="#111827" stroke-width="1.5"/>
+  <text x="428" y="254" font-size="11" fill="#374151" text-anchor="middle">(2) Typing · 200 ms debounce armed</text>
+
+  <line x1="546" y1="158" x2="586" y2="158" stroke="#6b7280" stroke-width="1.5"/>
+  <polygon points="580,154 590,158 580,162" fill="#6b7280"/>
+
+  <!-- Frame 3: persist + URL change -->
+  <rect x="596" y="88" width="220" height="140" fill="#fafafa" stroke="#16a34a"/>
+  <text x="610" y="124" font-size="13" fill="#111827">Untitled</text>
+  <text x="610" y="140" font-size="11" fill="#6b7280">body…</text>
+  <rect x="610" y="148" width="196" height="18" rx="3" fill="#ecfccb"/>
+  <text x="618" y="161" font-size="10" fill="#365314">→ create_note() · URL = /notes/$id</text>
+  <text x="706" y="254" font-size="11" fill="#16a34a" text-anchor="middle">(3) Persist · URL replaced (no remount)</text>
+
+  <!-- Alt branch: blur empty -->
+  <line x1="268" y1="188" x2="268" y2="300" stroke="#dc2626" stroke-width="1.5" stroke-dasharray="4 4"/>
+  <polygon points="264,294 268,304 272,294" fill="#dc2626"/>
+  <rect x="148" y="304" width="240" height="80" fill="#fff7ed" stroke="#dc2626" stroke-dasharray="4 4"/>
+  <text x="268" y="328" font-size="12" fill="#9a3412" text-anchor="middle">Blur without meaningful content</text>
+  <text x="268" y="348" font-size="11" fill="#9a3412" text-anchor="middle">→ discard draft</text>
+  <text x="268" y="366" font-size="11" fill="#9a3412" text-anchor="middle">(no IPC, no file, no row)</text>
+
+  <!-- Callouts -->
+  <g font-size="11" fill="#374151">
+    <text x="860" y="108">◾ Debounce is 200 ms (faster than the 500 ms save path)</text>
+    <text x="860" y="126">◾ Content buffered during create_note carries into the</text>
+    <text x="882" y="142">first save — no lost keystrokes</text>
+    <text x="860" y="160">◾ router.navigate({ replace: true }) so Back doesn't</text>
+    <text x="882" y="176">trap the user on the draft URL</text>
+    <text x="860" y="196">◾ Blur = focus leaves the editor OR route change</text>
+  </g>
+</svg>

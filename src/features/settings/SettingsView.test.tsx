@@ -40,11 +40,11 @@ const BASE_CONFIG = {
   llm: { kind: 'ollama', endpoint: 'http://localhost:11434', model: 'llama3.2:3b' },
   autostart: false,
   shortcuts: {
-    new_note: 'Ctrl+Alt+Shift+N',
-    open_app: 'Ctrl+Alt+Shift+C',
-    agenda: 'Ctrl+Alt+Shift+A',
-    meetings: 'Ctrl+Alt+Shift+M',
-    toggle_recording: 'Ctrl+Alt+Shift+R',
+    new_note: 'Super+Shift+N',
+    open_app: 'Super+Shift+C',
+    agenda: 'Super+Shift+A',
+    meetings: 'Super+Shift+M',
+    toggle_recording: 'Super+Shift+R',
   },
 };
 
@@ -253,7 +253,7 @@ describe('SettingsView — shortcuts panel', () => {
     render(<SettingsView />);
 
     expect(await screen.findByText('Ctrl+Shift+Space')).toBeInTheDocument();
-    expect(screen.queryByText('Ctrl+Alt+Shift+N')).not.toBeInTheDocument();
+    expect(screen.queryByText('Super+Shift+N')).not.toBeInTheDocument();
   });
 
   it('surfaces the "rebind coming soon" hint', async () => {
