@@ -1,13 +1,48 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+/* Pull BlockNote's shadcn classes into the scan so utilities they
+   rely on aren't purged. Tailwind 4 ignores node_modules by default. */
+@source "../node_modules/@blocknote/shadcn";
+
+/* Dark mode follows the `.dark` class on <html>, matching what the
+   theme.ts helper toggles. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* shadcn token set. Every colour goes through a `--token: H S L`
+   triplet so the Tailwind alias wraps it with `hsl(var(...))` and we
+   can swap light/dark by toggling the `.dark` class on <html>.
+   Primary is the Coxinha orange (#de8c3a) in both modes — the
+   background flips, the accent colour stays the brand. */
+@theme {
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
+
+  --font-sans: "Inter", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", Consolas, monospace;
+}
 
 @layer base {
-  /* shadcn token set. Every colour goes through a `--token: H S L`
-     triplet so the Tailwind alias can wrap it with `hsl(var(...))`
-     and we can swap light/dark by toggling the `.dark` class on
-     <html>. Primary is the Coxinha orange (#de8c3a) in both modes
-     — the background flips, the accent colour stays the brand. */
   :root {
     --background: 0 0% 100%;
     --foreground: 222 47% 11%;

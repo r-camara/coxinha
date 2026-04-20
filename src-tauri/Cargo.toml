@@ -27,6 +27,8 @@ tauri-plugin-fs = "2"
 
 # Typed IPC (generates TS from Rust)
 specta = { version = "2.0.0-rc", features = ["derive", "chrono", "uuid"] }
+# Pinning 0.0.9: 0.0.11 moves `BigIntExportBehavior` out of the
+# crate root; worth updating the export call if we ever bump.
 specta-typescript = "0.0.9"
 tauri-specta = { version = "2.0.0-rc", features = ["derive", "typescript"] }
 
@@ -43,21 +45,27 @@ tokio.workspace = true
 async-trait = "0.1"
 
 # DB
-rusqlite = { version = "0.32", features = ["bundled", "backup", "chrono"] }
+rusqlite = { version = "0.39", features = ["bundled", "backup", "chrono"] }
 
 # Audio
-cpal = "0.15"
+cpal = "0.17"
 hound = "3.5"
 
 # Voice activity detection (Silero ONNX). Ported from Handy per
 # ADR-0014. `download-binaries` grabs the ONNX Runtime shared
 # library at build time so Windows doesn't need libclang or a
 # system install.
+# Pinning rc.10: rc.12's download-binaries build script fails on
+# a `ureq 3.x` API mismatch (`tls_config` method missing). Revisit
+# when a fixed RC or 2.0 stable ships.
 ort = { version = "=2.0.0-rc.10", default-features = false, features = [
     "std",
     "ndarray",
     "download-binaries",
 ] }
+# ndarray stays at 0.16 because ort rc.10 forces it (they haven't
+# bumped to 0.17 on the RC line). Cargo resolution will complain
+# if we mismatch.
 ndarray = "0.16"
 
 # STT — features gate the crates
@@ -72,29 +80,29 @@ pyannote-rs = { version = "0.3", optional = true }
 genai = "0.5"
 
 # HTTP + config
-reqwest = { version = "0.12", features = ["json", "stream"] }
-toml = "0.8"
-directories = "5"
+reqwest = { version = "0.13", features = ["json", "stream"] }
+toml = "1"
+directories = "6"
 
 # Filesystem watcher (detect external vault edits)
-notify = "7"
+notify = "8"
 
 # Image processing (WebP compression on paste)
 image = { version = "0.25", features = ["webp", "png", "jpeg"] }
 
 # i18n (tray menu strings etc.)
-rust-i18n = "3"
+rust-i18n = "4"
 sys-locale = "0.3"
 
 [dev-dependencies]
 tempfile = "3"
 tokio = { workspace = true }
 # Lightweight process inspection for perf smoke (RSS + CPU sampling).
-sysinfo = { version = "0.32", default-features = false, features = ["system"] }
+sysinfo = { version = "0.38", default-features = false, features = ["system"] }
 
 [target.'cfg(windows)'.dependencies]
 # Call detection + process-specific loopback
-windows = { version = "0.58", features = [
+windows = { version = "0.62", features = [
     "Win32_Foundation",
     "Win32_Media_Audio",
     "Win32_System_Com",
