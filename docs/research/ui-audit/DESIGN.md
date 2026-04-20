@@ -8,21 +8,29 @@
 
 ## 1. Visual Theme & Atmosphere
 
-**"A writing desk with good light."**
+**"Quiet tool."**
 
 Coxinha is a local-first Windows notetaker that doubles as a
-meeting recorder. The UI is a working surface — not a dashboard,
-not a SaaS product page, not a cloud workspace. Think iA Writer's
-typographic discipline, Bear's warmth, and Obsidian's respect for
-the user's files — *not* Notion's icon-everywhere corporate
-aesthetic.
+meeting recorder — an app the user opens dozens of times a
+day. The UI is a working surface that has to **disappear**
+during use. A palette or typography that shouts ends up
+tiring.
+
+Revised direction (2026-04-20): neutral Zinc baseline with
+Coxinha Orange reserved as a precise signal — not a pervasive
+warm wash. Think Arc Browser's restraint, Linear's neutrality,
+iA Writer's typographic discipline — *not* Bear's warm paper
+or Notion's corporate-purple accents. The first draft of this
+doc leaned into a warm cream aesthetic; user feedback flagged
+it as fatiguing for constant use. Restraint wins.
 
 **Atmosphere axes:**
 
-- **Creativity: 8/10** — push beyond Notion's defaults.
-- **Variance: 6/10** — offset asymmetric; reading column centered
-  on wide viewports with deliberate negative space on either
-  side.
+- **Creativity: 6/10** — distinctive through restraint, not
+  saturation. The goal is "recognizable without being loud".
+- **Variance: 6/10** — offset asymmetric; reading column
+  centered on wide viewports with deliberate negative space on
+  either side.
 - **Density: 5/10** — daily-app balance; sidebar carries work,
   main pane stays content-primary.
 - **Motion: 4/10** — fluid but restrained. Motion communicates
@@ -31,56 +39,76 @@ aesthetic.
 
 **Reference points (acknowledged, not cloned):**
 
-- *Notion* — content-first minimalism + the left-rail chrome
-  model. Rejected: page-icon culture, template galleries,
-  database/kanban metaphors, generic "Elevate your work" voice.
-- *Bear* — palette warmth and respect for the writing surface.
-- *iA Writer* — reading-column discipline and typographic weight.
+- *Arc Browser* — disciplined neutrals with a single accent
+  used surgically. This is the closest aesthetic match.
+- *Linear* — neutral Zinc palette, weight-driven hierarchy,
+  speed-of-thought motion.
+- *iA Writer* — reading-column discipline and typographic
+  weight.
+- *Notion* — content-first minimalism + left-rail chrome.
+  Rejected: page-icon culture, template galleries,
+  database/kanban metaphors, generic "Elevate" voice.
 - *Obsidian* — filesystem-canonical honesty and wiki-link
   primitives.
 
 **Voice:** plain, direct, Brazilian warmth without folkloric
-cliché. The name is a Brazilian savory snack. Lean into craft and
-precision — never into "tech startup".
+cliché. The name is a Brazilian savory snack. Lean into craft
+and precision — never into "tech startup".
 
 ---
 
 ## 2. Color Palette & Roles
 
-Warm-neutral base with a single brand accent. No purple, no neon,
-no gradient headlines. Pure black is banned.
+Neutral Zinc baseline. Coxinha Orange appears **only** as a
+signal for user-driven action or system state — the "+ New"
+button, save-pending dot, active tag filter, focus rings.
+Everywhere else is gray. If the orange shows up more than
+three times on a screen, something is wrong.
+
+Pure black is banned.
 
 ### Light mode
 
 | Name | Hex | Role |
 |---|---|---|
-| **Cream Paper** | `#FAF8F3` | Primary background surface — warm off-white, reading-friendly |
-| **Linen** | `#FFFDF7` | Card / elevated surface fill, marginally lighter than canvas |
-| **Coffee Ink** | `#1C1917` | Primary text — warmer than Zinc-950, not pure black |
-| **Steel Grey** | `#737373` | Secondary text, metadata, timestamps |
-| **Whisper Line** | `#E7E5E4` | Borders, dividers, 1px structural separators |
-| **Coxinha Orange** | `#DE8C3A` | Single accent — CTAs, focus rings, active nav. Saturation 69% (under 80% ceiling) |
+| **Canvas** | `#FAFAFA` | Primary background surface (Zinc 50, neutral-warm) |
+| **Surface** | `#FFFFFF` | Card / elevated / popover fill |
+| **Stone** | `#F4F4F5` | Sidebar background (Zinc 100). Sits under the main canvas in depth order. |
+| **Ink** | `#18181B` | Primary text (Zinc 950). Not pure black |
+| **Steel** | `#71717A` | Secondary text, metadata, timestamps (Zinc 500) |
+| **Line** | `#E4E4E7` | Borders, dividers, 1px structural separators (Zinc 200) |
+| **Hover** | `#F4F4F580` | Neutral tint for active nav item backgrounds — no orange wash |
+| **Coxinha Orange** | `#DE8C3A` | Single accent. CTAs, save-pending dot, active tag pill, focus ring. Saturation 69% (under 80% ceiling). Appears sparingly |
+| **Orange Trace** | `#DE8C3A14` | 8% orange — reserved for one specific signal (active note in sidebar list). Everywhere else uses Hover |
 | **Alarm Red** | `#B91C1C` | Destructive actions only. Never decorative |
 
 ### Dark mode
 
 | Name | Hex | Role |
 |---|---|---|
-| **Night Paper** | `#171615` | Background — warm charcoal, not slate-cool |
-| **Dim Surface** | `#1F1E1D` | Elevated surface |
-| **Daylight** | `#F5F1EA` | Primary text |
-| **Faded Day** | `#A8A29E` | Secondary text |
-| **Shadow Line** | `#292524` | Borders |
+| **Canvas** | `#0C0C0D` | Background — near-black neutral, not warm charcoal |
+| **Surface** | `#18181B` | Elevated surface (Zinc 950) |
+| **Stone** | `#151517` | Sidebar background |
+| **Ink** | `#F4F4F5` | Primary text |
+| **Steel** | `#A1A1AA` | Secondary text |
+| **Line** | `#27272A` | Borders (Zinc 800) |
+| **Hover** | `#FFFFFF08` | 3% white tint for active backgrounds |
 | **Coxinha Orange** | `#DE8C3A` | Unchanged across modes — the brand stays constant, the surfaces flip |
-| **Alarm Red** | `#DC2626` | Slightly brighter for dark surface contrast |
+| **Orange Trace** | `#DE8C3A1F` | 12% orange on dark — a touch more visible since dark surfaces swallow transparency |
+| **Alarm Red** | `#DC2626` | Slightly brighter for dark-surface contrast |
 
 ### Strict bans
 
-- Pure black `#000000` — use Coffee Ink or Charcoal Depth.
-- Cool greys that shift between warm and cool within one
-  surface — stick to the warm Steel Grey / Faded Day family.
-- More than one accent colour. The orange is the only non-
-  neutral in the system.
+- Pure black `#000000` — use `Ink` or `Canvas` (dark).
+- Warm-tinted greys or cream backgrounds — the earlier "cream
+  paper + coffee ink" direction was rolled back because the
+  warmth read as tiring for constant-use daily work. Stay on
+  Zinc neutrals.
+- More than one accent colour. Orange is the only non-neutral
+  in the system.
+- Orange as a pervasive wash (sidebar fill, full-width banner,
+  large filled cards). Orange is a **signal**, not a
+  background.
 - Purple, indigo, neon gradients, rainbow hovers.
 - Destructive red as decoration (banners, badges). Red is
   reserved for "this action will delete something".
@@ -346,18 +374,20 @@ Coxinha-specific bans:
 
 Three things that mark a screen as "Coxinha" at a glance:
 
-1. **Warm cream surface + coffee-dark ink.** No other major
-   notetaker commits to a warm palette this hard. It's the
-   first-read signal.
+1. **Restraint-through-neutrality.** Zinc-family grays on
+   every surface, Coxinha Orange only where action or system
+   state demands it. A user can glance at the screen for a
+   full second before seeing any colour — that silence is the
+   signature. Arc Browser-adjacent, but with a distinct accent.
 2. **Reading column with deliberate negative space on wide
    viewports.** Content has a max-width and respects it —
    the pane doesn't fill edge-to-edge on a 1920px monitor.
    Notion and Google Docs do fill; we don't.
 3. **Hand-drawn SVG illustrations** for Agenda / Meetings
    empty states. Not 3D renders, not stock illustration, not
-   Lottie. 1.5px line art in Coffee Ink, breathing slowly.
-   This is where the "craft" personality shows up
-   concretely.
+   Lottie. 1.5px line art in Ink, breathing slowly. This is
+   where "craft" personality shows up concretely without
+   fighting the neutral surfaces.
 
 ---
 
