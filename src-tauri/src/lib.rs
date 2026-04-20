@@ -160,6 +160,7 @@ pub fn build_specta() -> tauri_specta::Builder<tauri::Wry> {
         ])
         .events(tauri_specta::collect_events![
             events::Navigate,
+            events::BeforeQuit,
             events::CallDetected,
             events::RecordingProgress,
             events::TranscriptionProgress,

@@ -9,8 +9,14 @@ use tauri::{
 };
 use tauri_specta::Event;
 
-use crate::events::{Navigate, Route};
+use crate::events::{BeforeQuit, Navigate, Route};
 use crate::window::show_main;
+
+/// Janela entre emitir `BeforeQuit` e chamar `app.exit(0)`. Escolhido
+/// pra cobrir o debounce de 500 ms do editor + ~100 ms de IPC
+/// round-trip. Maior que isso vira fricção ("por que o Quit demora?"),
+/// menor corre risco de perder a última batida.
+const QUIT_GRACE: std::time::Duration = std::time::Duration::from_millis(600);
 
 pub fn setup(app: &AppHandle) -> Result<()> {
     let open_item = MenuItem::with_id(app, "open", t!("tray.open"), true, None::<&str>)?;
@@ -44,9 +50,7 @@ pub fn setup(app: &AppHandle) -> Result<()> {
                 }
                 .emit(app);
             }
-            "quit" => {
-                app.exit(0);
-            }
+            "quit" => request_graceful_quit(app),
             _ => {}
         })
         .on_tray_icon_event(|tray, event| {
@@ -62,4 +66,19 @@ pub fn setup(app: &AppHandle) -> Result<()> {
         .build(app)?;
 
     Ok(())
+}
+
+/// Avisa o frontend (editor com debounce, futuros drafts) e só
+/// chama `app.exit(0)` depois de `QUIT_GRACE`. Logs pra deixar
+/// explícito no tracing se alguma coisa demorar demais.
+fn request_graceful_quit(app: &AppHandle) {
+    if let Err(e) = BeforeQuit.emit(app) {
+        tracing::warn!("BeforeQuit emit failed: {e}");
+    }
+    let handle = app.clone();
+    tauri::async_runtime::spawn(async move {
+        tokio::time::sleep(QUIT_GRACE).await;
+        tracing::info!("graceful quit window elapsed, exiting");
+        handle.exit(0);
+    });
 }

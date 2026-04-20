@@ -226,11 +226,13 @@ async listNotesByTag(tag: string) : Promise<Result<Note[], string>> {
 
 export const events = __makeEvents__<{
 navigate: Navigate,
+beforeQuit: BeforeQuit,
 callDetected: CallDetected,
 recordingProgress: RecordingProgress,
 transcriptionProgress: TranscriptionProgress
 }>({
 navigate: "navigate",
+beforeQuit: "before-quit",
 callDetected: "call-detected",
 recordingProgress: "recording-progress",
 transcriptionProgress: "transcription-progress"
@@ -249,6 +251,7 @@ export type AppConfig = { vault_path: string;
  * BCP-47 language tag (e.g. "en", "pt-BR"). Empty means "use OS default".
  */
 locale?: string; transcriber: TranscriberConfig; diarizer: DiarizerConfig; llm: LlmProvider; autostart: boolean; shortcuts: ShortcutsConfig }
+export type BeforeQuit = null
 export type CallDetected = { app_name: string; process_name: string }
 export type DiarizerConfig = { engine: "none" } | { engine: "pyannote"; segmentation_model: string; embedding_model: string } | { engine: "speakrs"; model_dir: string; accelerator: Accelerator }
 export type LlmProvider = { kind: "ollama"; endpoint: string; model: string } | { kind: "claude"; model: string } | { kind: "open_ai"; model: string } | { kind: "groq"; model: string } | { kind: "open_router"; model: string }
