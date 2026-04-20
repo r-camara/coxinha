@@ -11,22 +11,17 @@ use std::sync::{Mutex, OnceLock};
 
 use anyhow::Result;
 use shared::ShortcutsConfig;
-use tauri::{AppHandle, Emitter};
+use tauri::AppHandle;
 use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut, ShortcutState};
+use tauri_specta::Event;
 
+use crate::events::{Navigate, Route};
 use crate::window::show_main;
 
-/// Frontend routes reachable via a global shortcut.
-const ROUTE_NEW_NOTE: &str = "/notes/new";
-const ROUTE_OPEN_APP: &str = "/";
-const ROUTE_AGENDA: &str = "/agenda";
-const ROUTE_MEETINGS: &str = "/meetings";
-const ROUTE_TOGGLE_RECORDING: &str = "/actions/toggle-recording";
-
-/// Shortcut → frontend route, populated at `register_all`. Used by
+/// Shortcut → Route, populated at `register_all`. Used by
 /// `handle_shortcut` to resolve a press without string-matching the
 /// `Shortcut`'s Debug output.
-static ROUTES: OnceLock<Mutex<HashMap<Shortcut, &'static str>>> = OnceLock::new();
+static ROUTES: OnceLock<Mutex<HashMap<Shortcut, Route>>> = OnceLock::new();
 
 pub fn register_all(app: &AppHandle, cfg: &ShortcutsConfig) -> Result<()> {
     let gs = app.global_shortcut();
@@ -34,11 +29,11 @@ pub fn register_all(app: &AppHandle, cfg: &ShortcutsConfig) -> Result<()> {
     routes.clear();
 
     for (raw, route) in [
-        (&cfg.new_note, ROUTE_NEW_NOTE),
-        (&cfg.open_app, ROUTE_OPEN_APP),
-        (&cfg.agenda, ROUTE_AGENDA),
-        (&cfg.meetings, ROUTE_MEETINGS),
-        (&cfg.toggle_recording, ROUTE_TOGGLE_RECORDING),
+        (&cfg.new_note, Route::NotesNew),
+        (&cfg.open_app, Route::Home),
+        (&cfg.agenda, Route::Agenda),
+        (&cfg.meetings, Route::Meetings),
+        (&cfg.toggle_recording, Route::ToggleRecording),
     ] {
         match raw.parse::<Shortcut>() {
             Ok(shortcut) => {
@@ -65,14 +60,14 @@ pub fn handle_shortcut(
 
     let route = {
         let routes = routes_lock().lock().unwrap();
-        routes.get(shortcut).copied().unwrap_or("/")
+        routes.get(shortcut).copied().unwrap_or(Route::Home)
     };
-    tracing::info!("shortcut {} -> {}", shortcut, route);
+    tracing::info!("shortcut {} -> {:?}", shortcut, route);
 
     show_main(app);
-    let _ = app.emit("navigate", route);
+    let _ = Navigate { route }.emit(app);
 }
 
-fn routes_lock() -> &'static Mutex<HashMap<Shortcut, &'static str>> {
+fn routes_lock() -> &'static Mutex<HashMap<Shortcut, Route>> {
     ROUTES.get_or_init(|| Mutex::new(HashMap::new()))
 }

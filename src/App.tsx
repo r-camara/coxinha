@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { listen, type UnlistenFn } from '@tauri-apps/api/event';
+import type { UnlistenFn } from '@tauri-apps/api/event';
 import { AgendaView } from './components/AgendaView';
 import { NoteEditor } from './components/NoteEditor';
 import { SettingsView } from './components/SettingsView';
 import { Sidebar } from './components/Sidebar';
-import type { CallDetected } from './lib/bindings';
+import { events, type Route } from './lib/bindings';
 import { useAppStore } from './lib/store';
 import { followThemePreference, getThemePreference, THEME_PREF_EVENT } from './lib/theme';
 
@@ -37,31 +37,43 @@ export default function App() {
     loadNotes();
 
     (async () => {
-      const navUnsub = await listen<string>('navigate', async (e) => {
-        const route = e.payload;
-        if (route === '/notes/new') {
-          await newNote();
-          setView('notes');
-        } else if (route === '/agenda') {
-          setView('agenda');
-        } else if (route === '/meetings') {
-          setView('meetings');
-        } else if (route === '/settings') {
-          setView('settings');
-        } else if (route === '/actions/toggle-recording') {
-          // TODO
-        }
+      const navUnsub = await events.navigate.listen(async (e) => {
+        await handleRoute(e.payload.route);
       });
       if (cancelled) return navUnsub();
       unsubs.push(navUnsub);
 
-      const callUnsub = await listen<CallDetected>('call-detected', (e) => {
+      const callUnsub = await events.callDetected.listen((e) => {
         console.log('Call detected', e.payload);
         // TODO: show a toast with a "Record" button
       });
       if (cancelled) return callUnsub();
       unsubs.push(callUnsub);
     })();
+
+    async function handleRoute(route: Route) {
+      switch (route) {
+        case 'notes-new':
+          await newNote();
+          setView('notes');
+          return;
+        case 'home':
+          setView('notes');
+          return;
+        case 'agenda':
+          setView('agenda');
+          return;
+        case 'meetings':
+          setView('meetings');
+          return;
+        case 'settings':
+          setView('settings');
+          return;
+        case 'toggle-recording':
+          // TODO (spec 0007)
+          return;
+      }
+    }
 
     return () => {
       cancelled = true;

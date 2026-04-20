@@ -225,10 +225,12 @@ async listNotesByTag(tag: string) : Promise<Result<Note[], string>> {
 
 
 export const events = __makeEvents__<{
+navigate: Navigate,
 callDetected: CallDetected,
 recordingProgress: RecordingProgress,
 transcriptionProgress: TranscriptionProgress
 }>({
+navigate: "navigate",
 callDetected: "call-detected",
 recordingProgress: "recording-progress",
 transcriptionProgress: "transcription-progress"
@@ -251,6 +253,7 @@ export type CallDetected = { app_name: string; process_name: string }
 export type DiarizerConfig = { engine: "none" } | { engine: "pyannote"; segmentation_model: string; embedding_model: string } | { engine: "speakrs"; model_dir: string; accelerator: Accelerator }
 export type LlmProvider = { kind: "ollama"; endpoint: string; model: string } | { kind: "claude"; model: string } | { kind: "open_ai"; model: string } | { kind: "groq"; model: string } | { kind: "open_router"; model: string }
 export type Meeting = { id: string; title: string; started_at: string; ended_at: string | null; duration_seconds: number | null; participants: string[]; recording_path: string | null; has_transcript: boolean; has_summary: boolean; source_app: string | null }
+export type Navigate = { route: Route }
 export type Note = { id: string; title: string; path: string; tags: string[]; created_at: string; updated_at: string }
 export type NoteContent = { note: Note; markdown: string }
 export type ObsidianVault = { 
@@ -287,6 +290,7 @@ export type RebuildStats = { notes_indexed: number; links_indexed: number;
  */
 notes_skipped: number }
 export type RecordingProgress = { meeting_id: string; duration_seconds: number; level_db: number }
+export type Route = "notes-new" | "home" | "agenda" | "meetings" | "settings" | "toggle-recording"
 export type ShortcutsConfig = { new_note: string; open_app: string; agenda: string; meetings: string; toggle_recording: string }
 export type TagCount = { tag: string; count: number }
 export type TranscriberConfig = 
