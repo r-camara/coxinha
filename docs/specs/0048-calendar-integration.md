@@ -40,9 +40,12 @@ with actual calendar-event integration on top.
 - **Calendar cache** under `.coxinha/calendar/<provider>.json`
   — one file per connected account. Rebuildable from the
   source; never authoritative.
-- **Sync policy:** pull every 15 min while app is running;
-  pull on demand (menu button); stale-while-revalidate read
-  from cache on boot.
+- **Sync policy (adaptive):** pull every 15 minutes at rest;
+  tightens to every 2 minutes within the 10-minute window
+  before any known event starts. This keeps the pre-meeting
+  briefing (spec 0035) accurate without hammering the
+  provider all day. On-demand pull via a menu button; stale-
+  while-revalidate read from cache on boot.
 - **Agenda strip** (horizontal scroll) at the top of the
   `/agenda` route:
   - 14 days visible at a time (3 past, today, 10 ahead)
@@ -163,8 +166,9 @@ with actual calendar-event integration on top.
 - **Multi-calendar overlap** — two accounts both syncing,
   same-titled event (e.g., personal cal + work cal both
   have "Dentist"). Dedup by `starts_at + ends_at + title`?
-  Proposed: no dedup in F2 — show both with provider color
-  hint.
+  Proposed: no dedup in F2 — show both **without colour
+  differentiation** (respects DESIGN.md orange-only rule).
+  Provider shown only as a small icon or on chip hover.
 
 ## Test plan summary
 

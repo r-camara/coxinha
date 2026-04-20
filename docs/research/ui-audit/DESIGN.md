@@ -112,6 +112,35 @@ Pure black is banned.
 - Purple, indigo, neon gradients, rainbow hovers.
 - Destructive red as decoration (banners, badges). Red is
   reserved for "this action will delete something".
+- **Workspace chrome tinting.** Arc Browser tints the whole
+  window per Space. Tempting, but fights the orange-only rule
+  and the "quiet tool" thesis. Workspaces are differentiated
+  by **icon** (and name), never by colour-tinting chrome.
+  Opera's neutral-highlight-on-active-icon pattern is the
+  template (see
+  `docs/research/opera-ux-inventory.md` §3).
+
+### Orange-count discipline (rule of thumb)
+
+Before introducing any non-neutral color on a new surface,
+verify the screen stays under **three Coxinha-Orange
+appearances**. Current reference frames (spec 0042 mockup
+pass):
+
+| Screen | Orange appearances |
+|---|---|
+| `/notes/$id` writing | 3 (+ New, active-note tint, save dot) |
+| Quick capture | 2 (+ New placeholder, save dot) |
+| `/agenda` | 3–4 (same + active tag pill — borderline) |
+| `/meetings` | 2 (+ New, active tag pill) |
+| `/settings` | 2 (+ New, active theme chip) |
+| Dark main | 3 (same tokens, dark mode) |
+
+New features that flirt with adding orange (calendar provider
+colours, category borders, folder handles) stay neutral unless
+the signal value clearly justifies the count bump. When in
+doubt: a Lucide icon in steel-grey conveys category without
+adding colour.
 
 ---
 

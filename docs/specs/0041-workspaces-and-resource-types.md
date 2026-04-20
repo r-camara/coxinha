@@ -91,8 +91,17 @@ depend on spec 0039 having shipped.
 - URL tree (ADR-0016 extension): `/w/:workspace/notes/$noteId`,
   `/w/:workspace/agenda`, etc. Root `__root` route hydrates the
   active workspace from `config.toml`; URL param overrides.
-- Sidebar workspace switcher at the top; shows active workspace
-  with a dropdown of siblings, "+ New workspace" at the bottom.
+- **Workspace icon rail** (Opera One-inspired, see
+  `docs/research/opera-ux-inventory.md` §3): always-visible
+  vertical strip of workspace icons at the top-left of the
+  sidebar. 28 px square each, 4 px gap, Lucide-icon-based.
+  Active workspace highlighted with `$color-hover` neutral
+  fill — identity via icon, never via colour-tinting the
+  chrome (preserves DESIGN.md orange-only rule). Tooltip on
+  hover shows the workspace name. Clicking switches. `Ctrl+1..9`
+  switches to slot 1..9 (Arc Browser pattern).
+  `Ctrl+Shift+[` / `Ctrl+Shift+]` cycle. "+" icon at the
+  bottom of the rail opens Create workspace modal (C2).
 - Type is a small chip near the title in the editor; unknown
   types render with their raw slug, no console error.
 

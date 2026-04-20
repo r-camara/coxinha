@@ -103,15 +103,13 @@ here".
   `.coxinha/types/*.yml`.
 - **Template loading:** templates are read once at workspace
   load and refreshed on `set_variables`/workspace change.
-- **Category separators:** instead of section titles, a thin
-  Line-colored horizontal rule between categories. Saves
-  vertical space, keeps visual clean per DESIGN.md.
-- **Left-border color cue:** 2 px left border on each row:
-  - Blocks: `$color-steel-grey`
-  - Templates: `$color-coffee-ink` (subtle weight)
-  - Actions: `$color-coxinha-orange` at 40 % opacity (hint
-    that they DO something, not just insert)
-  - Shortcuts help: no border
+- **Category separators:** subtle uppercase category headers
+  (same style as sidebar `RECENT` / `TAGS`) — Geist 10 px,
+  `letter-spacing: 0.08em`, `$color-steel-grey`, with a 4 px
+  top-margin on each category after the first. No per-
+  category colored border on rows — that would introduce
+  color variation that fights the DESIGN.md orange-only
+  rule. Icons per row carry the semantic cue.
 - **Icon placement:** each row gets a 16 × 16 Lucide icon on
   the left of the border. Blocks get their type's icon
   (paragraph = `type`, list = `list`, etc.); actions get

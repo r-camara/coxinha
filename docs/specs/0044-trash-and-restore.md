@@ -45,10 +45,14 @@ Mem's recoverable archive. Ours can't ship past F1 without one
     text, confirm dialog)
   - Top toolbar: "Empty trash" (confirms, purges everything)
 - **Restore semantics:** restoring writes the file back to
-  `deleted_from_path`. If the original path is now taken (a
-  note with same UUID was re-created, or the file was recreated
-  by external editor), suffix with `-restored` on the title and
-  `-restored-N` on the filename if N>1.
+  `deleted_from_path`.
+  - If the parent folder of the original path no longer exists
+    (user deleted `projects/` while the note was in trash),
+    the parent folder is re-created automatically.
+  - If the original path is now taken (a note with same UUID
+    was re-created, or a new file was created at the same
+    path by an external editor), suffix with `-restored` on
+    the title and `-restored-N` on the filename if N>1.
 - **Keyboard:** `Delete` in the sidebar note list moves to
   trash with a confirm; `Shift+Delete` skips confirm.
 - **Exclude trash from FTS.** Deleted notes don't appear in

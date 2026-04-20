@@ -31,8 +31,13 @@ single-user surface.
 - **Mic button** in the Quick Capture window's tab bar,
   right-aligned (before the `+` new tab). Lucide `mic` icon,
   14 × 14. Tooltip: "Dictate (Ctrl+Shift+D)".
-- **Hotkey:** `Ctrl+Shift+D` toggles dictation (only active when
-  the Quick Capture window has focus). Not a global OS hotkey.
+- **In-app hotkey:** `Ctrl+Shift+D` toggles dictation (only
+  active when the Quick Capture window has focus).
+- **Global shortcut `Win+Shift+D`**: opens Quick Capture AND
+  starts dictation in a single keystroke — the "capture a
+  thought by voice right now" path. Registered alongside the
+  other Win+Shift+* chords in `shared::ShortcutsConfig` as
+  `voice_capture_global`. Default: `Win+Shift+D`.
 - **Dictation panel** slides down from the tab bar when active:
   - Live waveform strip (Silero-VAD-gated levels, 16 kHz mono)
   - Partial transcript as it streams (greyed text, updates

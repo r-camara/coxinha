@@ -42,10 +42,24 @@ it.
   reverts and a toast reports.
 - **Right-click context menu:** Rename · Move to… ·
   Reveal in File Explorer · Delete (→ spec 0044 trash).
-- **Root-level "Recent" pseudo-folder** sits above the tree,
-  collapsed by default. Shows the 5 most recently opened
-  notes regardless of folder — preserves the fast "where was
-  I" path.
+- **"Recent" section** sits ABOVE the tree as a distinct
+  sidebar section (not a pseudo-folder inside the tree).
+  Shows the 5 most recently opened notes regardless of
+  folder. Collapsible via its own small chevron. Preserves
+  the fast "where was I" path without mixing tree and
+  non-tree semantics in the same data structure.
+- **Search-override behaviour:** when the user types in the
+  sidebar search, the tree is hidden and replaced with a
+  flat list of matching results. Clearing the query restores
+  the tree to its previous expand state. No auto-expanding
+  of folders that contain a match.
+- **Folder handle design** (Opera Tab Islands-inspired but
+  neutral): each folder row shows a Lucide `chevron-right`
+  (rotated 90° when open) + a small `folder` icon + label.
+  No colored left handle (respects orange-only rule). On
+  hover, the row background subtly tints with
+  `$color-hover`. Click anywhere on the row toggles
+  expand/collapse.
 - **Search scoping by folder** — right-click a folder →
   "Search in this folder" opens the command palette (spec
   0043) with a scope pill already selected.

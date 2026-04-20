@@ -55,6 +55,13 @@ without the mouse.
 - **Sub-palette flow:** "Switch workspace" → second palette
   layer listing workspaces (icon + name + note count). `Esc`
   goes back to parent palette, not closed.
+- **Create-on-enter** (Obsidian quick-switcher pattern): when
+  the typed query matches no existing page, pressing `Enter`
+  creates a new note with that exact title in the active
+  workspace's root folder and opens it in a new tab. A
+  "Create note: <query>" row appears at the bottom of the
+  pages section whenever no perfect match exists. `Shift+Enter`
+  forces creation even when a match exists.
 - **Registration:** actions registered via a typed
   `CommandRegistry` module. New actions register by calling
   `registerCommand({ id, label, run })`. Future features
@@ -143,6 +150,10 @@ without the mouse.
   place. Or should Enter on that row route to `/notes` with
   the query? Proposed: in-place expansion, route option for
   a future iteration.
+- **Create-on-enter default folder** — always root, or
+  whatever folder the user currently has expanded in the tree
+  sidebar (spec 0045)? Proposed: current tree focus if
+  tree-sidebar focus exists; otherwise workspace root.
 
 ## Test plan summary
 

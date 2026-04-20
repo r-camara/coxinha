@@ -36,6 +36,11 @@ covers both.
 - **Ctrl+Shift+M toggle** registered globally when Coxinha
   window is focused. Not a system-wide global shortcut —
   specifically an in-app hotkey.
+- **From empty state / no open note:** pressing
+  `Ctrl+Shift+M` when no note is active creates a fresh
+  transient draft in compact mode (equivalent to Win+Y
+  behaviour). This keeps the toggle consistent — it never
+  does nothing.
 - **Maximize / minimize icon** in the top-right of the tab bar
   (Lucide `maximize-2` when compact; `minimize-2` when full).
   Click does the same as the hotkey.
