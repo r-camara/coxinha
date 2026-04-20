@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, use, useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useCreateBlockNote } from '@blocknote/react';
 import { BlockNoteView } from '@blocknote/shadcn';
@@ -14,25 +14,42 @@ interface Props {
   noteId: string;
 }
 
-export function NoteEditor({ noteId }: Props) {
-  const [initialMarkdown, setInitialMarkdown] = useState<string | null>(null);
-  const saveNote = useAppStore((s) => s.saveNote);
+// Promise cache keyed by noteId. React 19's `use()` exige que a
+// promise seja *estável* entre renders — recriar a cada render cai
+// em loop de Suspense. O cache vive no escopo do módulo (a vida do
+// app) porque as notas não trocam por baixo enquanto o editor está
+// aberto; saves locais atualizam a store, não invalidam o cache
+// aqui.
+const noteCache = new Map<string, Promise<NoteContent>>();
 
-  useEffect(() => {
-    (async () => {
-      const res = await invoke<NoteContent>('get_note', { id: noteId });
-      setInitialMarkdown(res.markdown);
-    })();
-  }, [noteId]);
-
-  if (initialMarkdown === null) {
-    return <LoadingSkeleton />;
+function getNotePromise(noteId: string): Promise<NoteContent> {
+  let p = noteCache.get(noteId);
+  if (!p) {
+    p = invoke<NoteContent>('get_note', { id: noteId });
+    noteCache.set(noteId, p);
   }
+  return p;
+}
+
+export function NoteEditor({ noteId }: Props) {
+  return (
+    <Suspense fallback={<LoadingSkeleton />}>
+      <NoteEditorContent noteId={noteId} />
+    </Suspense>
+  );
+}
+
+function NoteEditorContent({ noteId }: Props) {
+  // React 19 `use()` suspende até a promise resolver e repropaga
+  // erros pro error boundary mais próximo. Substitui o
+  // `initialMarkdown === null` + skeleton síncrono.
+  const content = use(getNotePromise(noteId));
+  const saveNote = useAppStore((s) => s.saveNote);
 
   return (
     <EditorInner
       noteId={noteId}
-      initialMarkdown={initialMarkdown}
+      initialMarkdown={content.markdown}
       onSave={(md) => saveNote(noteId, md)}
     />
   );
