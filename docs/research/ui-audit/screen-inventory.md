@@ -114,6 +114,12 @@ new MICRO-designs of "what happens when X".
 | E18 | Preview a wiki-link | D6 | Hover over `[[link]]` | Tooltip card after 400 ms: title + first 3 lines. Click navigates; `Ctrl+Click` opens in new tab | ◊ |
 | E19 | Tag a note | B1 + A2 | Type `#tag` anywhere in body | Tag is extracted (spec 0005). Pill appears in sidebar TAGS section within 150 ms. Inline pill style matches sidebar pill | → |
 | E20 | Theme flip | B8 + everywhere | Click theme chip in Settings, or OS preference change | All surfaces cross-fade their colours in 200 ms. Token-driven — each surface does it automatically via CSS variables. No JS per-element animation | → |
+| E21 | Edit a note property | B1 | Click the property row above the editor | Typed inputs per field (date picker for `created_at`, tag multi-select for `tags`, slug-validated text for `workspace`, etc.). Writes back to YAML frontmatter. Obsidian-inspired. Future spec | ◊ |
+| E22 | Insert a block reference | B1 | Type `[[Note#^` in editor | Picker opens for target note's blocks (auto-generates `^abc123` ids on-the-fly). Enter inserts `[[Note#^id]]` as a link; `![[Note#^id]]` as a live embed | ◊ |
+| E23 | Regenerate meeting summary | B6 | Click "Regenerate" in the summary tab | Editable prompt input, re-runs `summarize_meeting` with the new prompt. Original preserved in history. Granola-inspired | → |
+| E24 | Pre-meeting prep popup | D10 | 5 min before a calendar event | Right-side toast: attendee names, prior meetings with them, recent mentions in vault. Non-modal, dismissible. Spec 0035 | ◊ (F4) |
+| E25 | In-meeting scratch pad | B3 + D3 | User starts recording with Quick Capture open | The Quick Capture window becomes the meeting's scratch pad. Notes typed during the call are saved as part of the meeting note. Granola parallel. Auto-linked to the recording on stop | → |
+| E26 | Create-on-enter from palette | A5 / E4 | `Ctrl+K`, type a title that doesn't match any note, `Enter` | Creates a new note with that title in the default folder of the active workspace, opens it in a new tab. Obsidian quick-switcher pattern. (spec 0043 open question) | → |
 
 ## Next mockup waves
 
@@ -151,50 +157,161 @@ Ordered for highest design-value-first, dependencies respected.
 
 ## Competitive cross-reference
 
-For every surface above, the nearest-competitor decision is
-captured here. Full research in:
+For every surface above, the nearest-competitor decision.
+Full research in:
 
-- `notion-flow-inventory.md`
-- `obsidian-flow-inventory.md` (in progress — running)
-- `granola-flow-inventory.md` (in progress — running)
-- `type-model-benchmark.md`
+- `notion-flow-inventory.md` (1186 words)
+- `obsidian-flow-inventory.md` (1354 words)
+- `granola-flow-inventory.md` (1173 words)
+- `type-model-benchmark.md` (AnyType / Obsidian / Notion / Mem / Granola)
 - `shortcut-map.md`
 
-Some calls already baked into this inventory:
+### Baked-in calls
 
-- **Command palette (A5)** — Obsidian distinguishes
-  `Ctrl+P` (command palette) from `Ctrl+O` (quick switcher).
-  Coxinha collapses both into **one `Ctrl+K`** with typed
-  sections (pages / actions / shortcuts). Simpler mental
-  model, fewer hotkeys to learn.
+- **Command palette (A5)** — Obsidian keeps **two** surfaces:
+  `Ctrl+P` runs *commands*; `Ctrl+O` is the *quick switcher*
+  for notes (create-on-enter if no match). Coxinha collapses
+  both into **one `Ctrl+K`** with typed sections. Simpler
+  mental model, fewer hotkeys. Follow-up: add Obsidian's
+  *create-on-enter* behaviour as a palette action when no
+  page matches the typed query — see spec 0043 open question
+  on "Enter behavior for unmatched queries".
 - **Workspace (A4)** — AnyType-like Spaces, not Mem's
-  Collections (tag-like). Our workspaces have a filesystem
-  folder per ADR-0017; AnyType keeps them in a proprietary
+  Collections (tag-like). Our workspaces are filesystem
+  folders per ADR-0017; AnyType keeps them in a proprietary
   DB; we win on "open the folder in any Markdown editor".
 - **Page tree (A2)** — Obsidian shows the vault folder tree;
-  Notion shows a page hierarchy that is distinct from
-  filesystem. Coxinha follows Obsidian: filesystem is the
-  tree. A note has subpages only if its folder has child
-  `.md` files.
-- **Slash menu (D5)** — BlockNote ships it; we don't invent
-  our own. Coverage: heading, paragraph, list, todo, quote,
-  code, image, mermaid (spec 0011), excalidraw (spec 0012),
-  divider. No `/embed` yet (no remote content in F1).
-- **Quick Capture (B3)** — closest analog is a dedicated
-  macOS-style Scribble or "Notes Quick Note". Obsidian has
-  nothing equivalent. Notion's `Ctrl+Alt+N` needs Notion
-  open. We win on "tray-resident, zero-launch-cost".
-- **Meeting detail (B6)** — Granola's "enhanced notes"
-  pattern (original handwritten notes beside AI summary) is
-  the move to steal. Not Otter's transcript-first layout.
-- **Share (C1)** — Notion's model (per-person permissions
-  inside a team workspace) is the wrong fit. Link-first
-  with token-based scoping (spec 0040) is closer to
-  Excalidraw Cloud / CodeSandbox.
+  Notion shows a page hierarchy distinct from filesystem.
+  Coxinha follows Obsidian: filesystem is the tree. A note
+  has sub-pages only if its folder has child `.md` files.
+  (spec 0045)
+- **Slash menu (D5)** — BlockNote ships an **insert-only**
+  slash. Obsidian's core Slash Commands plugin wires `/` to
+  **every registered command** (toggles, templates,
+  settings). Coxinha should follow Obsidian: extend the
+  BlockNote slash menu so `/record`, `/summarize`,
+  `/template <name>`, `/open settings` are reachable from
+  inside the editor — not only block insertions. Note for
+  a future spec 0050 (or fold into 0043).
+- **Quick Capture (B3)** — closest analog is macOS's
+  "Quick Note" scribble. Obsidian has nothing equivalent;
+  Notion's `Ctrl+Alt+N` requires Notion window open. We win
+  on "tray-resident, zero-launch-cost".
+- **Meeting detail (B6)** — Granola's signature is
+  "enhanced notes beside transcript" — user's hand-written
+  notes during the call become the left column; AI
+  summary + action items become the right column; the raw
+  transcript is a toggle. That is the layout to steal. Not
+  Otter-style transcript-first.
+- **Meeting in-flight typing (D2 + B6)** — Granola lets the
+  user type notes **during** the meeting in the same window
+  that surfaces the live transcript. The hand-written notes
+  persist raw even after the AI enhance pass. Our equivalent:
+  the Quick Capture window is already a blank editor —
+  during recording, it can double as the in-meeting scratch
+  pad, with the note automatically linked to the meeting
+  recording afterwards.
+- **Share (C1)** — Notion's per-person permissions inside a
+  team workspace is the wrong fit. Link-first with
+  token-based scoping (spec 0040) is closer to Excalidraw
+  Cloud / CodeSandbox.
 - **Canvas (D8 / D9)** — Excalidraw is our block format
   (spec 0012). Inline block: Obsidian+Excalidraw-plugin
-  pattern. Standalone canvas route: Excalidraw Cloud file-
-  pattern. Both coexist per ADR-0017.
+  pattern (`.excalidraw.md` with YAML frontmatter + fenced
+  JSON). Standalone canvas route: Excalidraw Cloud file
+  pattern. Both coexist per ADR-0017. **Steal from
+  Obsidian+Excalidraw**: `![[drawing.excalidraw|400]]`-style
+  width hint on embedded drawings; per-file frontmatter for
+  `excalidraw-export-dark` and `excalidraw-export-pngscale`
+  as customization without leaving Markdown.
+
+### Properties UI (missing from current inventory)
+
+Obsidian 1.4+ renders YAML frontmatter as a **typed table
+above the note body** — text, number, date, datetime,
+checkbox, list, tag. Edits write back to YAML on disk.
+
+Coxinha's notes already carry frontmatter (`id`, `tags`,
+`meeting`, plus `workspace` and `type` after spec 0041).
+Today we hide the YAML; Obsidian's approach surfaces it as
+editable UI. **Adopt for F1.5 / F2:** new entry `B1.1
+Properties editor` — a collapsible table between the title
+and body of a note. Each property type gets a tailored
+input (date picker, tag multi-select, etc.). Write-back
+path goes through `storage::update_note` with the YAML
+re-serialized.
+
+Added as entry E21 below.
+
+### Calendar & agenda (feeds spec 0048)
+
+Obsidian's **Calendar plugin (liamcain)** is the closest
+model for Coxinha's Agenda integration:
+
+- Right-sidebar or pane-embedded month grid.
+- Each day cell shows a **word-count meter** (density dot
+  sized by how much was written).
+- Click a day → opens its daily note; `Ctrl+Click` splits;
+  `Ctrl+Hover` shows a Page Preview.
+- Reads the Daily Notes + Periodic Notes settings — so the
+  grid is consistent with the user's daily naming scheme.
+
+For Coxinha we add OS calendar integration on top (Google /
+Outlook events visible as chips on their day). Spec 0048
+picks this up.
+
+### Block references & transclusion (missing from current inventory)
+
+Obsidian's `[[Note#^block-id]]` + `![[Note#^block-id]]`
+pattern is high-leverage for meeting recaps: you can quote
+a specific sentence from today's meeting summary inside a
+project note, and it stays live.
+
+Typing `[[Note#^` in the editor opens a block picker that
+auto-generates a short `^abc123` id on the target block.
+That id is invisible in rendered view, visible only in
+source.
+
+**Adopt at F2+:** add E22 below for `Insert block
+reference`. Depends on the wiki-link picker (spec 0013)
+already shipping.
+
+### Granola-specific surfaces we steal
+
+- **Pre-meeting prep view** (D10 in this inventory, spec
+  0035) — mapped to a right-side toast/pane. Granola surfaces
+  prior meetings with the same attendees, recent notes
+  mentioning them, the calendar event's agenda field. We
+  mirror this — local-first: the prep pulls from our vault +
+  our own calendar cache.
+- **Enhanced notes regeneration** — Granola lets the user
+  regenerate the AI summary with a different prompt after
+  the fact. Our equivalent: `Ctrl+Shift+R` (or a button in
+  the summary tab) triggers `summarize_meeting` again with
+  an editable prompt. Depends on spec 0008 wiring.
+- **Meeting → note link** — after every meeting, Granola
+  offers "Create note from this meeting". We do better: a
+  meeting IS a note (`meetings/<uuid>/summary.md`) already
+  per vault-schema, and our notes can `@mention` a meeting
+  (spec 0013 + frontmatter `meeting:`). Document the
+  equivalence.
+
+### Non-features we explicitly don't copy
+
+From the three docs combined:
+
+- **Notion**: page icons / covers, cloud databases, team
+  mentions, share-to-web publishing, inbox center.
+- **Obsidian**: graph view as centerpiece, Dataview-as-query,
+  plugin marketplace at launch, workspace-panes-pull-out-
+  into-tabs complexity.
+- **Granola**: cloud-required everything — recording lives
+  in their infrastructure, summary generation runs in their
+  cloud, sharing goes through their server.
+
+For each, the rejection reason traces back to a ADR or a
+product invariant (ADR-0002 local-first, ADR-0007
+tray-resident, ADR-0015 knowledge/memory separation).
 
 ## How to read this doc
 
