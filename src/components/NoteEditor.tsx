@@ -6,7 +6,7 @@ import '@blocknote/core/fonts/inter.css';
 import '@blocknote/shadcn/style.css';
 import { invoke } from '@tauri-apps/api/core';
 
-import type { NoteContent } from '../lib/bindings';
+import { events, type NoteContent } from '../lib/bindings';
 import { useAppStore } from '../lib/store';
 import { BacklinksPanel } from './BacklinksPanel';
 
@@ -99,12 +99,33 @@ function EditorInner({
   // Without this, switching notes during the 500 ms window fires a
   // save against a torn-down BlockNote instance.
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingContentRef = useRef<string | null>(null);
+
+  const flushNow = useMemo(
+    () => async () => {
+      if (saveTimerRef.current) {
+        clearTimeout(saveTimerRef.current);
+        saveTimerRef.current = null;
+      }
+      const md =
+        pendingContentRef.current ??
+        (await editor.blocksToMarkdownLossy(editor.document));
+      pendingContentRef.current = null;
+      onSave(md);
+    },
+    [editor, onSave],
+  );
 
   const debouncedSave = useMemo(
     () => () => {
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
       saveTimerRef.current = setTimeout(async () => {
-        const md = await editor.blocksToMarkdownLossy(editor.document);
+        pendingContentRef.current = await editor.blocksToMarkdownLossy(
+          editor.document,
+        );
+        saveTimerRef.current = null;
+        const md = pendingContentRef.current;
+        pendingContentRef.current = null;
         onSave(md);
       }, 500);
     },
@@ -119,6 +140,23 @@ function EditorInner({
       }
     };
   }, []);
+
+  // Graceful shutdown: Rust emits BeforeQuit ~600 ms antes de
+  // app.exit(0). Se o debounce estiver pendente, flusha agora pra
+  // não perder o último texto digitado.
+  useEffect(() => {
+    let unlisten: (() => void) | undefined;
+    events.beforeQuit
+      .listen(() => {
+        void flushNow();
+      })
+      .then((f) => {
+        unlisten = f;
+      });
+    return () => {
+      unlisten?.();
+    };
+  }, [flushNow]);
 
   return (
     <div className="h-full flex">
