@@ -1,24 +1,15 @@
 /**
- * Telemetria local do fluxo "Ctrl+Alt+N → cursor no editor".
+ * Local timing for the "Ctrl+Alt+N → cursor in editor" flow.
  *
- * Usa `performance.mark` + `performance.measure` do browser
- * — zero overhead em produção (sem dev tools aberto os marks
- * ficam no buffer interno e podem ser descartados).
+ * To read the numbers: open DevTools (F12) and hit Ctrl+Alt+N.
+ * The breakdown lands in the console. UX budget is 2 s total.
  *
- * **Como ler os números:** abra o DevTools (F12) no app rodando
- * e aperte Ctrl+Alt+N. A tabela aparece no console. O budget UX
- * é 2 s do aperto até conseguir digitar.
- *
- * Marks emitidos (em ordem):
- *   - new-note:hotkey             — evento `navigate` recebido do Rust
- *   - new-note:create-invoked     — antes do `invoke('create_note')`
- *   - new-note:note-created       — depois do `invoke` retornar
- *   - new-note:editor-suspended   — primeiro render do NoteEditor
- *                                    (Suspense ainda pendente)
- *   - new-note:editor-ready       — `editor.focus()` chamado
- *
- * A cada `new-note:editor-ready`, a função `logNewNoteTrace` é
- * chamada e imprime uma tabela com os deltas.
+ * Marks, in order:
+ *   - new-note:hotkey            — navigate event arrived from Rust
+ *   - new-note:create-invoked    — just before invoke('create_note')
+ *   - new-note:note-created      — invoke resolved
+ *   - new-note:editor-suspended  — NoteEditor first render
+ *   - new-note:editor-ready      — editor.focus() landed
  */
 
 const PREFIX = 'new-note';
@@ -28,11 +19,6 @@ export function mark(name: string): void {
   performance.mark(`${PREFIX}:${name}`);
 }
 
-/**
- * Chamada no final do fluxo (`editor.focus()` landed). Calcula todos
- * os deltas, imprime uma tabela console-friendly, e **limpa os
- * marks** pra que o próximo Ctrl+Alt+N comece do zero.
- */
 export function logNewNoteTrace(): void {
   if (typeof performance === 'undefined') return;
 
@@ -56,27 +42,22 @@ export function logNewNoteTrace(): void {
       total += m.duration;
       rows.push({ step: label, ms: Math.round(m.duration) });
     } catch {
-      // Mark ausente = fluxo abortou no meio; ignora.
+      // Mark missing — flow aborted mid-way. Still render the row.
       rows.push({ step: label, ms: 'n/a' });
     }
   }
 
   rows.push({ step: 'TOTAL (hotkey → editor-ready)', ms: Math.round(total) });
 
-  // eslint-disable-next-line no-console
+  /* eslint-disable no-console */
   console.group('[perf] new-note trace');
-  // eslint-disable-next-line no-console
   console.table(rows);
   if (total > 2000) {
-    // eslint-disable-next-line no-console
-    console.warn(
-      `[perf] new-note EXCEDEU budget (${Math.round(total)}ms > 2000ms)`,
-    );
+    console.warn(`[perf] new-note exceeded budget (${Math.round(total)}ms > 2000ms)`);
   }
-  // eslint-disable-next-line no-console
   console.groupEnd();
+  /* eslint-enable no-console */
 
-  // Limpa pra não vazar entre runs
   for (const name of [
     'hotkey',
     'create-invoked',

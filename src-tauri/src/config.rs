@@ -40,10 +40,8 @@ pub struct AppState {
 }
 
 impl AppState {
-    /// Async por design: inicializações futuras (download de modelos,
-    /// checks de rede, FTS warm-up) precisarão `await` — melhor que o
-    /// tipo já esteja correto e o `.setup` saiba lidar. O corpo de
-    /// hoje é síncrono; nada bloqueia o runtime.
+    /// Async by design: future init paths (model download, network
+    /// probes, FTS warm-up) will need `.await`. Body is sync today.
     pub async fn initialize(app_handle: &AppHandle) -> Result<Self> {
         let vault_root = default_vault_root()?;
         let config_path = vault_root.join(".coxinha").join("config.toml");

@@ -15,12 +15,9 @@ interface Props {
   noteId: string;
 }
 
-// Promise cache keyed by noteId. React 19's `use()` exige que a
-// promise seja *estável* entre renders — recriar a cada render cai
-// em loop de Suspense. O cache vive no escopo do módulo (a vida do
-// app) porque as notas não trocam por baixo enquanto o editor está
-// aberto; saves locais atualizam a store, não invalidam o cache
-// aqui.
+// React 19's `use()` requires a stable promise identity across
+// renders; recreating it per render loops Suspense forever. Module
+// scope is fine because saves go through the store, not this cache.
 const noteCache = new Map<string, Promise<NoteContent>>();
 
 function getNotePromise(noteId: string): Promise<NoteContent> {
@@ -33,9 +30,8 @@ function getNotePromise(noteId: string): Promise<NoteContent> {
 }
 
 export function NoteEditor({ noteId }: Props) {
-  // Marcado aqui (no componente pai) pra capturar o primeiro render
-  // antes do Suspense resolver — o `use()` no filho só dispara marks
-  // se a promise já estiver resolvida.
+  // Marked on the parent render so the trace captures the time
+  // Suspense spends waiting for `getNotePromise`.
   mark('editor-suspended');
   return (
     <Suspense fallback={<LoadingSkeleton />}>
@@ -45,9 +41,6 @@ export function NoteEditor({ noteId }: Props) {
 }
 
 function NoteEditorContent({ noteId }: Props) {
-  // React 19 `use()` suspende até a promise resolver e repropaga
-  // erros pro error boundary mais próximo. Substitui o
-  // `initialMarkdown === null` + skeleton síncrono.
   const content = use(getNotePromise(noteId));
   const saveNote = useAppStore((s) => s.saveNote);
 
@@ -148,9 +141,7 @@ function EditorInner({
     };
   }, []);
 
-  // Graceful shutdown: Rust emits BeforeQuit ~600 ms antes de
-  // app.exit(0). Se o debounce estiver pendente, flusha agora pra
-  // não perder o último texto digitado.
+  // Graceful shutdown: flush pending debounce before Rust exits.
   useEffect(() => {
     let unlisten: (() => void) | undefined;
     events.beforeQuit

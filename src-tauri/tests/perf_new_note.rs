@@ -1,36 +1,26 @@
-//! Latência do fluxo "Ctrl+Alt+N → cursor no editor".
+//! Latency of the "Ctrl+Alt+N → cursor in editor" flow.
 //!
-//! O fluxo completo atravessa cinco limites:
-//!   1. OS → global_shortcut plugin (pressed)
+//! Full path crosses five boundaries:
+//!   1. OS → global_shortcut plugin
 //!   2. `shortcuts::handle_shortcut` → `Navigate.emit`
 //!   3. IPC Rust→WebView → `events.navigate.listen`
-//!   4. `invoke('create_note')` → Rust `commands::create_note`
+//!   4. `invoke('create_note')` → `commands::create_note`
 //!   5. `invoke('get_note')` → Suspense resolve → `editor.focus()`
 //!
-//! Esse teste mede **só a parte backend medível sem WebView2**:
-//!   - tempo de `create_note` (escreve arquivo, upsert no DB, parse
-//!     wiki-links, extrai tags)
-//!   - tempo de `get_note` (lê o arquivo do disco, devolve NoteContent)
+//! This test covers the backend slice that's measurable without a
+//! WebView (steps tied to Storage). The rest — OS dispatch, IPC
+//! serialize, WebView render — gets measured from the frontend via
+//! `performance.mark` (see `src/lib/perf.ts`, logs in DevTools).
 //!
-//! As frações OS→plugin→emit e WebView render são medidas no
-//! frontend via `performance.mark` (logs no console do DevTools).
-//!
-//! O budget é **time-to-type** total ≤ 2 s (requisito de UX).
-//! Aqui defendemos só a parte Rust: create + get ≤ 50 ms a cada,
-//! porque qualquer coisa acima disso torna impossível atingir o
-//! budget total quando somado aos outros hops (shortcut → emit:
-//! ~5 ms, IPC: ~10 ms, WebView render + BlockNote init: ~500-800
-//! ms). Se este teste começar a passar dos 50 ms por chamada, a
-//! regressão veio daqui — não da UI.
+//! UX budget for the full flow is 2 s. Budget asserted here is
+//! 50 ms per storage call — above that there's no way the full flow
+//! fits 2 s once you add the 500–800 ms typical WebView cost.
 
 use std::path::PathBuf;
 use std::time::Instant;
 
 #[tokio::test]
 async fn new_note_backend_latency_fits_budget() {
-    // Monta storage contra um vault tmp — mesma superfície que
-    // `AppState::initialize` usa, sem o custo de construir o
-    // `AppHandle` do Tauri.
     let tmp = tempfile::tempdir().expect("tempdir");
     let vault: PathBuf = tmp.path().into();
 
@@ -43,12 +33,9 @@ async fn new_note_backend_latency_fits_budget() {
     let db = std::sync::Arc::new(coxinha_lib::perf_helpers::open_db(&db_path));
     let storage = coxinha_lib::perf_helpers::storage(vault.clone(), db.clone());
 
-    // Warm-up: primeira criação inclui one-shot de init do connection
-    // pool / page cache do SQLite. Descartamos.
+    // First create pays SQLite page-cache warm-up; discard it.
     let _ = storage.create_note("", "").await.expect("warm-up create");
 
-    // Amostra 10 runs, reporta média e pior caso. O pior caso é o
-    // que importa na latência percebida.
     let mut create_samples = Vec::with_capacity(10);
     let mut get_samples = Vec::with_capacity(10);
 
@@ -74,17 +61,14 @@ async fn new_note_backend_latency_fits_budget() {
         create_avg, create_max, get_avg, get_max
     );
 
-    // Budget: 50 ms por chamada no pior caso.
-    // Se isso quebrar, o culpado quase sempre é novo I/O bloqueante
-    // que entrou no path (novo parser, nova escrita colateral, etc.).
     assert!(
         *create_max < std::time::Duration::from_millis(50),
-        "create_note max {:?} ultrapassou o budget de 50ms",
+        "create_note max {:?} exceeded the 50ms budget",
         create_max
     );
     assert!(
         *get_max < std::time::Duration::from_millis(50),
-        "get_note max {:?} ultrapassou o budget de 50ms",
+        "get_note max {:?} exceeded the 50ms budget",
         get_max
     );
 }

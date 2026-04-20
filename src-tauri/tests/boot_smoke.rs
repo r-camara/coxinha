@@ -18,9 +18,9 @@ use std::thread;
 use std::time::{Duration, Instant};
 
 const READY_MARKER: &str = "Coxinha ready";
-// Hard UX requirement: boot-to-ready precisa caber em 2 s.
-// BOOT_WAIT_BUDGET é o timeout do leitor de stdout (folga pra não
-// travar CI se o marker nunca vier), não o limite de perf.
+// UX requirement: boot-to-ready fits in 2 s. BOOT_WAIT_BUDGET is
+// the stdout reader timeout — slack so CI doesn't hang if the
+// marker never arrives — not the perf limit.
 const BOOT_WAIT_BUDGET: Duration = Duration::from_secs(8);
 const BOOT_READY_BUDGET: Duration = Duration::from_secs(2);
 

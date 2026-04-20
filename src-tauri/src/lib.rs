@@ -52,11 +52,6 @@ pub fn run() {
 
     let specta_builder = build_specta();
 
-    // Regenera bindings.ts em dev, mas **só escreve se mudou**.
-    // O Vite observa src/; se `run()` sobrescrevesse o arquivo toda
-    // vez, HMR disparava a cada cargo run mesmo sem nenhuma mudança
-    // na superficie IPC (e podia correr com invocações em progresso,
-    // ver docs/architecture/debugged-helper.md → "debug traps").
     #[cfg(debug_assertions)]
     export_bindings_if_changed(&specta_builder);
 
@@ -78,10 +73,8 @@ pub fn run() {
         .setup(move |app| {
             specta_builder.mount_events(app);
 
-            // Tudo que precisa de `await` vive dentro do block_on; o
-            // setup closure em si continua síncrono (Tauri ainda não
-            // aceita async .setup sem extra plumbing). Se em algum
-            // momento o próprio .setup virar async, o bloco some.
+            // Tauri's .setup is sync; block_on is the bridge for
+            // AppState::initialize's async signature.
             let state =
                 tauri::async_runtime::block_on(async { AppState::initialize(app.handle()).await })?;
 
@@ -91,13 +84,10 @@ pub fn run() {
                 rust_i18n::set_locale(&normalize_locale(&state.config.locale));
             }
 
-            // Storage vive num managed state independente pra que os
-            // ~14 commands de hot path (list_notes, search_notes, get_*,
-            // update_*, list_tags, etc.) não peguem o lock monolítico
-            // do AppState. Todo command que só precisa de Storage
-            // usa tauri::State<'_, Arc<Storage>>. Os outros (update_
-            // config, transcribe_meeting, recorder ops) continuam no
-            // AppState porque mexem em mais de um subsistema.
+            // Hot-path commands take `tauri::State<'_, Arc<Storage>>`
+            // directly so saves don't serialize against searches via
+            // the AppState mutex. Commands spanning multiple
+            // subsystems still go through the full state below.
             app.manage(state.storage.clone());
 
             let shared_state = Arc::new(Mutex::new(state));
@@ -132,8 +122,9 @@ pub fn run() {
 /// Extracted so `run()` and a potential stand-alone exporter share
 /// the same command list — if one drifts, both drift. Don't add a
 /// command here and forget the other; use this as the only source.
-/// Helpers expostos só para testes de integração (`tests/perf_*.rs`).
-/// Não usar em prod — a API estável passa pelo specta.
+/// Escape hatch for integration tests in `tests/perf_*.rs` that
+/// need Storage/Db without booting a Tauri `AppHandle`. Not part of
+/// the public API.
 #[doc(hidden)]
 pub mod perf_helpers {
     use std::path::PathBuf;
@@ -241,10 +232,6 @@ mod commands {
     use crate::storage::Storage;
     use shared::*;
     use uuid::Uuid;
-
-    // Commands storage-only: pegam Arc<Storage> diretamente, não
-    // passam pelo mutex global do AppState. Saves (update_note) não
-    // bloqueiam mais searches, tag refreshes, backlinks, etc.
 
     #[tauri::command]
     #[specta::specta]
