@@ -16,9 +16,10 @@
     "format": "prettier --write \"src/**/*.{ts,tsx,css}\""
   },
   "dependencies": {
-    "@blocknote/core": "^0.44.0",
-    "@blocknote/react": "^0.44.0",
-    "@blocknote/shadcn": "^0.44.0",
+    "@blocknote/core": "^0.48.1",
+    "@blocknote/react": "^0.48.1",
+    "@blocknote/shadcn": "^0.48.1",
+    "@tailwindcss/vite": "^4.0.0",
     "@tauri-apps/api": "^2.2.0",
     "@tauri-apps/plugin-autostart": "^2.0.0",
     "@tauri-apps/plugin-dialog": "^2.2.0",
@@ -27,12 +28,11 @@
     "@tauri-apps/plugin-notification": "^2.2.0",
     "@tauri-apps/plugin-shell": "^2.2.0",
     "clsx": "^2.1.1",
-    "i18next": "^24.2.0",
-    "lucide-react": "^0.468.0",
+    "i18next": "^26.0.6",
+    "lucide-react": "^1.8.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "react-i18next": "^15.4.0",
-    "tailwind-merge": "^2.5.5",
+    "react-i18next": "^17.0.4",
     "zustand": "^5.0.2"
   },
   "devDependencies": {
@@ -40,19 +40,16 @@
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.1.0",
     "@testing-library/user-event": "^14.6.1",
-    "@types/node": "^22.10.5",
+    "@types/node": "^25.6.0",
     "@types/react": "^19.0.2",
     "@types/react-dom": "^19.0.2",
-    "@vitejs/plugin-react": "^4.3.4",
-    "autoprefixer": "^10.4.20",
-    "eslint": "^9.17.0",
-    "jsdom": "^25.0.1",
-    "postcss": "^8.4.49",
+    "@vitejs/plugin-react": "^6.0.1",
+    "jsdom": "^29.0.2",
     "prettier": "^3.4.2",
-    "tailwindcss": "^3.4.17",
-    "typescript": "^5.7.2",
-    "vite": "^6.0.5",
-    "vitest": "^2.1.8"
+    "tailwindcss": "^4.2.2",
+    "typescript": "^6.0.3",
+    "vite": "^8.0.9",
+    "vitest": "^4.1.4"
   },
   "packageManager": "pnpm@9.15.0"
 }
