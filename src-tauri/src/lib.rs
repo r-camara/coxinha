@@ -114,10 +114,13 @@ pub fn run() {
         .setup(move |app| {
             specta_builder.mount_events(app);
 
-            let state = AppState::initialize(app.handle())?;
+            // Tudo que precisa de `await` vive dentro do block_on; o
+            // setup closure em si continua síncrono (Tauri ainda não
+            // aceita async .setup sem extra plumbing). Se em algum
+            // momento o próprio .setup virar async, o bloco some.
+            let state =
+                tauri::async_runtime::block_on(async { AppState::initialize(app.handle()).await })?;
 
-            // Register shortcuts using the freshly-loaded config, before
-            // wrapping state in Arc<Mutex> — avoids a block_on inside setup.
             shortcuts::register_all(app.handle(), &state.config.shortcuts)?;
 
             if !state.config.locale.is_empty() {
