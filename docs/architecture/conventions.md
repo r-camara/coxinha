@@ -20,10 +20,14 @@ is:
 Quick grep check before committing:
 
 ```bash
-git diff --staged | grep -E 'ã|é|ç|à|õ|í|ê' | grep -v locales/
+git diff --staged -- . ':!src/locales' ':!src-tauri/locales' ':!docs' \
+  | grep -P '[\p{Latin}&&[^\x00-\x7F]]'
 ```
 
-If that prints anything in code paths, fix it.
+(Unix/Git Bash. `-P` turns on Perl regex so the Unicode Latin class
+covers every accented character, uppercase included. The pathspec
+excludes locale catalogs and docs — both legitimately hold
+non-ASCII.) If that prints any `+` line, fix it.
 
 ## Comments: WHY, not WHAT
 

@@ -24,12 +24,8 @@ async fn new_note_backend_latency_fits_budget() {
     let tmp = tempfile::tempdir().expect("tempdir");
     let vault: PathBuf = tmp.path().into();
 
-    for sub in &["notes", "meetings", "attachments", "daily"] {
-        std::fs::create_dir_all(vault.join(sub)).unwrap();
-    }
-
+    coxinha_lib::perf_helpers::fresh_vault(&vault);
     let db_path = vault.join(".coxinha").join("index.db");
-    std::fs::create_dir_all(db_path.parent().unwrap()).unwrap();
     let db = std::sync::Arc::new(coxinha_lib::perf_helpers::open_db(&db_path));
     let storage = coxinha_lib::perf_helpers::storage(vault.clone(), db.clone());
 

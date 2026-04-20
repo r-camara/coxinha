@@ -30,9 +30,6 @@ function getNotePromise(noteId: string): Promise<NoteContent> {
 }
 
 export function NoteEditor({ noteId }: Props) {
-  // Marked on the parent render so the trace captures the time
-  // Suspense spends waiting for `getNotePromise`.
-  mark('editor-suspended');
   return (
     <Suspense fallback={<LoadingSkeleton />}>
       <NoteEditorContent noteId={noteId} />
@@ -42,6 +39,10 @@ export function NoteEditor({ noteId }: Props) {
 
 function NoteEditorContent({ noteId }: Props) {
   const content = use(getNotePromise(noteId));
+  // Placed after `use()` resolves so the mark captures the end of
+  // the Suspense wait. Harmless if this isn't a new-note flow —
+  // `logNewNoteTrace` bails when the `hotkey` mark is missing.
+  mark('editor-suspended');
   const saveNote = useAppStore((s) => s.saveNote);
 
   return (

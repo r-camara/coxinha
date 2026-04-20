@@ -117,23 +117,25 @@ pub fn run() {
         .expect("error while running tauri application");
 }
 
-/// Build the specta Builder wired with every IPC command and event.
-///
-/// Extracted so `run()` and a potential stand-alone exporter share
-/// the same command list — if one drifts, both drift. Don't add a
-/// command here and forget the other; use this as the only source.
 /// Escape hatch for integration tests in `tests/perf_*.rs` that
 /// need Storage/Db without booting a Tauri `AppHandle`. Not part of
 /// the public API.
 #[doc(hidden)]
 pub mod perf_helpers {
-    use std::path::PathBuf;
+    use std::path::{Path, PathBuf};
     use std::sync::Arc;
 
     use crate::db::Db;
     use crate::storage::Storage;
 
-    pub fn open_db(path: &std::path::Path) -> Db {
+    /// Mirrors what `AppState::initialize` does for the vault
+    /// layout — stays a single source of truth so tests don't drift
+    /// when the expected subdirs change.
+    pub fn fresh_vault(root: &Path) {
+        crate::config::bootstrap_vault(root).expect("bootstrap_vault");
+    }
+
+    pub fn open_db(path: &Path) -> Db {
         Db::open(path).expect("open DB")
     }
 
@@ -142,6 +144,8 @@ pub mod perf_helpers {
     }
 }
 
+/// Wired with every IPC command and event so `run()` and any future
+/// stand-alone exporter share one command list.
 pub fn build_specta() -> tauri_specta::Builder<tauri::Wry> {
     tauri_specta::Builder::<tauri::Wry>::new()
         .commands(tauri_specta::collect_commands![

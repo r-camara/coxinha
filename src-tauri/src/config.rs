@@ -143,7 +143,7 @@ fn default_config(vault_root: &std::path::Path) -> AppConfig {
     }
 }
 
-fn bootstrap_vault(root: &std::path::Path) -> Result<()> {
+pub(crate) fn bootstrap_vault(root: &std::path::Path) -> Result<()> {
     for sub in &[
         "notes",
         "meetings",

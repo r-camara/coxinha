@@ -3,18 +3,24 @@
  *
  * To read the numbers: open DevTools (F12) and hit Ctrl+Alt+N.
  * The breakdown lands in the console. UX budget is 2 s total.
- *
- * Marks, in order:
- *   - new-note:hotkey            — navigate event arrived from Rust
- *   - new-note:create-invoked    — just before invoke('create_note')
- *   - new-note:note-created      — invoke resolved
- *   - new-note:editor-suspended  — NoteEditor first render
- *   - new-note:editor-ready      — editor.focus() landed
  */
 
 const PREFIX = 'new-note';
 
-export function mark(name: string): void {
+// Single source of truth for mark names — both `mark()` and the
+// trace table type-check against this tuple. Renaming here forces
+// updates everywhere at compile time.
+const MARKS = [
+  'hotkey',
+  'create-invoked',
+  'note-created',
+  'editor-suspended',
+  'editor-ready',
+] as const;
+
+export type PerfMark = (typeof MARKS)[number];
+
+export function mark(name: PerfMark): void {
   if (typeof performance === 'undefined') return;
   performance.mark(`${PREFIX}:${name}`);
 }
@@ -22,7 +28,15 @@ export function mark(name: string): void {
 export function logNewNoteTrace(): void {
   if (typeof performance === 'undefined') return;
 
-  const steps: Array<[string, string, string]> = [
+  // Without a `hotkey` mark this isn't a new-note flow — just a
+  // note-switch firing the same focus effect. Bail out quietly so
+  // we don't spam "n/a" rows and don't clear marks that belong to
+  // an in-flight flow.
+  if (performance.getEntriesByName(`${PREFIX}:hotkey`).length === 0) {
+    return;
+  }
+
+  const steps: Array<[string, PerfMark, PerfMark]> = [
     ['hotkey → create-invoked', 'hotkey', 'create-invoked'],
     ['create-invoked → note-created (IPC)', 'create-invoked', 'note-created'],
     ['note-created → editor-suspended (render)', 'note-created', 'editor-suspended'],
@@ -42,7 +56,6 @@ export function logNewNoteTrace(): void {
       total += m.duration;
       rows.push({ step: label, ms: Math.round(m.duration) });
     } catch {
-      // Mark missing — flow aborted mid-way. Still render the row.
       rows.push({ step: label, ms: 'n/a' });
     }
   }
@@ -58,13 +71,7 @@ export function logNewNoteTrace(): void {
   console.groupEnd();
   /* eslint-enable no-console */
 
-  for (const name of [
-    'hotkey',
-    'create-invoked',
-    'note-created',
-    'editor-suspended',
-    'editor-ready',
-  ]) {
+  for (const name of MARKS) {
     performance.clearMarks(`${PREFIX}:${name}`);
   }
   for (const [label] of steps) {
