@@ -1,0 +1,210 @@
+# Coxinha screen inventory
+
+> Master doc listing every UI surface — screens, modals, overlays,
+> ambient moments, key interactions — across the whole product.
+> Source of truth for mockup coverage and spec completeness.
+>
+> Paired with `DESIGN.md` (the aesthetic doctrine) and the
+> research docs in this folder (`notion-flow-inventory.md`,
+> `obsidian-flow-inventory.md`, `granola-flow-inventory.md`,
+> `type-model-benchmark.md`, `shortcut-map.md`).
+
+## Legend
+
+| Mark | Meaning |
+|---|---|
+| **✓** | Mocked (in `mockups/coxinha.pen` + exported PNG) |
+| **→** | Queued for next mockup wave |
+| **◊** | Deferred — depends on a spec not yet drafted / F2+ |
+| **×** | Not on roadmap (documented-out per ADR/spec) |
+
+Spec anchors use the form `spec 00XX` pointing at
+`docs/specs/00XX-*.md`. `new` means the spec is drafted in this
+same round (0043–0048).
+
+---
+
+## A. Shell primitives
+
+The chrome around every route. Stable across screens; design
+tokens in `DESIGN.md`.
+
+| # | Surface | Spec | Design note | Mock |
+|---|---|---|---|---|
+| A1 | Window chrome | spec 0001 | OS-native title bar (no custom draggable region). Tray-resident per ADR-0007. Closing hides; real quit from tray menu. | ◊ (OS-rendered) |
+| A2 | Sidebar (280 px fixed, Stone bg) | spec 0005 | Brand + workspace switcher + `+ New` / nav block / search / content panel (Recent, Tags, **nested tree when spec 0045 lands**) / Settings footer | ✓ |
+| A3 | Tab bar (40 px, Stone bg, rounded-top tabs) | spec 0039 + this round | Tabs for each open note. Active tab fills Canvas (merges with editor). Close-x on active. `+` at end opens new tab. Obsidian-inspired, not VSCode-flat | ✓ |
+| A4 | Workspace switcher popover | spec 0041 + new spec 0046 | Triggered from brand area in sidebar. Popover listing workspaces (icon + name + note count in mono) + "Create workspace…" entry. `Ctrl+1/2/3` jumps to slots 1–3 | → |
+| A5 | Command palette overlay (`Ctrl+K`) | new **spec 0043** | Full-width dialog, scrim dimmer. Three sections: pages (fuzzy by title + snippet), actions (new note, switch workspace, toggle theme, rebuild index), shortcuts help. `Esc` closes | → |
+| A6 | Empty-state editor | spec 0042 | `/notes` renders the editor directly on a transient draft. BlockNote placeholder ("Enter text or type '/' for commands") is the only affordance | ✓ |
+| A7 | Save indicator | spec 0042 | Subtle Coxinha-orange dot in the meta row under the note title after each save, 600 ms fade. Never a toast | ✓ (static) |
+| A8 | Focus / compact mode | new **spec 0046** | Ctrl+Shift+M collapses the full shell to the same 900×600 compact window the hotkey opens. Reverse toggles back, with spring-200 window resize + sidebar/backlinks slide-in | → |
+
+## B. Content screens
+
+The routes. Each mounts under `__root` per ADR-0016.
+
+| # | Surface | Route | Spec | Design note | Mock |
+|---|---|---|---|---|---|
+| B1 | Notes · writing / detail | `/notes/$id` | spec 0005 | BlockNote editor in the 720 px reading column, BacklinksPanel on the right (256 px). Meta row under title: `Created {date} · Saved •` with save-dot | ✓ |
+| B2 | Notes · index (empty state) | `/notes` | spec 0042 | Full-bleed editor on transient draft. See A6 | ✓ |
+| B3 | Quick capture | hotkey-only window (Win+Y) | spec 0042 | 900×600 floating window. **No sidebar, no BacklinksPanel** — only tab bar + editor. Notepad/Obsidian-clean | ✓ |
+| B4 | Agenda · today | `/agenda` | spec 0006 + spec 0009 | Daily note open in a tab ("Hoje — $date"). Tasks section, bullets, cursor. BacklinksPanel kept. Per-day navigation via **calendar strip** (→ new spec 0048) | ✓ (basic) |
+| B5 | Calendar integration strip | `/agenda` (part of B4) | new **spec 0048** | Horizontal scroll of last 14 days above the daily note. Each day: dot sized/colored by note density. Click jumps to that day's daily note. Plus OS-calendar events for today as small chips | → |
+| B6 | Meeting detail | `/meetings/$id` | spec 0008 + 0009 | Top: metadata (title, duration, participants). Middle-left: transcript with speaker labels + timestamps (mono). Middle-right: summary (LLM output). Bottom: audio waveform with playhead. Tabs: original notes · transcript · summary | → |
+| B7 | Meetings list | `/meetings` | spec 0009 | Grouped by TODAY / YESTERDAY / THIS WEEK. Each row: title · duration (mono) · status chip | ✓ |
+| B8 | Settings | `/settings` | spec 0010 | APPEARANCE (theme chips) · GLOBAL SHORTCUTS (rows with kbd) · VAULT (path + Obsidian picker per spec 0037) · ENGINES (transcriber/diarizer/LLM when present) | ✓ (basic) |
+| B9 | Shared · view-only | `/shared/$token` | spec 0040 | Stripped shell: no sidebar, no tab bar. Just the note/canvas/meeting content with a "Shared by $owner" chip. Read-only UI state | ◊ (F3) |
+
+## C. Modals & overlays
+
+| # | Surface | Spec | Design note | Mock |
+|---|---|---|---|---|
+| C1 | Share modal | spec 0040 | Triggered from "Share" button in tab bar header of a note/canvas. Fields: permission (view/comment/edit), expires (never/7d/30d), copy link. Lists existing shares with revoke | → (F3) |
+| C2 | Create workspace modal | spec 0041 + spec 0046 | Name (auto-slug preview in mono), description, icon grid (15 Lucide icons). Submit writes `.workspace.toml` + subdirs, switches to it | → |
+| C3 | Rename workspace modal | spec 0041 | Inline-style small modal. Name editable, slug locked (per ADR-0017). Cancel / Save | ◊ |
+| C4 | Delete confirm dialog | spec 0005 + spec 0044 | Soft-delete confirmation: "Move to Trash?" (not "Permanent delete"). Primary action moves to `.coxinha/trash/`, restore available | → |
+| C5 | Trash view | new **spec 0044** | Full-screen (or large modal) list of deleted items: title, deleted-at (mono), original path. Filter by age (7d/30d/60d). Restore button per row; "Empty trash" at top with confirm | → |
+| C6 | Templates picker | spec 0041 | Opens when user types `/template` in BlockNote OR on "New from template" in the sidebar `+` dropdown. Shows available templates from `.coxinha/types/*.yml`. Plain grid, no hero cards | → |
+| C7 | Keyboard shortcuts sheet (`?`) | spec 0042 | Opens on `?` key when no field is focused. Lists all global + in-app shortcuts. Grouped. Escape closes | → |
+| C8 | Rebuild index progress | spec 0005 | Small dialog / inline bar in Settings showing `Indexing 1247 of 3298 notes…` with a spinner-free indeterminate stripe. Honors reduced-motion | → |
+| C9 | Onboarding — first-run | spec 0017 | Single screen when no `config.toml` exists: "Pick a vault folder" (empty default → home/coxinha, or "Adopt an Obsidian vault" with picker). No multi-step tour | → |
+
+## D. Special / ambient surfaces
+
+Things that float, live-update, or run in the background.
+
+| # | Surface | Spec | Design note | Mock |
+|---|---|---|---|---|
+| D1 | System tray icon | ADR-0007 | Icon-only. Menu: Open / New note / Start recording / Settings / Quit | → (OS-rendered, but document layout) |
+| D2 | Call-detected toast | spec 0007 | Lower-right corner. Icon + "Teams call detected — Record?" + primary button · dismiss. Non-blocking, auto-hides 12 s. Spring-in from below | → |
+| D3 | Recording indicator | spec 0007 | Tray icon turns orange + a subtle pulse ring while recording. Hovering shows elapsed time | → (tray) |
+| D4 | Voice dictation overlay | new **spec 0047** (extends spec 0038) | In the Quick Capture window: mic icon at the top-right of the tab bar. Click → panel slides down with live waveform + partial transcript. "Stop" commits the transcript into the editor at cursor | → |
+| D5 | Slash menu (`/ in editor`) | BlockNote native | Dropdown of block types + utility commands. We do not redesign — we DOCUMENT which entries are enabled (heading, paragraph, list, todo, quote, code, image, **mermaid** (spec 0011), **excalidraw** (spec 0012), divider). Filter by typeahead | → |
+| D6 | Link preview on hover | new spec (future) | Hover `[[wiki-link]]` → tooltip card with first 3 lines of the target note. Delayed 400 ms. Obsidian-style | ◊ |
+| D7 | Semantic link suggestions | new spec 0049 (depends on spec 0030) | As user types, ghost text or underline on phrases that match existing notes. Tab to accept as `[[link]]`. Uses local embeddings | ◊ |
+| D8 | Inline Excalidraw block | spec 0012 | Small thumbnail + "Open" affordance. Click opens fullscreen modal with Excalidraw canvas. Save closes, refreshes thumbnail | → |
+| D9 | Standalone canvas route | spec 0012 + ADR-0017 | Same Excalidraw fullscreen canvas, but for `workspaces/$ws/canvases/$uuid.excalidraw.json` (first-class resource). Shown as a tab in the tab bar like a note | → |
+| D10 | Pre-meeting briefing | spec 0035 | Ambient panel, appears 5 min before a calendar event: lists recent notes linked to attendees + last meeting with them. Non-modal, right-slide toast | ◊ (F4) |
+
+## E. Key interaction moments
+
+Specific UX events within the above surfaces. Not new screens —
+new MICRO-designs of "what happens when X".
+
+| # | Moment | Lives in | Trigger | Design note | Mock |
+|---|---|---|---|---|---|
+| E1 | Hit `Win+Y` from anywhere | D1 + B3 | Global hotkey | Tray wakes → Quick Capture window spawns at center of focused display, 900×600. Cursor blinks. 2 s budget (spec 0003) | ✓ (target state) |
+| E2 | First keystroke in empty state | B2 / B3 | Any keypress after mount | Transient draft → 200 ms debounce → `create_note` → URL replaces to `/notes/$id` silently. No flicker. See spec 0042 | → (animated sequence) |
+| E3 | Blur empty draft | B2 / B3 | Focus leaves editor with no content | Draft discarded. No IPC, no file, no DB row | ✓ (covered in empty-state-flow.svg) |
+| E4 | `Ctrl+K` opens palette | A5 | Hotkey or sidebar search icon | Palette grows from 0 to full-scale (200 ms spring), backdrop scrim fades in. Typeahead focused | → |
+| E5 | Switch workspace | A4 | Click brand / `Ctrl+1..9` | Popover opens 200 ms, select → workspace switches, sidebar re-populates with new note list, URL updates to `/w/:ws/...`, tab bar resets (empty draft). Spring-in on notes list | → |
+| E6 | `/` opens block menu | D5 | Typing `/` in BlockNote | Inline dropdown under cursor. Arrow keys + Enter. Filters as you type | → (BlockNote native) |
+| E7 | Quick Capture → Full shell | A8 | Click maximize icon or `Ctrl+Shift+M` | See A8 animation. Sidebar slides in from left at 150 ms, BacklinksPanel from right at 220 ms, window size spring-animated | → (sequence mock) |
+| E8 | Start recording | D1 / D2 | Win+Shift+R or "Record" on call-detected toast | Tray icon turns orange. No modal. Meeting metadata file created. Recording runs in background. Click tray "Stop recording" OR Win+Shift+R again to stop | → |
+| E9 | Stop recording → meeting detail | B6 | Stop recording | New meeting entry appears in `/meetings`. If called from "Open meeting" on tray, routes to `/meetings/$id`. During transcription: status shows "Transcribing… 34 %" (spec 0008) | → |
+| E10 | Meeting summary generation | B6 | First successful transcribe + LLM configured | `/meetings/$id` summary tab animates from spinner → rendered summary. Cursor at top of summary for immediate edit. Granola-inspired: enhanced summary lives BESIDE original transcript, not replacing it | → |
+| E11 | Save a note | B1 | `Ctrl+S` / idle 500 ms | Orange save dot appears in meta row, 600 ms fade. No toast. | ✓ (static) |
+| E12 | Open Excalidraw block inline | D8 | Click thumbnail in editor | Fullscreen modal with Excalidraw canvas. `Esc` or Save closes; thumbnail refreshes | → |
+| E13 | Create a tab | A3 | `Ctrl+T` / `+` in tab bar | New empty draft as the new active tab. No modal. Same flow as E1 but without window spawn | → |
+| E14 | Close a tab with unsaved content | A3 | Click close-x or `Ctrl+W` | If transient draft (never persisted): closes silently. If persisted: closes, dropped-tab history on `Ctrl+Shift+T` reopens | → |
+| E15 | Delete a note | C4 / C5 | Right-click note in sidebar → Delete | Confirm modal → move to `.coxinha/trash/`. Note disappears from sidebar, tabs close if open. Trash link in footer turns bold for 5 s | → |
+| E16 | Restore a deleted note | C5 | Trash view → Restore row | Note reappears at original path, sidebar refetches. If path collision, suffix `-restored` | → |
+| E17 | Add `[[wiki-link]]` | B1 | Type `[[` in editor | Autocomplete dropdown listing notes (fuzzy by title). Enter inserts link. Unknown target allowed (creates a "ghost link" styled in muted ink) | → |
+| E18 | Preview a wiki-link | D6 | Hover over `[[link]]` | Tooltip card after 400 ms: title + first 3 lines. Click navigates; `Ctrl+Click` opens in new tab | ◊ |
+| E19 | Tag a note | B1 + A2 | Type `#tag` anywhere in body | Tag is extracted (spec 0005). Pill appears in sidebar TAGS section within 150 ms. Inline pill style matches sidebar pill | → |
+| E20 | Theme flip | B8 + everywhere | Click theme chip in Settings, or OS preference change | All surfaces cross-fade their colours in 200 ms. Token-driven — each surface does it automatically via CSS variables. No JS per-element animation | → |
+
+## Next mockup waves
+
+Ordered for highest design-value-first, dependencies respected.
+
+**Wave 2** (foundations, non-stateful):
+- A4 workspace switcher popover
+- A5 command palette overlay (Ctrl+K)
+- C2 create workspace modal
+- A8 / E7 focus/compact mode transition frames (before / during / after)
+
+**Wave 3** (content detail):
+- B6 meeting detail layout
+- E9 meeting post-stop → route transition
+- E10 summary generation state
+
+**Wave 4** (modals):
+- C1 share modal (once spec 0040 surface settles)
+- C4 + C5 delete confirm + trash view
+- C6 templates picker
+- C7 keyboard shortcuts sheet
+- C9 onboarding
+
+**Wave 5** (ambient / special):
+- D2 call-detected toast
+- D4 voice dictation overlay
+- D8 / D9 Excalidraw inline + standalone canvas
+- E4, E5, E7 animation sequences (before / during / after)
+
+**Deferred** (require an unwritten spec):
+- B5 calendar strip (new spec 0048)
+- D6 link hover preview (future spec)
+- D7 semantic link suggestions (spec 0049, depends on 0030)
+- D10 pre-meeting briefing (spec 0035)
+
+## Competitive cross-reference
+
+For every surface above, the nearest-competitor decision is
+captured here. Full research in:
+
+- `notion-flow-inventory.md`
+- `obsidian-flow-inventory.md` (in progress — running)
+- `granola-flow-inventory.md` (in progress — running)
+- `type-model-benchmark.md`
+- `shortcut-map.md`
+
+Some calls already baked into this inventory:
+
+- **Command palette (A5)** — Obsidian distinguishes
+  `Ctrl+P` (command palette) from `Ctrl+O` (quick switcher).
+  Coxinha collapses both into **one `Ctrl+K`** with typed
+  sections (pages / actions / shortcuts). Simpler mental
+  model, fewer hotkeys to learn.
+- **Workspace (A4)** — AnyType-like Spaces, not Mem's
+  Collections (tag-like). Our workspaces have a filesystem
+  folder per ADR-0017; AnyType keeps them in a proprietary
+  DB; we win on "open the folder in any Markdown editor".
+- **Page tree (A2)** — Obsidian shows the vault folder tree;
+  Notion shows a page hierarchy that is distinct from
+  filesystem. Coxinha follows Obsidian: filesystem is the
+  tree. A note has subpages only if its folder has child
+  `.md` files.
+- **Slash menu (D5)** — BlockNote ships it; we don't invent
+  our own. Coverage: heading, paragraph, list, todo, quote,
+  code, image, mermaid (spec 0011), excalidraw (spec 0012),
+  divider. No `/embed` yet (no remote content in F1).
+- **Quick Capture (B3)** — closest analog is a dedicated
+  macOS-style Scribble or "Notes Quick Note". Obsidian has
+  nothing equivalent. Notion's `Ctrl+Alt+N` needs Notion
+  open. We win on "tray-resident, zero-launch-cost".
+- **Meeting detail (B6)** — Granola's "enhanced notes"
+  pattern (original handwritten notes beside AI summary) is
+  the move to steal. Not Otter's transcript-first layout.
+- **Share (C1)** — Notion's model (per-person permissions
+  inside a team workspace) is the wrong fit. Link-first
+  with token-based scoping (spec 0040) is closer to
+  Excalidraw Cloud / CodeSandbox.
+- **Canvas (D8 / D9)** — Excalidraw is our block format
+  (spec 0012). Inline block: Obsidian+Excalidraw-plugin
+  pattern. Standalone canvas route: Excalidraw Cloud file-
+  pattern. Both coexist per ADR-0017.
+
+## How to read this doc
+
+Every time a new spec lands or a mockup is produced:
+
+1. Add or flip the **Mock** column for the affected row
+2. If a surface is decomposed into sub-surfaces, split the
+   row into two
+3. New surfaces (from new specs) go in the right category
+   alphabetically by spec number
+4. When a competitor research doc lands, pull new
+   comparative notes into the "Competitive cross-reference"
+   section
