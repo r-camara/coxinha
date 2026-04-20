@@ -66,3 +66,23 @@ user complains.
   (process spawn → `setup` complete) to isolate our regressions.
 - Regression gate width — 20% is generous for CI noise but may
   miss smaller creeps. Revisit after a few weeks of data.
+
+## Shipped so far
+
+- **Boot-to-ready budget** asserted at 2 s in `boot_smoke.rs`
+  (`BOOT_READY_BUDGET`, was 5 s). Current measured: **~1.44 s**.
+- **Backend slice of the new-note flow** — integration test at
+  `src-tauri/tests/perf_new_note.rs`. Budgets `create_note` and
+  `get_note` at 50 ms each (p-max over 10 samples after warm-up).
+  Current measured: **create avg 2.1 ms / max 2.85 ms**, **get
+  avg 0.4 ms / max 0.59 ms**.
+- **Frontend marks** for the same flow — `src/lib/perf.ts` exposes
+  a `mark()` helper + `logNewNoteTrace()` that reports the
+  breakdown (hotkey → create-invoked → note-created →
+  editor-suspended → editor-ready) on every Ctrl+Alt+N when
+  DevTools is open. Budget asserted in the console: 2 s total.
+  `performance.mark` is cheap enough to leave on in production.
+
+Still pending from this spec: `criterion` microbenchmarks,
+warm-start bench, 10k-note list/search benches, PR-comment
+regression gate, fixture generator.
