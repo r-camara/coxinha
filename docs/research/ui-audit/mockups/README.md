@@ -1,35 +1,81 @@
 # UI Mockups
 
-Paired SVG mockups (current state / desired state) for the main
-Coxinha views, plus a Mermaid route diagram. SVG because VSCode
-renders it natively — open the file, right-click → *Open Preview*
-(or install the *SVG Preview* extension for live edits).
+Design artifacts for Coxinha. Two formats coexist:
 
-Pencil Project (`.epgz`) was considered — going with SVG because
-it is hand-editable text, renders in VSCode without an extension,
-and keeps diffs reviewable in a PR. Excalidraw would have worked
-too (the app already uses it via spec 0012) but requires the
-Excalidraw extension for VSCode to render. We can migrate later
-if you prefer the format.
+- **SVG** — the first-pass mockups, hand-authored. Render
+  natively in VSCode preview. Comment-annotated. Cheap to diff.
+- **`.pen` (Pencil.dev)** — higher-fidelity mockups built via
+  the Pencil MCP server against the design tokens in
+  `../DESIGN.md`. Source-of-truth for anything that needs real
+  typography, spacing, and palette rendering.
+
+When the two disagree, `.pen` wins — it is what the actual app
+is trending toward.
 
 ## Files
 
-| File | What it shows |
-|---|---|
-| `app-shell-current.svg` | Sidebar + centered "New note" CTA in main pane; fixed 280 px sidebar, no content max-width |
-| `app-shell-desired.svg` | Same sidebar; main pane is a full-bleed editor on a transient draft; content column has a reading max-width on wide viewports |
-| `empty-state-current.svg` | Close-up of today's empty state — orange CTA button floating in empty main pane |
-| `empty-state-desired.svg` | Close-up of the type-to-start state — editor with a low-opacity placeholder ("Type to start.") and no CTA |
-| `empty-state-flow.svg` | Timeline of the draft lifecycle: focus → type → persist; or focus → blur (empty) → discard |
-| `route-map.md` | Mermaid diagram of the route tree wired by `src/router.tsx` |
+| File | Format | What it shows |
+|---|---|---|
+| `coxinha-notes-writing.png` | PNG export from `coxinha.pen` | `/notes/$id` during active writing — sidebar populated, editor with title + body + H2 + bullets + cursor, BacklinksPanel on the right |
+| `coxinha.pen` | Pencil source | Live document. Source for `coxinha-notes-writing.png`. See "Source files" below — you may need to save it from Pencil Desktop (Ctrl+S) the first time. |
+| `app-shell-current.svg` | SVG | First-pass sketch: current centered-CTA empty state (pre-spec-0042) |
+| `app-shell-desired.svg` | SVG | First-pass sketch: target full-bleed editor + max-width column |
+| `empty-state-current.svg` | SVG | First-pass sketch close-up: today's centered-CTA |
+| `empty-state-desired.svg` | SVG | First-pass sketch close-up: target type-to-start |
+| `empty-state-flow.svg` | SVG | First-pass sketch: draft lifecycle (focus → type → persist, or focus → blur → discard) |
+| `route-map.md` | Mermaid | Route tree + shortcut-to-navigate sequence |
 
-Current screenshots captured by `pnpm screenshots` live next door
-in `../screenshots/` — flip between them and the mockups to see
-before/after.
+## How to view
 
-## How to discuss
+- **PNG:** VSCode renders natively. Click the file.
+- **SVG:** VSCode "Open Preview" on the file. Hand-edit directly
+  to comment or sketch.
+- **`.pen`:** Open in [Pencil Desktop](https://pencil.dev).
+  VSCode does not render `.pen` files.
+- **`.md` (route-map):** VSCode Markdown preview (Ctrl+Shift+V)
+  renders embedded Mermaid diagrams.
 
-Each SVG has comments inline calling out the layout intent (sidebar
-width, content max-width, spacing). Drop a review comment on the
-line that needs changing, or sketch over the SVG in VSCode — the
-file is text, edits diff cleanly.
+## Source files
+
+The `.pen` files are Pencil's native format, produced via the
+Pencil MCP server (`mcp__pencil__*` tools in this session). The
+source of truth for aesthetic rules is `../DESIGN.md` — Pencil
+reads that document when generating new screens.
+
+**Important:** Pencil Desktop does not auto-save to the target
+path until you press Ctrl+S inside the app. After a mockup
+session, confirm with `ls mockups/*.pen` and save in Pencil if
+the file is missing.
+
+## How to regenerate the PNG from the `.pen`
+
+Inside Pencil Desktop: File → Export → PNG (or Command Palette
+→ "Export node as PNG"). Pick `2x` scale to match the version
+committed here.
+
+Via MCP (from a Claude Code session with Pencil MCP connected):
+
+```
+mcp__pencil__export_nodes({
+  filePath: "<absolute path>/coxinha.pen",
+  nodeIds: ["<node id of the root window frame>"],
+  outputDir: "<absolute path>/mockups",
+  format: "png",
+  scale: 2,
+})
+```
+
+## Design doctrine
+
+All mockups (SVG and `.pen`) trace back to `../DESIGN.md` — the
+single source of truth for palette, typography, component
+behaviour, motion, and the banned-pattern list. When in doubt,
+the doctrine wins.
+
+Related research:
+
+- `../screenshots/` — Playwright captures of the live app
+- `../ui-audit.md` — prose analysis of current state vs direction
+- `../shortcut-map.md` — evidence trail for the Win+Y decision
+- `../type-model-benchmark.md` — product-taxonomy comparison
+  (AnyType / Obsidian / Notion / Mem / Granola)
