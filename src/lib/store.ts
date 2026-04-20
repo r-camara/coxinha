@@ -3,6 +3,7 @@ import { invoke } from '@tauri-apps/api/core';
 
 import type { Note } from './bindings';
 import { sortByUpdated } from './notes';
+import { mark } from './perf';
 
 interface AppStore {
   notes: Note[];
@@ -36,10 +37,12 @@ export const useAppStore = create<AppStore>((set) => ({
     // gets derived from the first `#` heading on save (see
     // `storage::update_note`), and the sidebar falls back to
     // "(untitled)" until then.
+    mark('create-invoked');
     const note = await invoke<Note>('create_note', {
       title: '',
       content: '',
     });
+    mark('note-created');
     set((state) => ({
       notes: [note, ...state.notes],
       activeNoteId: note.id,

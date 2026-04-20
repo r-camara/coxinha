@@ -6,6 +6,7 @@ import { NoteEditor } from './components/NoteEditor';
 import { SettingsView } from './components/SettingsView';
 import { Sidebar } from './components/Sidebar';
 import { events, type Route } from './lib/bindings';
+import { mark } from './lib/perf';
 import { useAppStore } from './lib/store';
 import { followThemePreference, getThemePreference, THEME_PREF_EVENT } from './lib/theme';
 
@@ -54,6 +55,7 @@ export default function App() {
     async function handleRoute(route: Route) {
       switch (route) {
         case 'notes-new':
+          mark('hotkey');
           await newNote();
           setView('notes');
           return;

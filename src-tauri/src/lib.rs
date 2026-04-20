@@ -132,6 +132,25 @@ pub fn run() {
 /// Extracted so `run()` and a potential stand-alone exporter share
 /// the same command list — if one drifts, both drift. Don't add a
 /// command here and forget the other; use this as the only source.
+/// Helpers expostos só para testes de integração (`tests/perf_*.rs`).
+/// Não usar em prod — a API estável passa pelo specta.
+#[doc(hidden)]
+pub mod perf_helpers {
+    use std::path::PathBuf;
+    use std::sync::Arc;
+
+    use crate::db::Db;
+    use crate::storage::Storage;
+
+    pub fn open_db(path: &std::path::Path) -> Db {
+        Db::open(path).expect("open DB")
+    }
+
+    pub fn storage(vault: PathBuf, db: Arc<Db>) -> Arc<Storage> {
+        Arc::new(Storage::new(vault, db))
+    }
+}
+
 pub fn build_specta() -> tauri_specta::Builder<tauri::Wry> {
     tauri_specta::Builder::<tauri::Wry>::new()
         .commands(tauri_specta::collect_commands![

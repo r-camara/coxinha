@@ -7,6 +7,7 @@ import '@blocknote/shadcn/style.css';
 import { invoke } from '@tauri-apps/api/core';
 
 import { events, type NoteContent } from '../lib/bindings';
+import { logNewNoteTrace, mark } from '../lib/perf';
 import { useAppStore } from '../lib/store';
 import { BacklinksPanel } from './BacklinksPanel';
 
@@ -32,6 +33,10 @@ function getNotePromise(noteId: string): Promise<NoteContent> {
 }
 
 export function NoteEditor({ noteId }: Props) {
+  // Marcado aqui (no componente pai) pra capturar o primeiro render
+  // antes do Suspense resolver — o `use()` no filho só dispara marks
+  // se a promise já estiver resolvida.
+  mark('editor-suspended');
   return (
     <Suspense fallback={<LoadingSkeleton />}>
       <NoteEditorContent noteId={noteId} />
@@ -92,6 +97,8 @@ function EditorInner({
       // Land the cursor in the body so a fresh note (empty markdown)
       // or a returning one starts editable without a click.
       editor.focus();
+      mark('editor-ready');
+      logNewNoteTrace();
     })();
   }, [editor, initialMarkdown]);
 
