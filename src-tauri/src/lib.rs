@@ -116,13 +116,20 @@ pub fn run() {
 
             let state = AppState::initialize(app.handle())?;
 
-            // Register shortcuts using the freshly-loaded config, before
-            // wrapping state in Arc<Mutex> — avoids a block_on inside setup.
             shortcuts::register_all(app.handle(), &state.config.shortcuts)?;
 
             if !state.config.locale.is_empty() {
                 rust_i18n::set_locale(&normalize_locale(&state.config.locale));
             }
+
+            // Storage vive num managed state independente pra que os
+            // ~14 commands de hot path (list_notes, search_notes, get_*,
+            // update_*, list_tags, etc.) não peguem o lock monolítico
+            // do AppState. Todo command que só precisa de Storage
+            // usa tauri::State<'_, Arc<Storage>>. Os outros (update_
+            // config, transcribe_meeting, recorder ops) continuam no
+            // AppState porque mexem em mais de um subsistema.
+            app.manage(state.storage.clone());
 
             let shared_state = Arc::new(Mutex::new(state));
             app.manage(shared_state);
@@ -170,19 +177,22 @@ fn normalize_locale(raw: &str) -> String {
 
 mod commands {
     use super::*;
+    use crate::storage::Storage;
     use shared::*;
     use uuid::Uuid;
+
+    // Commands storage-only: pegam Arc<Storage> diretamente, não
+    // passam pelo mutex global do AppState. Saves (update_note) não
+    // bloqueiam mais searches, tag refreshes, backlinks, etc.
 
     #[tauri::command]
     #[specta::specta]
     pub async fn create_note(
-        state: tauri::State<'_, Arc<Mutex<AppState>>>,
+        storage: tauri::State<'_, Arc<Storage>>,
         title: String,
         content: String,
     ) -> Result<Note, String> {
-        let state = state.lock().await;
-        state
-            .storage
+        storage
             .create_note(&title, &content)
             .await
             .map_err(|e| e.to_string())
@@ -191,13 +201,11 @@ mod commands {
     #[tauri::command]
     #[specta::specta]
     pub async fn update_note(
-        state: tauri::State<'_, Arc<Mutex<AppState>>>,
+        storage: tauri::State<'_, Arc<Storage>>,
         id: Uuid,
         content: String,
     ) -> Result<Note, String> {
-        let state = state.lock().await;
-        state
-            .storage
+        storage
             .update_note(id, &content)
             .await
             .map_err(|e| e.to_string())
@@ -206,45 +214,34 @@ mod commands {
     #[tauri::command]
     #[specta::specta]
     pub async fn delete_note(
-        state: tauri::State<'_, Arc<Mutex<AppState>>>,
+        storage: tauri::State<'_, Arc<Storage>>,
         id: Uuid,
     ) -> Result<(), String> {
-        let state = state.lock().await;
-        state
-            .storage
-            .delete_note(id)
-            .await
-            .map_err(|e| e.to_string())
+        storage.delete_note(id).await.map_err(|e| e.to_string())
     }
 
     #[tauri::command]
     #[specta::specta]
-    pub async fn list_notes(
-        state: tauri::State<'_, Arc<Mutex<AppState>>>,
-    ) -> Result<Vec<Note>, String> {
-        let state = state.lock().await;
-        state.storage.list_notes().await.map_err(|e| e.to_string())
+    pub async fn list_notes(storage: tauri::State<'_, Arc<Storage>>) -> Result<Vec<Note>, String> {
+        storage.list_notes().await.map_err(|e| e.to_string())
     }
 
     #[tauri::command]
     #[specta::specta]
     pub async fn get_note(
-        state: tauri::State<'_, Arc<Mutex<AppState>>>,
+        storage: tauri::State<'_, Arc<Storage>>,
         id: Uuid,
     ) -> Result<NoteContent, String> {
-        let state = state.lock().await;
-        state.storage.get_note(id).await.map_err(|e| e.to_string())
+        storage.get_note(id).await.map_err(|e| e.to_string())
     }
 
     #[tauri::command]
     #[specta::specta]
     pub async fn search_notes(
-        state: tauri::State<'_, Arc<Mutex<AppState>>>,
+        storage: tauri::State<'_, Arc<Storage>>,
         query: String,
     ) -> Result<Vec<Note>, String> {
-        let state = state.lock().await;
-        state
-            .storage
+        storage
             .search_notes(&query)
             .await
             .map_err(|e| e.to_string())
@@ -253,28 +250,18 @@ mod commands {
     #[tauri::command]
     #[specta::specta]
     pub async fn list_meetings(
-        state: tauri::State<'_, Arc<Mutex<AppState>>>,
+        storage: tauri::State<'_, Arc<Storage>>,
     ) -> Result<Vec<Meeting>, String> {
-        let state = state.lock().await;
-        state
-            .storage
-            .list_meetings()
-            .await
-            .map_err(|e| e.to_string())
+        storage.list_meetings().await.map_err(|e| e.to_string())
     }
 
     #[tauri::command]
     #[specta::specta]
     pub async fn get_meeting(
-        state: tauri::State<'_, Arc<Mutex<AppState>>>,
+        storage: tauri::State<'_, Arc<Storage>>,
         id: Uuid,
     ) -> Result<Meeting, String> {
-        let state = state.lock().await;
-        state
-            .storage
-            .get_meeting(id)
-            .await
-            .map_err(|e| e.to_string())
+        storage.get_meeting(id).await.map_err(|e| e.to_string())
     }
 
     #[tauri::command]
@@ -339,13 +326,11 @@ mod commands {
     #[tauri::command]
     #[specta::specta]
     pub async fn save_attachment(
-        state: tauri::State<'_, Arc<Mutex<AppState>>>,
+        storage: tauri::State<'_, Arc<Storage>>,
         filename: String,
         bytes: Vec<u8>,
     ) -> Result<String, String> {
-        let state = state.lock().await;
-        state
-            .storage
+        storage
             .save_attachment(&filename, &bytes)
             .await
             .map_err(|e| e.to_string())
@@ -385,12 +370,10 @@ mod commands {
     #[tauri::command]
     #[specta::specta]
     pub async fn get_or_create_daily_note(
-        state: tauri::State<'_, Arc<Mutex<AppState>>>,
+        storage: tauri::State<'_, Arc<Storage>>,
         date: Option<String>,
     ) -> Result<Note, String> {
-        let state = state.lock().await;
-        state
-            .storage
+        storage
             .get_or_create_daily_note(date.as_deref())
             .await
             .map_err(|e| e.to_string())
@@ -402,11 +385,10 @@ mod commands {
     #[tauri::command]
     #[specta::specta]
     pub async fn get_backlinks(
-        state: tauri::State<'_, Arc<Mutex<AppState>>>,
+        storage: tauri::State<'_, Arc<Storage>>,
         id: Uuid,
     ) -> Result<Vec<Note>, String> {
-        let state = state.lock().await;
-        state.storage.backlinks(id).await.map_err(|e| e.to_string())
+        storage.backlinks(id).await.map_err(|e| e.to_string())
     }
 
     /// Wipe the notes index and rebuild it by walking the current
@@ -417,11 +399,9 @@ mod commands {
     #[tauri::command]
     #[specta::specta]
     pub async fn rebuild_from_vault(
-        state: tauri::State<'_, Arc<Mutex<AppState>>>,
+        storage: tauri::State<'_, Arc<Storage>>,
     ) -> Result<RebuildStats, String> {
-        let state = state.lock().await;
-        state
-            .storage
+        storage
             .rebuild_from_vault()
             .await
             .map_err(|e| e.to_string())
@@ -430,21 +410,18 @@ mod commands {
     #[tauri::command]
     #[specta::specta]
     pub async fn list_tags(
-        state: tauri::State<'_, Arc<Mutex<AppState>>>,
+        storage: tauri::State<'_, Arc<Storage>>,
     ) -> Result<Vec<TagCount>, String> {
-        let state = state.lock().await;
-        state.storage.list_tags().await.map_err(|e| e.to_string())
+        storage.list_tags().await.map_err(|e| e.to_string())
     }
 
     #[tauri::command]
     #[specta::specta]
     pub async fn list_notes_by_tag(
-        state: tauri::State<'_, Arc<Mutex<AppState>>>,
+        storage: tauri::State<'_, Arc<Storage>>,
         tag: String,
     ) -> Result<Vec<Note>, String> {
-        let state = state.lock().await;
-        state
-            .storage
+        storage
             .list_notes_by_tag(&tag)
             .await
             .map_err(|e| e.to_string())
