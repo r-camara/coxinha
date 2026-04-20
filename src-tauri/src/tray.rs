@@ -12,10 +12,8 @@ use tauri_specta::Event;
 use crate::events::{BeforeQuit, Navigate, Route};
 use crate::window::show_main;
 
-/// Janela entre emitir `BeforeQuit` e chamar `app.exit(0)`. Escolhido
-/// pra cobrir o debounce de 500 ms do editor + ~100 ms de IPC
-/// round-trip. Maior que isso vira fricção ("por que o Quit demora?"),
-/// menor corre risco de perder a última batida.
+/// Covers the editor's 500 ms save debounce + ~100 ms IPC roundtrip.
+/// Longer feels like lag; shorter risks losing the last keystrokes.
 const QUIT_GRACE: std::time::Duration = std::time::Duration::from_millis(600);
 
 pub fn setup(app: &AppHandle) -> Result<()> {
@@ -68,9 +66,6 @@ pub fn setup(app: &AppHandle) -> Result<()> {
     Ok(())
 }
 
-/// Avisa o frontend (editor com debounce, futuros drafts) e só
-/// chama `app.exit(0)` depois de `QUIT_GRACE`. Logs pra deixar
-/// explícito no tracing se alguma coisa demorar demais.
 fn request_graceful_quit(app: &AppHandle) {
     if let Err(e) = BeforeQuit.emit(app) {
         tracing::warn!("BeforeQuit emit failed: {e}");

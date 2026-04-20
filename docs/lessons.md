@@ -14,6 +14,50 @@ paragraphs — not prose.
 
 ---
 
+## 2026-04-20 — `performance.mark` in a component body is a render-rate drip, not a one-shot
+
+**Context:** instrumented the Ctrl+Alt+N flow with
+`performance.mark('editor-suspended')` placed at the top of the
+`NoteEditor` function body. Looked fine locally; simplify review
+flagged that it fires on **every re-render of the parent**, not
+just when the Suspense boundary suspended. Any unrelated store
+update (sidebar tag refresh, note list sort) re-renders `NoteEditor`
+and re-stamps the mark — by the time `logNewNoteTrace` reads it,
+the original timestamp is gone.
+
+**Lesson:** component body code runs on every render. `useEffect`
+is the one-shot primitive; `use(promise)` is the Suspense gate. If
+you want a mark that captures the end of a Suspense wait, put it
+**after** `use()` resolves (inside the child that does the `use`),
+not on the parent's body. Also: guard the trace consumer on the
+presence of a start-of-flow mark so unrelated re-renders don't
+log a table of `n/a` rows or corrupt an in-flight trace.
+
+**Reference:** PR #21 `perf: instrumenta o fluxo new-note` +
+`simplify: reuse bootstrap_vault + type-safe perf marks`
+(NoteEditor.tsx + perf.ts).
+
+---
+
+## 2026-04-20 — A 2 s UX budget asks for a 2 s test budget
+
+**Context:** `boot_smoke.rs` asserted `BOOT_READY_BUDGET = 5 s`
+since the f1 baseline. Rationale at the time: give CI + Windows
+cold-start enough slack. When user said the real UX requirement is
+2 s, the test was quietly accepting 2.5× regressions as green.
+
+**Lesson:** tests assert the **product's** requirements, not the
+CI runner's comfort zone. When a budget number is documented in a
+spec, the test constant must match exactly. If CI flakes at that
+tighter number, fix the flakiness (warm caches, retry, isolate
+noisy machines) instead of loosening the assertion. A test that
+passes while the product is in violation is worse than no test.
+
+**Reference:** PR #21 — dropped `BOOT_READY_BUDGET` from 5 s to
+2 s in `boot_smoke.rs`. Measured boot is ~1.44 s, passes.
+
+---
+
 ## 2026-04-19 — `include_bytes!` inputs must not be globally gitignored
 
 **Context:** Adding `cargo clippy` to CI exploded in three rounds:

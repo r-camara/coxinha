@@ -110,6 +110,12 @@ path that has to keep working on every PR:
   after ready. Budgets: peak RSS < 200 MB, avg CPU < 25 %,
   idle-window growth < 30 MB. Current baseline ~38 MB RSS,
   0 % CPU, ~0 MB growth.
+- **1 new-note latency integration test** (`tests/perf_new_note.rs`)
+  — runs `create_note` + `get_note` 10 times against a tmp vault
+  after a warm-up, asserts p-max < 50 ms per call. Current:
+  create max ~2.85 ms, get max ~0.59 ms.
+- **Boot-to-ready asserted at 2 s** in `boot_smoke.rs`
+  (`BOOT_READY_BUDGET`). Current measured: ~1.44 s.
 - **22 frontend tests (Vitest)**: i18n catalog key coverage,
   `sortByUpdated` purity, `theme` helpers (apply, follow, cleanup,
   flips on OS change), `SettingsView` (empty state, dirty track,

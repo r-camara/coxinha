@@ -18,8 +18,11 @@ use std::thread;
 use std::time::{Duration, Instant};
 
 const READY_MARKER: &str = "Coxinha ready";
+// UX requirement: boot-to-ready fits in 2 s. BOOT_WAIT_BUDGET is
+// the stdout reader timeout — slack so CI doesn't hang if the
+// marker never arrives — not the perf limit.
 const BOOT_WAIT_BUDGET: Duration = Duration::from_secs(8);
-const BOOT_READY_BUDGET: Duration = Duration::from_secs(5);
+const BOOT_READY_BUDGET: Duration = Duration::from_secs(2);
 
 #[test]
 fn app_boots_and_emits_ready_within_budget() {
