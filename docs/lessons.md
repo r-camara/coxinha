@@ -14,6 +14,110 @@ paragraphs — not prose.
 
 ---
 
+## 2026-04-21 — Windows leaks `RegisterHotKey` registrations on force-kill
+
+**Context:** After several `taskkill //F` cycles of `coxinha.exe`
+during dev, a fresh boot logged `HotKey already registered` for
+all five shortcuts — but `tasklist` showed no coxinha process
+alive. The OS, not a surviving process, was refusing the
+re-registration: Windows 11's global-shortcut bookkeeping keeps
+a slot marked "in use" when the holding process exits without
+calling `UnregisterHotKey`, and only clears on reboot. Every
+previously-shipped default set (`Ctrl+Alt+*`, `Ctrl+Alt+Shift+*`,
+`Super+Shift+*`, `Super+Y`) had been force-killed at least once
+on my box, so none of them could be freshly registered.
+
+**Lesson:** a default global-shortcut set is only as good as its
+never-force-killed history on the user's box. When you have to
+rotate defaults (or the user reports "the shortcut doesn't work
+at all on my machine"), pick a chord family **never previously
+shipped as default** — that's the only way to be sure the OS
+slot is clean. Pair the rotation with a config migration that
+flips forward from every stale default set, so the user's
+`config.toml` catches up on the next boot. And: register with a
+graceful-exit handler so the common case (clean quit) returns
+the slot to the OS. Force-kill during crash-debug is the
+exception worth guarding defaults against.
+
+**Reference:** commit `fcff35f` — `shared/src/lib.rs` default
+pivots to `Ctrl+Alt+{Y/O/G/T/W}`, `src-tauri/src/config.rs`
+adds four stale-set migrations.
+
+---
+
+## 2026-04-21 — Tailwind 4 displaces CSS `@import url(...)` past the spec's first-statements rule
+
+**Context:** Putting the Google Fonts `@import url(...)` at the
+top of `src/index.css`, above `@import "tailwindcss"`, worked in
+Tailwind 3 but blew up the PostCSS build in Tailwind 4 with
+"imports must precede all other statements". Tailwind 4 expands
+its own `@layer base`, `@layer components`, `@layer utilities`
+blocks **inline** during PostCSS, so by the time the CSS parser
+sees the file the font `@import` is no longer first.
+
+**Lesson:** when a build pipeline inlines layer blocks from a
+meta-import, remote font loading can't live in the CSS. Move
+`@import url(fonts.googleapis.com/...)` into `<link
+rel="stylesheet">` in `index.html` (with a `preconnect` for each
+host). The HTML path sidesteps the CSS spec entirely and parallels
+font fetching with the JS boot.
+
+**Reference:** commit `f2e06e6` — `index.html` gains the font
+`<link>`, `src/index.css` drops the `@import url(...)`.
+
+---
+
+## 2026-04-21 — TanStack Router's `createMemoryHistory` ignores URL navigation from Playwright
+
+**Context:** The router was configured with `createMemoryHistory`
+so the Tauri window doesn't touch `window.location`. In
+Playwright, `page.goto('/settings')` quietly rendered the notes
+index because memory history isn't listening to the URL bar —
+the router's internal state is the source of truth and the URL
+is purely cosmetic. Screenshots of "settings" were actually
+showing the BlockNote editor until the script click-through the
+rail.
+
+**Lesson:** when capturing per-route screenshots against a
+memory-history app, drive navigation with the same gestures a
+user would (click a rail button, hit a palette action). URL
+`goto` only works when the router is configured with browser or
+hash history. Corollary: if you need both — direct URL
+navigation for testing and no address bar in production — gate
+the history choice on a build flag rather than assuming either
+mode works everywhere.
+
+**Reference:** commit `ac998e8` — screenshots migrated from
+`page.goto` to rail click-through.
+
+---
+
+## 2026-04-21 — Extract pure sub-components so the contract is testable without the heavy dep
+
+**Context:** The Mix B Refined note chrome (38 px title, meta
+row, tag chips) lived inline in `NoteEditor.tsx`, tangled with
+the BlockNote `useCreateBlockNote` hook and its DOM. Verifying
+the contract (title fallback, date-to-`Saved` formatting,
+tag-row conditional) required either booting Tauri + a real
+note or a full BlockNote mock — both expensive. Extracting the
+block into `NoteHeader.tsx` (pure props in, JSX out) let a
+`NoteHeader.test.tsx` cover the contract in ~1 s with no
+mocks beyond `react-i18next`.
+
+**Lesson:** when a chrome block inside a heavy-dep component is
+what actually matters to the design contract, pull it out as a
+pure child before writing the test. The cost is one tiny file +
+a `<NoteHeader ... />` import; the benefit is a test that locks
+the contract without needing to simulate the heavy dep's world.
+Works for any shell — `ChromeBar` and `StatusBar` shipped with
+the same shape and got the same treatment.
+
+**Reference:** commit `4a05f4b` — `NoteHeader.tsx` +
+`NoteHeader.test.tsx` + `ChromeBar.test.tsx` (12 tests added
+in one pass).
+
+---
+
 ## 2026-04-20 — `performance.mark` in a component body is a render-rate drip, not a one-shot
 
 **Context:** instrumented the Ctrl+Alt+N flow with
