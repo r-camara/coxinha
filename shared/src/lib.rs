@@ -209,12 +209,27 @@ pub struct ShortcutsConfig {
 
 impl Default for ShortcutsConfig {
     fn default() -> Self {
+        // Every previous default set leaked Windows hot-key
+        // registrations on the user's box after taskkill-style
+        // force-quits. The Super+* chords were then permanently
+        // "already registered" for the rest of the boot session,
+        // blocking fresh registrations — OS reboot was the only
+        // clean-up. Pivot to chords that were never shipped as
+        // default, so fresh sessions can register them cleanly.
+        //
+        // Ctrl+Alt+<letter> with letters that OneNote and Windows
+        // do NOT claim (see docs/research/shortcut-map.md §4):
+        //   Y — not in OneNote's Ctrl+Alt set, not in Windows
+        //   O — free
+        //   G — aGenda, free
+        //   T — meeTings, free
+        //   W — reWind-ish, free
         Self {
-            new_note: "Ctrl+Alt+N".into(),
-            open_app: "Ctrl+Alt+C".into(),
-            agenda: "Ctrl+Alt+A".into(),
-            meetings: "Ctrl+Alt+M".into(),
-            toggle_recording: "Ctrl+Alt+R".into(),
+            new_note: "Ctrl+Alt+Y".into(),
+            open_app: "Ctrl+Alt+O".into(),
+            agenda: "Ctrl+Alt+G".into(),
+            meetings: "Ctrl+Alt+T".into(),
+            toggle_recording: "Ctrl+Alt+W".into(),
         }
     }
 }

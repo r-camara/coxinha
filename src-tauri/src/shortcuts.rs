@@ -41,6 +41,7 @@ pub fn register_all(app: &AppHandle, cfg: &ShortcutsConfig) -> Result<()> {
                     tracing::warn!("failed to register {}: {:?}", raw, e);
                     continue;
                 }
+                tracing::info!("registered shortcut {} -> {:?}", raw, route);
                 routes.insert(shortcut, route);
             }
             Err(e) => tracing::warn!("invalid shortcut '{}': {:?}", raw, e),
@@ -70,4 +71,52 @@ pub fn handle_shortcut(
 
 fn routes_lock() -> &'static Mutex<HashMap<Shortcut, Route>> {
     ROUTES.get_or_init(|| Mutex::new(HashMap::new()))
+}
+
+#[cfg(test)]
+mod tests {
+    use shared::ShortcutsConfig;
+    use tauri_plugin_global_shortcut::Shortcut;
+
+    #[test]
+    fn default_shortcuts_parse() {
+        // Guards spec 0042: the Ctrl+Alt+Shift+* defaults must
+        // parse into valid Shortcut values so the app doesn't
+        // boot with a broken global-shortcut registration.
+        let cfg = ShortcutsConfig::default();
+        for raw in [
+            &cfg.new_note,
+            &cfg.open_app,
+            &cfg.agenda,
+            &cfg.meetings,
+            &cfg.toggle_recording,
+        ] {
+            raw.parse::<Shortcut>()
+                .unwrap_or_else(|e| panic!("failed to parse default shortcut {raw:?}: {e:?}"));
+        }
+    }
+
+    #[test]
+    fn default_shortcuts_avoid_known_conflicts() {
+        // Regression guard for spec 0042. Every chord documented as
+        // intercepted on Windows at the OS or Office level goes
+        // here. See docs/research/shortcut-map.md for sources.
+        let cfg = ShortcutsConfig::default();
+        let forbidden = [
+            "Ctrl+Alt+N",       // OneNote in-app, caused the original bug
+            "Ctrl+Alt+Shift+N", // intermediate attempt that also failed in dev
+            "Super+Shift+N",    // interim PR #22 default, never field-validated
+            "Super+Y", // registered on most machines, but siblings (Super+Shift+*) collided
+            "Win+N",
+            "Super+N", // Windows 11 notification center
+            "Win+Alt+N",
+            "Super+Alt+N", // OneNote Quick Note (global)
+        ];
+        for chord in forbidden {
+            assert_ne!(
+                cfg.new_note, chord,
+                "default new_note chord {chord:?} is known to collide on Windows"
+            );
+        }
+    }
 }

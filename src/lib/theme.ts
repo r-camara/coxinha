@@ -53,3 +53,7 @@ export function followThemePreference(
   mq.addEventListener('change', handle);
   return () => mq.removeEventListener('change', handle);
 }
+
+export function resolveThemePreference(pref: ThemePreference): Theme {
+  return pref === 'auto' ? systemTheme() : pref;
+}

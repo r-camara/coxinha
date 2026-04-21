@@ -10,16 +10,15 @@ vi.mock('react-i18next', () => ({
 }));
 
 const getBacklinks = vi.fn();
-vi.mock('../lib/bindings', () => ({
+vi.mock('../../lib/bindings', () => ({
   commands: {
     getBacklinks: (...a: unknown[]) => getBacklinks(...a),
   },
 }));
 
-const setActiveNote = vi.fn();
-vi.mock('../lib/store', () => ({
-  useAppStore: <T,>(selector: (s: { setActiveNote: typeof setActiveNote }) => T) =>
-    selector({ setActiveNote }),
+const navigate = vi.fn();
+vi.mock('@tanstack/react-router', () => ({
+  useNavigate: () => navigate,
 }));
 
 import { BacklinksPanel } from './BacklinksPanel';
@@ -37,7 +36,7 @@ function note(id: string, title: string) {
 
 beforeEach(() => {
   getBacklinks.mockReset();
-  setActiveNote.mockReset();
+  navigate.mockReset();
 });
 
 describe('BacklinksPanel', () => {
@@ -62,7 +61,7 @@ describe('BacklinksPanel', () => {
     expect(screen.getByText('Beta')).toBeInTheDocument();
   });
 
-  it('opens the linker note on click via store.setActiveNote', async () => {
+  it('navigates to the linker note on click', async () => {
     const user = userEvent.setup();
     getBacklinks.mockResolvedValue({
       status: 'ok',
@@ -72,7 +71,10 @@ describe('BacklinksPanel', () => {
     render(<BacklinksPanel noteId="target" />);
     await user.click(await screen.findByRole('button', { name: 'Alpha' }));
 
-    expect(setActiveNote).toHaveBeenCalledWith('a');
+    expect(navigate).toHaveBeenCalledWith({
+      to: '/notes/$noteId',
+      params: { noteId: 'a' },
+    });
   });
 
   it('surfaces backend errors in an alert', async () => {

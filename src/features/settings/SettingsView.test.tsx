@@ -2,9 +2,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-// Mock react-i18next so tests don't depend on the full i18n init.
-// The component doesn't need rendered strings — we assert via roles
-// and aria labels, not literal copy. Any `t(key)` returns the key.
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (key: string, vars?: Record<string, string>) =>
@@ -12,14 +9,12 @@ vi.mock('react-i18next', () => ({
   }),
 }));
 
-// Mock the generated commands module. Vitest hoists `vi.mock`, so
-// these live-bound mocks get defined before the component imports.
 const getConfig = vi.fn();
 const listObsidianVaults = vi.fn();
 const updateConfig = vi.fn();
 const rebuildFromVault = vi.fn();
 
-vi.mock('../lib/bindings', () => ({
+vi.mock('../../lib/bindings', () => ({
   commands: {
     getConfig: (...a: unknown[]) => getConfig(...a),
     listObsidianVaults: (...a: unknown[]) => listObsidianVaults(...a),
@@ -29,13 +24,13 @@ vi.mock('../lib/bindings', () => ({
 }));
 
 const loadNotes = vi.fn();
-vi.mock('../lib/store', () => ({
+vi.mock('../../lib/store', () => ({
   useAppStore: <T,>(selector: (s: { loadNotes: typeof loadNotes }) => T) =>
     selector({ loadNotes }),
 }));
 
 import { SettingsView } from './SettingsView';
-import { THEME_STORAGE_KEY } from '../lib/theme';
+import { THEME_STORAGE_KEY } from '../../lib/theme';
 
 const BASE_CONFIG = {
   vault_path: 'C:/Users/me/coxinha',
@@ -45,11 +40,11 @@ const BASE_CONFIG = {
   llm: { kind: 'ollama', endpoint: 'http://localhost:11434', model: 'llama3.2:3b' },
   autostart: false,
   shortcuts: {
-    new_note: 'Ctrl+Alt+N',
-    open_app: 'Ctrl+Alt+C',
-    agenda: 'Ctrl+Alt+A',
-    meetings: 'Ctrl+Alt+M',
-    toggle_recording: 'Ctrl+Alt+R',
+    new_note: 'Ctrl+Alt+Y',
+    open_app: 'Ctrl+Alt+O',
+    agenda: 'Ctrl+Alt+G',
+    meetings: 'Ctrl+Alt+T',
+    toggle_recording: 'Ctrl+Alt+W',
   },
 };
 
@@ -235,8 +230,6 @@ describe('SettingsView — shortcuts panel', () => {
 
     render(<SettingsView />);
 
-    // Assert against BASE_CONFIG so the test tracks whatever the
-    // fixture says, not hard-coded Rust defaults that could drift.
     const { shortcuts } = BASE_CONFIG;
     expect(await screen.findByText(shortcuts.new_note)).toBeInTheDocument();
     expect(screen.getByText(shortcuts.open_app)).toBeInTheDocument();
@@ -244,7 +237,6 @@ describe('SettingsView — shortcuts panel', () => {
     expect(screen.getByText(shortcuts.meetings)).toBeInTheDocument();
     expect(screen.getByText(shortcuts.toggle_recording)).toBeInTheDocument();
 
-    // Action labels from the i18n table.
     expect(screen.getByText('settings.shortcuts.action.new_note')).toBeInTheDocument();
     expect(screen.getByText('settings.shortcuts.action.toggle_recording')).toBeInTheDocument();
   });
@@ -261,7 +253,7 @@ describe('SettingsView — shortcuts panel', () => {
     render(<SettingsView />);
 
     expect(await screen.findByText('Ctrl+Shift+Space')).toBeInTheDocument();
-    expect(screen.queryByText('Ctrl+Alt+N')).not.toBeInTheDocument();
+    expect(screen.queryByText('Ctrl+Alt+Y')).not.toBeInTheDocument();
   });
 
   it('surfaces the "rebind coming soon" hint', async () => {

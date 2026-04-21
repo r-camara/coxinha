@@ -8,9 +8,43 @@
     "meetings": "Meetings",
     "settings": "Settings"
   },
+  "rail": {
+    "search": "Search (⌘K)",
+    "toggleTheme": "Toggle theme"
+  },
+  "assistant": {
+    "region": "Assistant",
+    "title": "Assistant",
+    "close": "Close assistant",
+    "links": "Link suggestions",
+    "related": "Related",
+    "empty": "No suggestions yet.",
+    "askPlaceholder": "Ask…"
+  },
+  "palette": {
+    "title": "Command palette",
+    "placeholder": "Search notes, run a command…",
+    "empty": "No results for \"{{query}}\".",
+    "sections": {
+      "notes": "Notes",
+      "actions": "Actions"
+    },
+    "actions": {
+      "newNote": "New note",
+      "openAgenda": "Open agenda",
+      "openMeetings": "Open meetings",
+      "openSettings": "Open settings",
+      "toggleTheme": "Toggle theme"
+    },
+    "hints": {
+      "navigate": "navigate",
+      "open": "open",
+      "close": "close"
+    }
+  },
   "sidebar": {
     "newNoteButton": "+ New",
-    "newNoteTooltip": "New note (Ctrl+Alt+N)",
+    "newNoteTooltip": "New note (Ctrl+Alt+Y)",
     "searchPlaceholder": "Search notes…",
     "searchClear": "Clear search",
     "searchNoResults": "Nothing found",
@@ -25,7 +59,7 @@
   },
   "empty": {
     "noNoteSelected": "No note selected.",
-    "newNoteCta": "New note (Ctrl+Alt+N)"
+    "newNoteCta": "New note (Ctrl+Alt+Y)"
   },
   "agenda": {
     "title": "Agenda",

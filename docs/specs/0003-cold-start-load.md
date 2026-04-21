@@ -7,10 +7,16 @@
 - **Relevant ADRs:** ADR-0007 (tray-resident)
 
 ## Why
-Coxinha's whole pitch is "keyboard shortcut → typing in <50ms".
-That promise only holds if we measure it. Same for the vault at
-realistic sizes — a 10k-note user shouldn't feel a lag that a
-100-note user doesn't.
+Coxinha's whole pitch is "keyboard shortcut → typing in <50ms"
+(default `Win+Y` after spec 0042 — picked after two earlier
+defaults failed: `Ctrl+Alt+N` was intercepted by OneNote and
+`Ctrl+Alt+Shift+N` / `Super+Shift+N` also failed in dev
+because `config.toml` held stale values and the new `Default`
+impl doesn't apply to existing installs without migration;
+that migration now lives in `config.rs`). That promise only
+holds if we measure it. Same for
+the vault at realistic sizes — a 10k-note user shouldn't feel
+a lag that a 100-note user doesn't.
 
 Without budgets in CI, the next innocent-looking feature commit
 will quietly add 200ms to startup and nobody will notice until a

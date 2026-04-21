@@ -47,7 +47,7 @@ impl AppState {
         let config_path = vault_root.join(".coxinha").join("config.toml");
 
         // Load config or create the default
-        let config = if config_path.exists() {
+        let mut config: AppConfig = if config_path.exists() {
             let raw = std::fs::read_to_string(&config_path)
                 .with_context(|| format!("reading {}", config_path.display()))?;
             toml::from_str(&raw).context("parsing config.toml")?
@@ -57,6 +57,17 @@ impl AppState {
             std::fs::write(&config_path, toml::to_string_pretty(&cfg)?)?;
             cfg
         };
+
+        // Rewrite shortcuts that match a documented broken default
+        // (spec 0042). Users who customized keep their choice — only
+        // the exact stale default sets flip. One-shot per install.
+        if migrate_stale_shortcut_defaults(&mut config.shortcuts) {
+            std::fs::write(&config_path, toml::to_string_pretty(&config)?)?;
+            tracing::info!(
+                "migrated stale shortcut defaults to current ({:?})",
+                config.shortcuts.new_note
+            );
+        }
 
         // Make sure the folder layout exists
         bootstrap_vault(&vault_root)?;
@@ -125,6 +136,57 @@ fn default_vault_root() -> Result<PathBuf> {
     Ok(dirs.home_dir().join("coxinha"))
 }
 
+/// Detect shortcut sets that match earlier defaults we now know
+/// were intercepted on Windows (Ctrl+Alt+N → OneNote in-app;
+/// Ctrl+Alt+Shift+N → the transitional attempt that also failed).
+/// If the whole set matches one of the stale defaults, reset to
+/// the current `ShortcutsConfig::default()`. Users who customized
+/// even one key keep their choice — only exact matches flip.
+fn migrate_stale_shortcut_defaults(current: &mut ShortcutsConfig) -> bool {
+    let stale_sets: [ShortcutsConfig; 4] = [
+        ShortcutsConfig {
+            new_note: "Ctrl+Alt+N".into(),
+            open_app: "Ctrl+Alt+C".into(),
+            agenda: "Ctrl+Alt+A".into(),
+            meetings: "Ctrl+Alt+M".into(),
+            toggle_recording: "Ctrl+Alt+R".into(),
+        },
+        ShortcutsConfig {
+            new_note: "Ctrl+Alt+Shift+N".into(),
+            open_app: "Ctrl+Alt+Shift+C".into(),
+            agenda: "Ctrl+Alt+Shift+A".into(),
+            meetings: "Ctrl+Alt+Shift+M".into(),
+            toggle_recording: "Ctrl+Alt+Shift+R".into(),
+        },
+        ShortcutsConfig {
+            new_note: "Super+Shift+N".into(),
+            open_app: "Super+Shift+C".into(),
+            agenda: "Super+Shift+A".into(),
+            meetings: "Super+Shift+M".into(),
+            toggle_recording: "Super+Shift+R".into(),
+        },
+        // Super+Y hero attempt — Super+Y registered cleanly on
+        // most machines but the Super+Shift+* siblings collided
+        // with Windows 11 bindings (Win+Shift+M restore minimized,
+        // Win+Shift+R screen record, Win+Shift+A accessibility
+        // tip focus). Plus the whole set leaked registrations on
+        // force-kill, blocking fresh boots. Migration flips
+        // forward to the Ctrl+Alt+<free-letter> set.
+        ShortcutsConfig {
+            new_note: "Super+Y".into(),
+            open_app: "Super+Shift+C".into(),
+            agenda: "Super+Shift+A".into(),
+            meetings: "Super+Shift+M".into(),
+            toggle_recording: "Super+Shift+R".into(),
+        },
+    ];
+    if stale_sets.iter().any(|s| s == current) {
+        *current = ShortcutsConfig::default();
+        return true;
+    }
+    false
+}
+
 fn default_config(vault_root: &std::path::Path) -> AppConfig {
     AppConfig {
         vault_path: vault_root.display().to_string(),
@@ -176,5 +238,85 @@ mod tests {
         let cfg = default_config(std::path::Path::new("C:/tmp/coxinha"));
         crate::transcriber::build(&cfg.transcriber).expect("transcriber builds");
         crate::diarizer::build(&cfg.diarizer).expect("diarizer builds");
+    }
+
+    #[test]
+    fn migrate_flips_pre_spec_0042_ctrl_alt_defaults() {
+        let mut stale = ShortcutsConfig {
+            new_note: "Ctrl+Alt+N".into(),
+            open_app: "Ctrl+Alt+C".into(),
+            agenda: "Ctrl+Alt+A".into(),
+            meetings: "Ctrl+Alt+M".into(),
+            toggle_recording: "Ctrl+Alt+R".into(),
+        };
+        assert!(migrate_stale_shortcut_defaults(&mut stale));
+        assert_eq!(stale, ShortcutsConfig::default());
+    }
+
+    #[test]
+    fn migrate_flips_transitional_ctrl_alt_shift_defaults() {
+        let mut stale = ShortcutsConfig {
+            new_note: "Ctrl+Alt+Shift+N".into(),
+            open_app: "Ctrl+Alt+Shift+C".into(),
+            agenda: "Ctrl+Alt+Shift+A".into(),
+            meetings: "Ctrl+Alt+Shift+M".into(),
+            toggle_recording: "Ctrl+Alt+Shift+R".into(),
+        };
+        assert!(migrate_stale_shortcut_defaults(&mut stale));
+        assert_eq!(stale, ShortcutsConfig::default());
+    }
+
+    #[test]
+    fn migrate_flips_interim_super_shift_defaults() {
+        let mut stale = ShortcutsConfig {
+            new_note: "Super+Shift+N".into(),
+            open_app: "Super+Shift+C".into(),
+            agenda: "Super+Shift+A".into(),
+            meetings: "Super+Shift+M".into(),
+            toggle_recording: "Super+Shift+R".into(),
+        };
+        assert!(migrate_stale_shortcut_defaults(&mut stale));
+        assert_eq!(stale, ShortcutsConfig::default());
+    }
+
+    #[test]
+    fn migrate_flips_super_y_hero_defaults() {
+        // The Super+Y + Super+Shift+{C,A,M,R} set shipped briefly
+        // but collided with Windows 11 system bindings on several
+        // letters. Make sure a config that landed on it migrates
+        // forward to whatever the current default is.
+        let mut stale = ShortcutsConfig {
+            new_note: "Super+Y".into(),
+            open_app: "Super+Shift+C".into(),
+            agenda: "Super+Shift+A".into(),
+            meetings: "Super+Shift+M".into(),
+            toggle_recording: "Super+Shift+R".into(),
+        };
+        assert!(migrate_stale_shortcut_defaults(&mut stale));
+        assert_eq!(stale, ShortcutsConfig::default());
+    }
+
+    #[test]
+    fn migrate_keeps_customized_shortcuts() {
+        // If the user customized any chord, migration leaves the
+        // whole set alone — we don't want to silently erase a
+        // deliberate rebind.
+        let customized = ShortcutsConfig {
+            new_note: "Ctrl+Alt+N".into(),
+            open_app: "Ctrl+Alt+Shift+F12".into(), // user's pick
+            agenda: "Ctrl+Alt+A".into(),
+            meetings: "Ctrl+Alt+M".into(),
+            toggle_recording: "Ctrl+Alt+R".into(),
+        };
+        let mut cfg = customized.clone();
+        assert!(!migrate_stale_shortcut_defaults(&mut cfg));
+        assert_eq!(cfg, customized);
+    }
+
+    #[test]
+    fn migrate_is_noop_on_current_defaults() {
+        let mut cfg = ShortcutsConfig::default();
+        assert!(!migrate_stale_shortcut_defaults(&mut cfg));
+        assert_eq!(cfg, ShortcutsConfig::default());
     }
 }

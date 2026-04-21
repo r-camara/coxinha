@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" width="800" height="500" font-family="Inter, system-ui, sans-serif">
+  <!--
+    empty-state-desired.svg — target empty state (spec 0042).
+    No CTA. Full-bleed editor on a transient draft. Low-opacity
+    placeholder reads "Type to start." First keystroke (200 ms
+    after meaningful content) persists via create_note; blur on
+    empty discards — no file, no row.
+  -->
+  <rect width="800" height="500" fill="#ffffff" stroke="#e5e7eb"/>
+
+  <!-- Blinking cursor at the top-left of the "document" area -->
+  <line x1="40" y1="36" x2="40" y2="68" stroke="#111827" stroke-width="2">
+    <animate attributeName="opacity" values="1;0;1" dur="1.1s" repeatCount="indefinite"/>
+  </line>
+
+  <!-- Placeholder (low opacity, italic) -->
+  <text x="48" y="60" font-size="18" fill="#9ca3af" font-style="italic" opacity="0.55">Type to start.</text>
+
+  <!-- Annotations -->
+  <g font-size="11" fill="#16a34a">
+    <text x="16" y="444">Lifecycle</text>
+  </g>
+  <g font-size="12" fill="#374151">
+    <text x="16" y="462">◾ Focus on mount — cursor ready</text>
+    <text x="16" y="478">◾ First keystroke (200 ms post-meaningful) → create_note + URL replaces to /notes/$id</text>
+    <text x="16" y="494">◾ Blur without any content → draft discarded (no IPC, no file)</text>
+  </g>
+
+  <!-- Reading-width hint -->
+  <rect x="40" y="84" width="720" height="320" fill="none" stroke="#e5e7eb" stroke-dasharray="4 4"/>
+  <text x="48" y="104" font-size="10" fill="#9ca3af">(reading column — 720 px max-width on wide viewports)</text>
+</svg>

@@ -62,4 +62,13 @@ dev-vault/
 # Logs
 *.log
 logs/
-.claude/settings.local.json
+
+# Claude Code / tooling caches
+.claude/
+.playwright-mcp/
+
+# Per-machine MCP server config (paths are absolute and OS-specific)
+.mcp.json
+
+# Local design scratch / unrelated project files dropped into docs/ui/
+docs/ui/
