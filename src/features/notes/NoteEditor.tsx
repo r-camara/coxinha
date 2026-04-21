@@ -144,12 +144,14 @@ function EditorInner({
         className="flex-1 min-w-0 overflow-auto bn-container"
         aria-label={t('editor.region')}
       >
-        <BlockNoteView
-          editor={editor}
-          onChange={debouncedSave}
-          data-note-id={noteId}
-          theme={theme}
-        />
+        <div className="mx-auto max-w-[720px] px-8 pt-14">
+          <BlockNoteView
+            editor={editor}
+            onChange={debouncedSave}
+            data-note-id={noteId}
+            theme={theme}
+          />
+        </div>
       </section>
       <BacklinksPanel noteId={noteId} />
     </div>

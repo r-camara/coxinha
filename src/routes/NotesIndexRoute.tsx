@@ -86,10 +86,12 @@ export function NotesIndexRoute() {
       aria-label={t('editor.region')}
       data-testid="notes-index-draft"
     >
-      {/* BlockNote owns the placeholder ("type '/' for commands")
-          and reads the cursor — adding a sibling overlay doubled
-          the affordance in the 2026-04-20 screenshot pass. */}
-      <BlockNoteView editor={editor} onChange={onChange} theme={theme} />
+      {/* Reading-column centered at max 720 px per Claude Design
+          handoff. BlockNote owns the placeholder affordance —
+          double overlays were dropped in the 2026-04-20 pass. */}
+      <div className="mx-auto max-w-[720px] px-8 pt-14">
+        <BlockNoteView editor={editor} onChange={onChange} theme={theme} />
+      </div>
     </section>
   );
 }

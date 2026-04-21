@@ -12,6 +12,15 @@
     "search": "Search (⌘K)",
     "toggleTheme": "Toggle theme"
   },
+  "assistant": {
+    "region": "Assistant",
+    "title": "Assistant",
+    "close": "Close assistant",
+    "links": "Link suggestions",
+    "related": "Related",
+    "empty": "No suggestions yet.",
+    "askPlaceholder": "Ask…"
+  },
   "palette": {
     "title": "Command palette",
     "placeholder": "Search notes, run a command…",
