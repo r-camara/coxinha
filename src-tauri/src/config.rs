@@ -143,7 +143,7 @@ fn default_vault_root() -> Result<PathBuf> {
 /// the current `ShortcutsConfig::default()`. Users who customized
 /// even one key keep their choice — only exact matches flip.
 fn migrate_stale_shortcut_defaults(current: &mut ShortcutsConfig) -> bool {
-    let stale_sets: [ShortcutsConfig; 3] = [
+    let stale_sets: [ShortcutsConfig; 4] = [
         ShortcutsConfig {
             new_note: "Ctrl+Alt+N".into(),
             open_app: "Ctrl+Alt+C".into(),
@@ -158,12 +158,22 @@ fn migrate_stale_shortcut_defaults(current: &mut ShortcutsConfig) -> bool {
             meetings: "Ctrl+Alt+Shift+M".into(),
             toggle_recording: "Ctrl+Alt+Shift+R".into(),
         },
-        // Interim PR #22 default — Super+Shift+N never got field
-        // time before we swapped new_note down to Super+Y. Keep
-        // the migration entry so anyone who ran that PR branch
-        // flips forward instead of staying stuck.
         ShortcutsConfig {
             new_note: "Super+Shift+N".into(),
+            open_app: "Super+Shift+C".into(),
+            agenda: "Super+Shift+A".into(),
+            meetings: "Super+Shift+M".into(),
+            toggle_recording: "Super+Shift+R".into(),
+        },
+        // Super+Y hero attempt — Super+Y registered cleanly on
+        // most machines but the Super+Shift+* siblings collided
+        // with Windows 11 bindings (Win+Shift+M restore minimized,
+        // Win+Shift+R screen record, Win+Shift+A accessibility
+        // tip focus). Plus the whole set leaked registrations on
+        // force-kill, blocking fresh boots. Migration flips
+        // forward to the Ctrl+Alt+<free-letter> set.
+        ShortcutsConfig {
+            new_note: "Super+Y".into(),
             open_app: "Super+Shift+C".into(),
             agenda: "Super+Shift+A".into(),
             meetings: "Super+Shift+M".into(),
@@ -267,7 +277,23 @@ mod tests {
         };
         assert!(migrate_stale_shortcut_defaults(&mut stale));
         assert_eq!(stale, ShortcutsConfig::default());
-        assert_eq!(stale.new_note, "Super+Y");
+    }
+
+    #[test]
+    fn migrate_flips_super_y_hero_defaults() {
+        // The Super+Y + Super+Shift+{C,A,M,R} set shipped briefly
+        // but collided with Windows 11 system bindings on several
+        // letters. Make sure a config that landed on it migrates
+        // forward to whatever the current default is.
+        let mut stale = ShortcutsConfig {
+            new_note: "Super+Y".into(),
+            open_app: "Super+Shift+C".into(),
+            agenda: "Super+Shift+A".into(),
+            meetings: "Super+Shift+M".into(),
+            toggle_recording: "Super+Shift+R".into(),
+        };
+        assert!(migrate_stale_shortcut_defaults(&mut stale));
+        assert_eq!(stale, ShortcutsConfig::default());
     }
 
     #[test]
