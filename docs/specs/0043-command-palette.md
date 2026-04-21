@@ -1,6 +1,9 @@
 # Spec 0043: Command palette (`Ctrl+K`)
 
-- **Status:** draft
+- **Status:** implemented (first pass — fuzzy search + action
+  registry landed in `src/features/shell/CommandPalette.tsx`;
+  cross-workspace scope, create-on-enter, and perf tests still
+  to wire)
 - **Phase:** F1 (housekeeping UX, lands with or after spec 0039)
 - **Owner:** Rodolfo
 - **Depends on:** spec 0039 (router), spec 0005 (notes + FTS),

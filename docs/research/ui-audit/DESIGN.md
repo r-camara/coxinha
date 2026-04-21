@@ -3,6 +3,36 @@
 > Anti-cliché design doctrine for the Coxinha desktop notetaker.
 > Feeds `pencil` CLI prompts and any AI-assisted design / frontend
 > work. Single source of truth for aesthetic direction.
+>
+> **Reconciled with the Claude Design handoff (2026-04-21).** The
+> user built a full design system with Claude Design at
+> `claude.ai/design`, exporting the bundle that now lives
+> extracted under `docs/research/ui-audit/mockups/` (also see the
+> reference layout PNG). The handoff replaces the Zinc-neutral +
+> Coxinha Orange direction this doc previously settled on.
+>
+> **What changed:**
+>
+> - Palette pivots to warm paper canvas (`oklch(0.960 0.012 80)`)
+>   + stone ink + **sage** accent (`oklch(0.560 0.055 140)`). The
+>   orange-only rule is replaced by a sage-only rule at the
+>   same restraint level. See §2.
+> - Typography adopts **Newsreader** (display serif) + **Inter
+>   Tight** (body) + JetBrains Mono. Replaces the Geist single-
+>   family decision. Note titles in the reading column are 44 px
+>   Newsreader at weight 500. See §3.
+> - Shell refactors from a 280 px sidebar to a 44 px icon rail
+>   plus a Ctrl+K command palette. Most of what lived in the
+>   old sidebar (search, recent, tags) is reachable only from
+>   the palette now. See §5.
+> - Aesthetic anchor shifts from Arc Browser restraint to
+>   **Opera Air** ("mindful browsing" — soft off-white, breathing
+>   spacing, subtle depth, nothing shouting).
+>
+> Source of truth for tokens is now `src/index.css` (OKLCH raw
+> triplets + `@theme` aliases). The former Zinc + orange blocks
+> in this doc are kept historical-only below — see the struck-
+> through sections.
 
 ---
 
