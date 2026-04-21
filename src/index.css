@@ -143,6 +143,28 @@
   height: 100%;
 }
 
+/* Let the editor inherit the canvas background. Without this the
+   `@blocknote/shadcn` bundle paints `rgb(31,31,31)` in dark mode,
+   making the column look like a lighter slab floating over the
+   near-black shell — the user's "cinza mais claro no meio da tela"
+   report. Transparent here means "use whatever the page set". */
+.bn-container,
+.bn-container .bn-editor,
+.bn-container .ProseMirror {
+  background: transparent;
+}
+
+/* BlockNote shows its "Enter text or type '/' for commands" hint
+   via `::after` on *every* empty focused block. The user wants it
+   once — at the start of a blank note — then silent for the rest.
+   The attribute `data-is-only-empty-block` is set by BlockNote only
+   when this block is the sole empty block in the doc, which maps
+   exactly to the "first and only" case. Subsequent empty blocks
+   (created by Enter) lack the attribute and go quiet. */
+.bn-block-content[data-is-empty-and-focused="true"]:not([data-is-only-empty-block="true"])::after {
+  content: "" !important;
+}
+
 /* Display — Geist bold with tight tracking. Used for note titles
    and view headlines. Mix B Refined: 38px / 700 / -1.1 tracking. */
 .cx-display {

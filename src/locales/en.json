@@ -34,13 +34,17 @@
       "openAgenda": "Open agenda",
       "openMeetings": "Open meetings",
       "openSettings": "Open settings",
-      "toggleTheme": "Toggle theme"
+      "toggleTheme": "Toggle theme",
+      "deleteCurrentNote": "Delete this note",
+      "deleteThisNote": "Delete note"
     },
     "hints": {
       "navigate": "navigate",
       "open": "open",
+      "delete": "delete",
       "close": "close"
-    }
+    },
+    "deleteConfirm": "Delete \"{{title}}\"? This moves the file out of the vault and cannot be undone yet."
   },
   "sidebar": {
     "newNoteButton": "+ New",
