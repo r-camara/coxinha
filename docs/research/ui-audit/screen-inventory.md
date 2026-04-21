@@ -32,14 +32,15 @@ tokens in `DESIGN.md`.
 | # | Surface | Spec | Design note | Mock |
 |---|---|---|---|---|
 | A1 | Window chrome | spec 0001 | OS-native title bar (no custom draggable region). Tray-resident per ADR-0007. Closing hides; real quit from tray menu. | ◊ (OS-rendered) |
-| A2 | **IconRail** (44 px, icons only) | spec 0005 + Claude Design handoff | Replaces the old 280 px sidebar (2026-04-21). Logo dot at top, four nav icons (file / calendar / mic / search), flex spacer, theme toggle + settings at the bottom. Everything else (note list, search, tags, recent) lives in the command palette now | ✓ implemented |
-| A3 | Tab bar | spec 0039 | **Not mounted in the new layout.** The handoff reference is tab-less at the `/notes` root; multi-note tabbing returns in a future spec. Leaving as a recorded surface — kept in `components/Sidebar.tsx` for test-preservation | ◊ paused |
+| A2 | **IconRail** (48 px, icons only) | spec 0005 + spec 0052 | Widened to 48 px for the Mix B Refined shell (2026-04-21). Four nav icons (file / calendar / mic / search), flex spacer, theme toggle + settings at the bottom. Active state uses a soft tangerine tint (`accent / 0.08`). Discovery of notes lives in the command palette | ✓ implemented |
+| A3 | **ChromeBar** (52 px, breadcrumb + Saved indicator) | **spec 0052** | New surface introduced by Mix B Refined. Breadcrumb trail on the left (`notes / untitled.md`), Saved indicator slot on the right (`• Saved`). Rendered by every route via `<RouteLayout>` | ✓ implemented |
+| A3b | **StatusBar** (36 px footer) | **spec 0052** | New surface. Renders under editing routes with word count / save state on the left, optional meta on the right | ✓ implemented |
 | A4 | Workspace switcher | spec 0041 + new spec 0046 | Opera-style icon rail in the sidebar top (per spec 0041 update). Rail shows up to 9 workspace icons with `Ctrl+Alt+1..9` shortcuts | → |
 | A5 | Command palette overlay (`Ctrl+K`) | **spec 0043** | Implemented 2026-04-21. Actions + fuzzy note search + shortcuts help in one overlay. `Ctrl+K` / `Ctrl+P` / Esc wired. Translated from the Claude Design handoff's CommandPalette.jsx | ✓ implemented |
-| A6 | Empty-state editor | spec 0042 | `/notes` renders the BlockNote editor directly on a transient draft in a 720 px-max reading column. The native placeholder (`Enter text or type '/' for commands`) is the only affordance | ✓ implemented |
-| A7 | Save indicator | spec 0042 | Sage live-dot in the meta row. Per Claude Design handoff — orange has been fully replaced by sage as the single accent (2026-04-21) | ✓ (static) |
+| A6 | Empty-state editor | spec 0042 | `/notes` renders the BlockNote editor directly on a transient draft in a 760 px-max reading column. The native placeholder (`Enter text or type '/' for commands`) is the only affordance | ✓ implemented |
+| A7 | Save indicator | spec 0042 + spec 0052 | Tangerine live-dot (6 px) in the chrome bar's right slot. Orange replaces the interim sage accent per the Mix B Refined handoff (2026-04-21) | ✓ implemented |
 | A8 | Focus / compact mode | new **spec 0046** | Ctrl+Shift+M collapses the full shell to the 900×600 compact window. Reverse toggles back | → |
-| A9 | **AI Assistant panel** (300 px, right) | new **spec 0051** | Sunken side panel with ASSISTANT eyebrow + live dot, Link-suggestions section, Related section, Ask input with ⌘J chip. Ctrl+J toggles. Default open on `/notes/$id` routes | ✓ stub implemented |
+| A9 | **AI Assistant rail + panel** | spec 0051 + spec 0052 | Always-visible 48 px `ASK` rail (sparkles icon + vertical label) that expands to a 320 px panel on click or ⌘J. Panel layout unchanged: LINK SUGGESTIONS / RELATED sections + Ask input. Implemented 2026-04-21 | ✓ implemented |
 
 ## B. Content screens
 
