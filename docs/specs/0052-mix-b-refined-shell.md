@@ -87,8 +87,8 @@ Source: `docs/research/ui-audit/DESIGN.md` (reconciled at the top).
 
 - Rebinding the dedicated sidebar notes list. The mockups don't
   have one — discovery is via the command palette only.
-- Word-count computation in `NotesIndexRoute` (stub `0 palavras`
-  for now; real counting lands when the BlockNote document is
-  reachable from here).
+- Word-count computation in `NotesIndexRoute` (stubbed via the
+  `status.draftCount` locale key for now; real counting lands
+  when the BlockNote document is reachable from here).
 - Meeting-alert toast and recording workspace variants (Pages 5
   and 6 in the mockup). Separate surface, separate spec.

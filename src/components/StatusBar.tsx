@@ -1,7 +1,7 @@
 import { ReactNode } from 'react';
 
 interface Props {
-  /** Left-aligned status text (e.g. "847 palavras · 6 min · Saved"). */
+  /** Left-aligned status text (e.g. "847 words · 6 min · Saved"). */
   left?: ReactNode;
   /** Right-aligned text (e.g. locale indicator). */
   right?: ReactNode;

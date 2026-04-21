@@ -82,7 +82,7 @@ export function NotesIndexRoute() {
   return (
     <RouteLayout
       trail={[t('nav.notes').toLowerCase(), 'untitled.md']}
-      statusLeft={<span>0 palavras · 0 min</span>}
+      statusLeft={<span>{t('status.draftCount')}</span>}
     >
       <section
         className="h-full overflow-auto bn-container"
