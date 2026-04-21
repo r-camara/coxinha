@@ -14,6 +14,7 @@ import { NoteDetailRoute, noteContentQueryOptions } from './routes/NoteDetailRou
 import { AgendaRoute } from './routes/AgendaRoute';
 import { MeetingsRoute } from './routes/MeetingsRoute';
 import { SettingsRoute } from './routes/SettingsRoute';
+import { DevMenuPreviewRoute } from './routes/DevMenuPreviewRoute';
 
 export interface RouterContext {
   queryClient: QueryClient;
@@ -71,13 +72,25 @@ const settingsRoute = createRoute({
   component: SettingsRoute,
 });
 
-const routeTree = rootRoute.addChildren([
+// Dev-only preview route (stripped from prod bundle by the
+// `import.meta.env.DEV` guard below). Lets Playwright + humans
+// visually check the NoteActionsMenu without a real note.
+const devMenuPreviewRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: 'dev/menu-preview',
+  component: DevMenuPreviewRoute,
+});
+
+const baseChildren = [
   indexRoute,
   notesRoute.addChildren([notesIndexRoute, noteDetailRoute]),
   agendaRoute,
   meetingsRoute,
   settingsRoute,
-]);
+];
+const routeTree = rootRoute.addChildren(
+  import.meta.env.DEV ? [...baseChildren, devMenuPreviewRoute] : baseChildren,
+);
 
 export function createAppRouter(queryClient: QueryClient) {
   // Memory history in F1 Tauri — no address bar, URL is internal

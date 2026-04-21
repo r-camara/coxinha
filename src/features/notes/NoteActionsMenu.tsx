@@ -262,7 +262,7 @@ export function NoteActionsMenu({
             icon={<CloudOff size={14} aria-hidden="true" />}
             label={t('noteMenu.availableOffline')}
             disabled
-            value={true}
+            value={false}
           />
         )}
         {filter(t('noteMenu.smallText')) && (

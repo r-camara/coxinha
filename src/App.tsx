@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { RouterProvider } from '@tanstack/react-router';
 
@@ -20,6 +20,21 @@ export default function App() {
     const router = createAppRouter(queryClient);
     return { queryClient, router };
   });
+
+  // Dev handle for Playwright-driven visual checks — lets a test
+  // seed the query cache + navigate without a real Tauri backend.
+  // Lives in an effect (not the `useState` initializer) so
+  // StrictMode's double-invoke can't leave a stale pointer to an
+  // unmounted router on window. Stripped from prod via Vite's
+  // `import.meta.env.DEV` guard.
+  useEffect(() => {
+    if (!import.meta.env.DEV) return;
+    const w = window as unknown as { __coxinha?: unknown };
+    w.__coxinha = { queryClient, router };
+    return () => {
+      delete w.__coxinha;
+    };
+  }, [queryClient, router]);
 
   return (
     <QueryClientProvider client={queryClient}>
