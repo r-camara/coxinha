@@ -13,6 +13,7 @@ interface AppStore {
   setActiveNote: (id: string | null) => void;
   newNote: () => Promise<Note>;
   saveNote: (id: string, markdown: string) => Promise<void>;
+  duplicateNote: (id: string) => Promise<Note>;
   deleteNote: (id: string) => Promise<void>;
   searchNotes: (query: string) => Promise<Note[]>;
   openDailyNote: (date?: string) => Promise<Note>;
@@ -60,6 +61,34 @@ export const useAppStore = create<AppStore>((set) => ({
         ...state.notes.filter((n) => n.id !== id),
       ]),
     }));
+  },
+
+  async duplicateNote(id) {
+    const existing = await invoke<{ note: Note; markdown: string } | null>(
+      'get_note',
+      { id },
+    );
+    if (!existing) throw new Error(`note ${id} not found`);
+    // Prepend a dupe marker to the first heading if one exists; else
+    // just pass the markdown through — the backend derives the title
+    // from the first heading on save either way.
+    const dupedMd = existing.markdown.replace(
+      /^(#\s+)(.+)$/m,
+      (_m, prefix, heading) => `${prefix}${heading} (copy)`,
+    );
+    const fresh = await invoke<Note>('create_note', {
+      title: '',
+      content: '',
+    });
+    const saved = await invoke<Note>('update_note', {
+      id: fresh.id,
+      content: dupedMd,
+    });
+    set((state) => ({
+      notes: sortByUpdated([saved, ...state.notes.filter((n) => n.id !== saved.id)]),
+      activeNoteId: saved.id,
+    }));
+    return saved;
   },
 
   async deleteNote(id) {

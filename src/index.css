@@ -141,6 +141,25 @@
 /* BlockNote inside our layout: fill the pane, respect the theme. */
 .bn-container {
   height: 100%;
+  /* Per-note font family is switched by the NoteActionsMenu
+     picker (Default/Serif/Mono) — default to Geist. */
+  --cx-note-font: var(--font-sans);
+  --cx-note-size: 1rem;
+}
+
+.bn-container .ProseMirror {
+  font-family: var(--cx-note-font);
+  font-size: var(--cx-note-size);
+}
+
+.cx-note-font-serif {
+  --cx-note-font: 'Newsreader', 'Source Serif Pro', Georgia, serif;
+}
+.cx-note-font-mono {
+  --cx-note-font: var(--font-mono);
+}
+.cx-note-size-small {
+  --cx-note-size: 0.875rem;
 }
 
 /* Let the editor inherit the canvas background. Without this the
