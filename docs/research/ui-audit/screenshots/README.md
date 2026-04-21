@@ -1,6 +1,6 @@
 # UI Audit Screenshots
 
-Captured by `pnpm screenshots` on 2026-04-21T03:27:18.853Z.
+Captured by `pnpm screenshots` on 2026-04-21T03:40:32.271Z.
 Base URL: http://localhost:1420
 Viewports: 1440x900, 1024x768, 1920x1080
 Routes: /, /notes, /agenda, /meetings, /settings

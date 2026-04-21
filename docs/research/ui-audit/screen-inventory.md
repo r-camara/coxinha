@@ -32,13 +32,14 @@ tokens in `DESIGN.md`.
 | # | Surface | Spec | Design note | Mock |
 |---|---|---|---|---|
 | A1 | Window chrome | spec 0001 | OS-native title bar (no custom draggable region). Tray-resident per ADR-0007. Closing hides; real quit from tray menu. | ◊ (OS-rendered) |
-| A2 | Sidebar (280 px fixed, Stone bg) | spec 0005 | Brand + workspace switcher + `+ New` / nav block / search / content panel (Recent, Tags, **nested tree when spec 0045 lands**) / Settings footer | ✓ |
-| A3 | Tab bar (40 px, Stone bg, rounded-top tabs) | spec 0039 + this round | Tabs for each open note. Active tab fills Canvas (merges with editor). Close-x on active. `+` at end opens new tab. Obsidian-inspired, not VSCode-flat | ✓ |
-| A4 | Workspace switcher popover | spec 0041 + new spec 0046 | Triggered from brand area in sidebar. Popover listing workspaces (icon + name + note count in mono) + "Create workspace…" entry. `Ctrl+1/2/3` jumps to slots 1–3 | → |
-| A5 | Command palette overlay (`Ctrl+K`) | new **spec 0043** | Full-width dialog, scrim dimmer. Three sections: pages (fuzzy by title + snippet), actions (new note, switch workspace, toggle theme, rebuild index), shortcuts help. `Esc` closes | → |
-| A6 | Empty-state editor | spec 0042 | `/notes` renders the editor directly on a transient draft. BlockNote placeholder ("Enter text or type '/' for commands") is the only affordance | ✓ |
-| A7 | Save indicator | spec 0042 | Subtle Coxinha-orange dot in the meta row under the note title after each save, 600 ms fade. Never a toast | ✓ (static) |
-| A8 | Focus / compact mode | new **spec 0046** | Ctrl+Shift+M collapses the full shell to the same 900×600 compact window the hotkey opens. Reverse toggles back, with spring-200 window resize + sidebar/backlinks slide-in | → |
+| A2 | **IconRail** (44 px, icons only) | spec 0005 + Claude Design handoff | Replaces the old 280 px sidebar (2026-04-21). Logo dot at top, four nav icons (file / calendar / mic / search), flex spacer, theme toggle + settings at the bottom. Everything else (note list, search, tags, recent) lives in the command palette now | ✓ implemented |
+| A3 | Tab bar | spec 0039 | **Not mounted in the new layout.** The handoff reference is tab-less at the `/notes` root; multi-note tabbing returns in a future spec. Leaving as a recorded surface — kept in `components/Sidebar.tsx` for test-preservation | ◊ paused |
+| A4 | Workspace switcher | spec 0041 + new spec 0046 | Opera-style icon rail in the sidebar top (per spec 0041 update). Rail shows up to 9 workspace icons with `Ctrl+Alt+1..9` shortcuts | → |
+| A5 | Command palette overlay (`Ctrl+K`) | **spec 0043** | Implemented 2026-04-21. Actions + fuzzy note search + shortcuts help in one overlay. `Ctrl+K` / `Ctrl+P` / Esc wired. Translated from the Claude Design handoff's CommandPalette.jsx | ✓ implemented |
+| A6 | Empty-state editor | spec 0042 | `/notes` renders the BlockNote editor directly on a transient draft in a 720 px-max reading column. The native placeholder (`Enter text or type '/' for commands`) is the only affordance | ✓ implemented |
+| A7 | Save indicator | spec 0042 | Sage live-dot in the meta row. Per Claude Design handoff — orange has been fully replaced by sage as the single accent (2026-04-21) | ✓ (static) |
+| A8 | Focus / compact mode | new **spec 0046** | Ctrl+Shift+M collapses the full shell to the 900×600 compact window. Reverse toggles back | → |
+| A9 | **AI Assistant panel** (300 px, right) | new **spec 0051** | Sunken side panel with ASSISTANT eyebrow + live dot, Link-suggestions section, Related section, Ask input with ⌘J chip. Ctrl+J toggles. Default open on `/notes/$id` routes | ✓ stub implemented |
 
 ## B. Content screens
 
