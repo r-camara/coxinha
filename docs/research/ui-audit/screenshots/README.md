@@ -1,6 +1,6 @@
 # UI Audit Screenshots
 
-Captured by `pnpm screenshots` on 2026-04-21T03:23:03.773Z.
+Captured by `pnpm screenshots` on 2026-04-21T03:27:18.853Z.
 Base URL: http://localhost:1420
 Viewports: 1440x900, 1024x768, 1920x1080
 Routes: /, /notes, /agenda, /meetings, /settings
@@ -28,19 +28,19 @@ Routes: /, /notes, /agenda, /meetings, /settings
 ## Console errors per viewport
 
 ### 1440x900
-- Total error-level messages: 30
+- Total error-level messages: 20
 - Distinct: 2
 - `TypeError: Cannot read properties of undefined (reading 'invoke')`
 - `TypeError: Cannot read properties of undefined (reading 'transformCallback')`
 
 ### 1024x768
-- Total error-level messages: 30
+- Total error-level messages: 20
 - Distinct: 2
 - `TypeError: Cannot read properties of undefined (reading 'invoke')`
 - `TypeError: Cannot read properties of undefined (reading 'transformCallback')`
 
 ### 1920x1080
-- Total error-level messages: 30
+- Total error-level messages: 20
 - Distinct: 2
 - `TypeError: Cannot read properties of undefined (reading 'invoke')`
 - `TypeError: Cannot read properties of undefined (reading 'transformCallback')`

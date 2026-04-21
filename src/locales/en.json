@@ -8,6 +8,31 @@
     "meetings": "Meetings",
     "settings": "Settings"
   },
+  "rail": {
+    "search": "Search (⌘K)",
+    "toggleTheme": "Toggle theme"
+  },
+  "palette": {
+    "title": "Command palette",
+    "placeholder": "Search notes, run a command…",
+    "empty": "No results for \"{{query}}\".",
+    "sections": {
+      "notes": "Notes",
+      "actions": "Actions"
+    },
+    "actions": {
+      "newNote": "New note",
+      "openAgenda": "Open agenda",
+      "openMeetings": "Open meetings",
+      "openSettings": "Open settings",
+      "toggleTheme": "Toggle theme"
+    },
+    "hints": {
+      "navigate": "navigate",
+      "open": "open",
+      "close": "close"
+    }
+  },
   "sidebar": {
     "newNoteButton": "+ New",
     "newNoteTooltip": "New note (Win+Y)",

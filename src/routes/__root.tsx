@@ -1,8 +1,9 @@
-import { useEffect } from 'react';
-import { Outlet, useNavigate, useRouterState } from '@tanstack/react-router';
+import { useEffect, useState } from 'react';
+import { Outlet, useNavigate } from '@tanstack/react-router';
 import type { UnlistenFn } from '@tauri-apps/api/event';
 
-import { Sidebar, type View } from '../components/Sidebar';
+import { IconRail } from '../components/IconRail';
+import { CommandPalette } from '../features/shell/CommandPalette';
 import { events, type Route } from '../lib/bindings';
 import { mark } from '../lib/perf';
 import { useAppStore } from '../lib/store';
@@ -16,8 +17,7 @@ export function RootLayout() {
   const navigate = useNavigate();
   const loadNotes = useAppStore((s) => s.loadNotes);
   const newNote = useAppStore((s) => s.newNote);
-  const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const view = viewFromPath(pathname);
+  const [paletteOpen, setPaletteOpen] = useState(false);
 
   useEffect(() => {
     let cleanup = followThemePreference(getThemePreference());
@@ -86,35 +86,28 @@ export function RootLayout() {
     };
   }, [loadNotes, navigate, newNote]);
 
+  // Ctrl+K / Ctrl+P open the command palette. Ignored inside
+  // text inputs so users can still print-preview or whatever the
+  // OS maps on top. Palette close handled inside CommandPalette.
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (!(e.ctrlKey || e.metaKey)) return;
+      const key = e.key.toLowerCase();
+      if (key !== 'k' && key !== 'p') return;
+      e.preventDefault();
+      setPaletteOpen((v) => !v);
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
+
   return (
     <div className="h-screen w-screen flex bg-background text-foreground">
-      <Sidebar
-        current={view}
-        onNavigate={(v) => navigate({ to: viewToPath(v) })}
-      />
+      <IconRail onOpenPalette={() => setPaletteOpen(true)} />
       <main className="flex-1 overflow-hidden">
         <Outlet />
       </main>
+      <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
     </div>
   );
-}
-
-function viewFromPath(pathname: string): View {
-  if (pathname.startsWith('/agenda')) return 'agenda';
-  if (pathname.startsWith('/meetings')) return 'meetings';
-  if (pathname.startsWith('/settings')) return 'settings';
-  return 'notes';
-}
-
-function viewToPath(view: View): string {
-  switch (view) {
-    case 'notes':
-      return '/notes';
-    case 'agenda':
-      return '/agenda';
-    case 'meetings':
-      return '/meetings';
-    case 'settings':
-      return '/settings';
-  }
 }
