@@ -9,6 +9,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { events, type NoteContent } from '../../lib/bindings';
 import { logNewNoteTrace, mark } from '../../lib/perf';
 import { useAppStore } from '../../lib/store';
+import { useResolvedTheme } from '../../lib/useTheme';
 import { BacklinksPanel } from './BacklinksPanel';
 
 interface Props {
@@ -49,6 +50,7 @@ function EditorInner({
   onSave: (md: string) => void;
 }) {
   const { t } = useTranslation();
+  const theme = useResolvedTheme();
   const editor = useCreateBlockNote({
     uploadFile: async (file: File) => {
       const compressed = await compressImage(file);
@@ -146,6 +148,7 @@ function EditorInner({
           editor={editor}
           onChange={debouncedSave}
           data-note-id={noteId}
+          theme={theme}
         />
       </section>
       <BacklinksPanel noteId={noteId} />

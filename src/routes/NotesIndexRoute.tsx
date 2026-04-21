@@ -7,6 +7,7 @@ import '@blocknote/core/fonts/inter.css';
 import '@blocknote/shadcn/style.css';
 
 import { useAppStore } from '../lib/store';
+import { useResolvedTheme } from '../lib/useTheme';
 
 /**
  * Empty-state route (spec 0042). Renders the editor directly on a
@@ -22,6 +23,7 @@ export function NotesIndexRoute() {
   const navigate = useNavigate();
   const newNote = useAppStore((s) => s.newNote);
   const saveNote = useAppStore((s) => s.saveNote);
+  const theme = useResolvedTheme();
 
   const persistingRef = useRef(false);
   const pendingContentRef = useRef<string>('');
@@ -87,7 +89,7 @@ export function NotesIndexRoute() {
       {/* BlockNote owns the placeholder ("type '/' for commands")
           and reads the cursor — adding a sibling overlay doubled
           the affordance in the 2026-04-20 screenshot pass. */}
-      <BlockNoteView editor={editor} onChange={onChange} />
+      <BlockNoteView editor={editor} onChange={onChange} theme={theme} />
     </section>
   );
 }

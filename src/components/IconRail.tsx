@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from '@tanstack/react-router';
 import {
   Calendar,
@@ -14,13 +13,11 @@ import { useTranslation } from 'react-i18next';
 
 import {
   applyTheme,
-  followThemePreference,
   getThemePreference,
   setThemePreference,
   systemTheme,
-  type Theme,
-  THEME_PREF_EVENT,
 } from '../lib/theme';
+import { useResolvedTheme } from '../lib/useTheme';
 
 interface Props {
   onOpenPalette: () => void;
@@ -147,39 +144,10 @@ function viewFromPath(pathname: string): RouteView {
   return 'notes';
 }
 
-/**
- * Track the resolved theme ('light' or 'dark') so the rail can
- * show Sun in dark mode and Moon in light mode. Follows the same
- * `THEME_PREF_EVENT` + `prefers-color-scheme` pipe that `main.tsx`
- * + `App.tsx` already rely on.
- */
-function useResolvedTheme(): Theme {
-  const [theme, setTheme] = useState<Theme>(() => systemTheme());
-
-  useEffect(() => {
-    const read = () => {
-      const pref = getThemePreference();
-      setTheme(pref === 'auto' ? systemTheme() : pref);
-    };
-    read();
-    const handle = () => read();
-    window.addEventListener(THEME_PREF_EVENT, handle);
-    const media = window.matchMedia('(prefers-color-scheme: dark)');
-    media.addEventListener('change', read);
-    return () => {
-      window.removeEventListener(THEME_PREF_EVENT, handle);
-      media.removeEventListener('change', read);
-    };
-  }, []);
-
-  return theme;
-}
-
 function toggleTheme() {
   const pref = getThemePreference();
   const resolved = pref === 'auto' ? systemTheme() : pref;
   const next = resolved === 'dark' ? 'light' : 'dark';
   setThemePreference(next);
   applyTheme(next);
-  followThemePreference(next);
 }
