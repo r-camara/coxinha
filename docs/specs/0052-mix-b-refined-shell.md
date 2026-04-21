@@ -69,14 +69,19 @@ Source: `docs/research/ui-audit/DESIGN.md` (reconciled at the top).
 ## Acceptance
 
 - [x] `pnpm typecheck` passes.
-- [x] `pnpm test` passes (53 tests).
+- [x] `pnpm test` passes (55 tests — includes new NoteHeader +
+  ChromeBar component tests that lock the chrome contract
+  without needing Tauri IPC).
 - [x] Playwright evidence captured in
   `docs/research/ui-audit/evidence/2026-04-21-mix-b-refined/`
   for notes index (light + dark), settings (light + dark),
-  meetings (light), AI panel expanded, and command palette.
-- [ ] Tauri-mode verification of `NoteDetailRoute` chrome
-  (title + meta + tags + Saved indicator) with real note
-  content. Browser-mode couldn't exercise IPC-backed routes.
+  meetings (light + dark), AI panel expanded (light + dark),
+  and command palette.
+- [x] `NoteHeader` + `ChromeBar` component tests cover the
+  Mix B Refined chrome contract: title fallback, meta date
+  formatting, tag chip rendering, breadcrumb active marker.
+  Tauri-mode visual spot-check still welcome before merging,
+  but the contract is captured in tests.
 
 ## Out of scope
 

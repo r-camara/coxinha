@@ -11,6 +11,7 @@ import { logNewNoteTrace, mark } from '../../lib/perf';
 import { useAppStore } from '../../lib/store';
 import { useResolvedTheme } from '../../lib/useTheme';
 import { BacklinksPanel } from './BacklinksPanel';
+import { NoteHeader } from './NoteHeader';
 
 interface Props {
   noteId: string;
@@ -147,9 +148,6 @@ function EditorInner({
     };
   }, [flushNow]);
 
-  const displayTitle = title || t('sidebar.untitled');
-  const meta = formatNoteMeta(updatedAt);
-
   return (
     <div className="h-full flex">
       <section
@@ -157,26 +155,7 @@ function EditorInner({
         aria-label={t('editor.region')}
       >
         <div className="mx-auto max-w-[760px] px-24 pt-12 pb-10">
-          <header className="flex flex-col gap-2.5 mb-5">
-            <h1
-              className="cx-display text-[38px] text-foreground"
-              style={{ textWrap: 'balance' }}
-            >
-              {displayTitle}
-            </h1>
-            <p className="text-xs text-muted-foreground tracking-wide">
-              {meta}
-            </p>
-          </header>
-          {tags.length > 0 && (
-            <div className="flex flex-wrap gap-2 mb-6">
-              {tags.map((tag) => (
-                <span key={tag} className="cx-tag-chip">
-                  #{tag}
-                </span>
-              ))}
-            </div>
-          )}
+          <NoteHeader title={title} tags={tags} updatedAt={updatedAt} />
           <BlockNoteView
             editor={editor}
             onChange={debouncedSave}
@@ -188,17 +167,6 @@ function EditorInner({
       <BacklinksPanel noteId={noteId} />
     </div>
   );
-}
-
-function formatNoteMeta(updatedAt: string): string {
-  const d = new Date(updatedAt);
-  if (Number.isNaN(d.getTime())) return '';
-  const formatted = d.toLocaleDateString(undefined, {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  });
-  return `${formatted} · Saved`;
 }
 
 /**
