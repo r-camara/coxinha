@@ -88,7 +88,10 @@ export function Sidebar({ current, onNavigate }: Props) {
   return (
     <aside className="w-72 border-r border-border flex flex-col bg-muted/50">
       <header className="p-4 flex items-center justify-between">
-        <span className="font-bold text-lg" aria-label={t('brand.name')}>
+        <span
+          className="cx-display text-2xl"
+          aria-label={t('brand.name')}
+        >
           {t('brand.name')}
         </span>
         <button

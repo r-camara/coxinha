@@ -4,7 +4,7 @@ export function MeetingsView() {
   const { t } = useTranslation();
   return (
     <section className="p-8" aria-labelledby="meetings-heading">
-      <h1 id="meetings-heading" className="text-2xl font-bold mb-4">
+      <h1 id="meetings-heading" className="cx-display text-4xl mb-4">
         {t('meetings.title')}
       </h1>
       <p className="text-muted-foreground">{t('meetings.comingSoon')}</p>

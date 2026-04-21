@@ -49,7 +49,7 @@ export function AgendaView() {
   return (
     <section className="h-full flex flex-col" aria-labelledby="agenda-heading">
       <header className="px-8 pt-6 pb-2">
-        <h1 id="agenda-heading" className="text-2xl font-bold">
+        <h1 id="agenda-heading" className="cx-display text-4xl">
           {t('agenda.title')}
         </h1>
         <p className="text-sm text-muted-foreground">

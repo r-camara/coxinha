@@ -358,7 +358,7 @@ function SettingsFrame({ children }: { children: React.ReactNode }) {
   const { t } = useTranslation();
   return (
     <section className="p-8 space-y-6 max-w-3xl" aria-labelledby="settings-heading">
-      <h1 id="settings-heading" className="text-2xl font-bold">
+      <h1 id="settings-heading" className="cx-display text-4xl">
         {t('settings.title')}
       </h1>
       {children}
