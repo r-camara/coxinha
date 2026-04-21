@@ -41,6 +41,7 @@ pub fn register_all(app: &AppHandle, cfg: &ShortcutsConfig) -> Result<()> {
                     tracing::warn!("failed to register {}: {:?}", raw, e);
                     continue;
                 }
+                tracing::info!("registered shortcut {} -> {:?}", raw, route);
                 routes.insert(shortcut, route);
             }
             Err(e) => tracing::warn!("invalid shortcut '{}': {:?}", raw, e),
