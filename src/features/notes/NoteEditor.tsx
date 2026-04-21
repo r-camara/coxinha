@@ -11,6 +11,7 @@ import { logNewNoteTrace, mark } from '../../lib/perf';
 import { useAppStore } from '../../lib/store';
 import { useResolvedTheme } from '../../lib/useTheme';
 import { BacklinksPanel } from './BacklinksPanel';
+import { isInteractiveClickTarget } from './editorFocus';
 import { NoteHeader } from './NoteHeader';
 
 interface Props {
@@ -148,11 +149,24 @@ function EditorInner({
     };
   }, [flushNow]);
 
+  function focusEditorOnDeadSpace(e: React.MouseEvent<HTMLElement>) {
+    // Clicks inside the editor surface or on interactive chrome
+    // (title, tags, header buttons) already do the right thing —
+    // only rescue clicks that landed on the dead padded area.
+    if (isInteractiveClickTarget(e.target)) return;
+    const doc = editor.document;
+    const last = doc[doc.length - 1];
+    if (last) editor.setTextCursorPosition(last, 'end');
+    editor.focus();
+  }
+
   return (
     <div className="h-full flex">
       <section
-        className="flex-1 min-w-0 overflow-auto bn-container"
+        className="flex-1 min-w-0 overflow-auto bn-container cursor-text"
         aria-label={t('editor.region')}
+        onMouseDown={focusEditorOnDeadSpace}
+        data-testid="note-editor-surface"
       >
         <div className="mx-auto max-w-[760px] px-24 pt-12 pb-10">
           <NoteHeader title={title} tags={tags} updatedAt={updatedAt} />

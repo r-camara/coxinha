@@ -69,6 +69,19 @@ impl AppState {
             );
         }
 
+        // Log the effective shortcut set every boot so when a user
+        // reports "shortcut doesn't fire" we can read the truth
+        // without guessing what their config.toml actually says.
+        // One info line, five fields, easy to grep.
+        tracing::info!(
+            "effective shortcuts: new_note={} open_app={} agenda={} meetings={} toggle_recording={}",
+            config.shortcuts.new_note,
+            config.shortcuts.open_app,
+            config.shortcuts.agenda,
+            config.shortcuts.meetings,
+            config.shortcuts.toggle_recording,
+        );
+
         // Make sure the folder layout exists
         bootstrap_vault(&vault_root)?;
 
