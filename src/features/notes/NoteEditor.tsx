@@ -35,6 +35,9 @@ export function NoteEditor({ noteId, content }: Props) {
     <EditorInner
       noteId={noteId}
       initialMarkdown={content.markdown}
+      title={content.note.title}
+      tags={content.note.tags ?? []}
+      updatedAt={content.note.updated_at as unknown as string}
       onSave={(md) => saveNote(noteId, md)}
     />
   );
@@ -43,10 +46,16 @@ export function NoteEditor({ noteId, content }: Props) {
 function EditorInner({
   noteId,
   initialMarkdown,
+  title,
+  tags,
+  updatedAt,
   onSave,
 }: {
   noteId: string;
   initialMarkdown: string;
+  title: string;
+  tags: string[];
+  updatedAt: string;
   onSave: (md: string) => void;
 }) {
   const { t } = useTranslation();
@@ -138,13 +147,36 @@ function EditorInner({
     };
   }, [flushNow]);
 
+  const displayTitle = title || t('sidebar.untitled');
+  const meta = formatNoteMeta(updatedAt);
+
   return (
     <div className="h-full flex">
       <section
         className="flex-1 min-w-0 overflow-auto bn-container"
         aria-label={t('editor.region')}
       >
-        <div className="mx-auto max-w-[720px] px-8 pt-14">
+        <div className="mx-auto max-w-[760px] px-24 pt-12 pb-10">
+          <header className="flex flex-col gap-2.5 mb-5">
+            <h1
+              className="cx-display text-[38px] text-foreground"
+              style={{ textWrap: 'balance' }}
+            >
+              {displayTitle}
+            </h1>
+            <p className="text-xs text-muted-foreground tracking-wide">
+              {meta}
+            </p>
+          </header>
+          {tags.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-6">
+              {tags.map((tag) => (
+                <span key={tag} className="cx-tag-chip">
+                  #{tag}
+                </span>
+              ))}
+            </div>
+          )}
           <BlockNoteView
             editor={editor}
             onChange={debouncedSave}
@@ -156,6 +188,17 @@ function EditorInner({
       <BacklinksPanel noteId={noteId} />
     </div>
   );
+}
+
+function formatNoteMeta(updatedAt: string): string {
+  const d = new Date(updatedAt);
+  if (Number.isNaN(d.getTime())) return '';
+  const formatted = d.toLocaleDateString(undefined, {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
+  return `${formatted} · Saved`;
 }
 
 /**

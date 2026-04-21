@@ -1,34 +1,63 @@
 import { useTranslation } from 'react-i18next';
 import { Sparkles } from 'lucide-react';
+import clsx from 'clsx';
 
 interface Props {
   open: boolean;
+  onToggle: () => void;
   onClose: () => void;
 }
 
 /**
- * Persistent side panel on the right — "Assistant".
+ * Right-side AI panel. Two states per Mix B Refined:
  *
- * Visual stub for now. Real data comes later from:
- *   - spec 0049 (semantic link suggestions) for Link suggestions
- *   - a future AI-chat spec for the Ask-anything input
+ * - Collapsed: 48 px rail with a sparkles icon and vertical "ASK"
+ *   label. Click (or ⌘J) expands the full panel.
+ * - Expanded: 320 px panel with link / related sections and an
+ *   Ask input at the bottom.
  *
- * Matches the Claude Design handoff layout: ASSISTANT eyebrow
- * with a live status dot, Link suggestions section, Related
- * notes section, and an Ask input at the bottom with the
- * Ctrl+J kbd hint.
+ * Real data lands later from spec 0049 (semantic links) and a
+ * future AI-chat spec.
  */
-export function AiPanel({ open, onClose }: Props) {
+export function AiPanel({ open, onToggle, onClose }: Props) {
   const { t } = useTranslation();
 
-  if (!open) return null;
+  if (!open) {
+    return (
+      <aside
+        className="w-12 shrink-0 h-full border-l border-border bg-secondary flex flex-col items-center py-[18px] gap-4"
+        aria-label={t('assistant.region')}
+      >
+        <button
+          type="button"
+          onClick={onToggle}
+          title={t('assistant.title')}
+          aria-label={t('assistant.title')}
+          className="w-8 h-8 rounded flex items-center justify-center text-primary hover:bg-accent/60 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+        >
+          <Sparkles size={16} aria-hidden="true" />
+        </button>
+        <span
+          className="cx-eyebrow"
+          style={{
+            writingMode: 'vertical-rl',
+            transform: 'rotate(180deg)',
+            letterSpacing: '0.15em',
+          }}
+          aria-hidden="true"
+        >
+          ASK
+        </span>
+      </aside>
+    );
+  }
 
   return (
     <aside
-      className="w-[300px] shrink-0 h-full border-l border-border bg-muted flex flex-col"
+      className="w-[320px] shrink-0 h-full border-l border-border bg-secondary flex flex-col"
       aria-label={t('assistant.region')}
     >
-      <header className="flex items-center justify-between h-10 px-4 border-b border-border">
+      <header className="flex items-center justify-between h-[52px] px-4 border-b border-border shrink-0">
         <div className="flex items-center gap-2 cx-eyebrow">
           <span
             className="w-1.5 h-1.5 rounded-full"
@@ -51,24 +80,13 @@ export function AiPanel({ open, onClose }: Props) {
         </button>
       </header>
 
-      <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-5 min-h-0">
-        <section className="flex flex-col gap-1.5">
-          <div className="cx-eyebrow">{t('assistant.links')}</div>
-          <p className="text-sm text-muted-foreground italic">
-            {t('assistant.empty')}
-          </p>
-        </section>
-
-        <section className="flex flex-col gap-1.5">
-          <div className="cx-eyebrow">{t('assistant.related')}</div>
-          <p className="text-sm text-muted-foreground italic">
-            {t('assistant.empty')}
-          </p>
-        </section>
+      <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-[22px] min-h-0">
+        <Section title={t('assistant.links')} />
+        <Section title={t('assistant.related')} />
       </div>
 
-      <div className="border-t border-border px-4 py-3 shrink-0">
-        <div className="flex items-center gap-2 px-2.5 py-2 rounded-lg bg-background/50 focus-within:bg-background transition-colors">
+      <div className="border-t border-border px-3 py-3 shrink-0">
+        <div className="flex items-center gap-2 h-9 px-3 rounded bg-background border border-input focus-within:border-primary/50 transition-colors">
           <Sparkles
             size={14}
             className="text-primary shrink-0"
@@ -84,5 +102,17 @@ export function AiPanel({ open, onClose }: Props) {
         </div>
       </div>
     </aside>
+  );
+}
+
+function Section({ title, className }: { title: string; className?: string }) {
+  const { t } = useTranslation();
+  return (
+    <section className={clsx('flex flex-col gap-2', className)}>
+      <div className="cx-eyebrow">{title}</div>
+      <p className="text-sm text-muted-foreground italic">
+        {t('assistant.empty')}
+      </p>
+    </section>
   );
 }

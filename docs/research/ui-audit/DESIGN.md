@@ -4,35 +4,36 @@
 > Feeds `pencil` CLI prompts and any AI-assisted design / frontend
 > work. Single source of truth for aesthetic direction.
 >
-> **Reconciled with the Claude Design handoff (2026-04-21).** The
-> user built a full design system with Claude Design at
-> `claude.ai/design`, exporting the bundle that now lives
-> extracted under `docs/research/ui-audit/mockups/` (also see the
-> reference layout PNG). The handoff replaces the Zinc-neutral +
-> Coxinha Orange direction this doc previously settled on.
+> **Reconciled with the "Mix B Refined" handoff (2026-04-21).**
+> The user iterated a second design round at `docs/ui/new-options.pen`
+> with two frames ("Mix B Refined — Light" / "— Dark") that
+> refine the earlier Claude Design bundle. Evidence:
+> `docs/research/ui-audit/evidence/2026-04-21-mix-b-refined/`.
 >
-> **What changed:**
+> **What changed on 2026-04-21:**
 >
-> - Palette pivots to warm paper canvas (`oklch(0.960 0.012 80)`)
->   + stone ink + **sage** accent (`oklch(0.560 0.055 140)`). The
->   orange-only rule is replaced by a sage-only rule at the
->   same restraint level. See §2.
-> - Typography adopts **Newsreader** (display serif) + **Inter
->   Tight** (body) + JetBrains Mono. Replaces the Geist single-
->   family decision. Note titles in the reading column are 44 px
->   Newsreader at weight 500. See §3.
-> - Shell refactors from a 280 px sidebar to a 44 px icon rail
->   plus a Ctrl+K command palette. Most of what lived in the
->   old sidebar (search, recent, tags) is reachable only from
->   the palette now. See §5.
-> - Aesthetic anchor shifts from Arc Browser restraint to
->   **Opera Air** ("mindful browsing" — soft off-white, breathing
->   spacing, subtle depth, nothing shouting).
+> - Palette pivots from warm paper + sage to **neutral zinc +
+>   warm tangerine**. Canvas = pure white, surface = `#FAFAFA`,
+>   divider = `#E4E4E7`, ink = `#18181B`, accent = `#DE8C3A`
+>   (≈ `oklch(0.700 0.140 55)`). The sage-only rule is replaced
+>   by tangerine-only at the same restraint level. See §2.
+> - Typography pivots to **Geist** for display + body (with
+>   Inter Tight as fallback), plus JetBrains Mono. Newsreader
+>   is dropped — the Mix B Refined mockups are a unified
+>   sans stack. Note titles are 38 px Geist 700 at `-0.028em`
+>   tracking. See §3.
+> - Layout introduces the `ChromeBar` (52 px breadcrumb +
+>   "Saved" indicator) above every route and the `StatusBar`
+>   (36 px word-count / save state) below editing routes. Icon
+>   rail widens from 44 → 48 px. The AI panel becomes
+>   **always-visible** as a 48 px `ASK` rail that expands to
+>   320 px on click / Ctrl+J. See §5.
+> - Aesthetic anchor shifts from Opera Air / warm paper back
+>   toward **Arc Browser + Linear restraint**: the mockups are
+>   unmistakably zinc-neutral with a single warm accent.
 >
-> Source of truth for tokens is now `src/index.css` (OKLCH raw
-> triplets + `@theme` aliases). The former Zinc + orange blocks
-> in this doc are kept historical-only below — see the struck-
-> through sections.
+> Source of truth for tokens is `src/index.css` (OKLCH raw
+> triplets + `@theme` aliases).
 
 ---
 

@@ -121,7 +121,11 @@ export function RootLayout() {
       <main className="flex-1 overflow-hidden">
         <Outlet />
       </main>
-      <AiPanel open={aiPanelOpen} onClose={() => setAiPanelOpen(false)} />
+      <AiPanel
+        open={aiPanelOpen}
+        onToggle={() => setAiPanelOpen((v) => !v)}
+        onClose={() => setAiPanelOpen(false)}
+      />
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
     </div>
   );

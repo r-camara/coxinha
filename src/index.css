@@ -11,11 +11,10 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 /* ---------------------------------------------------------------
-   Coxinha design tokens — handoff from Claude Design (2026-04-20).
-   Warm paper canvas, stone ink, sage accent. OKLCH throughout so
-   the palette is perceptually even across lightness steps.
-   See docs/research/ui-audit/DESIGN.md and the handoff files in
-   the same folder.
+   Coxinha design tokens — Mix B Refined handoff (2026-04-20).
+   Geist sans throughout; neutral zinc-leaning surfaces; single
+   warm-tangerine accent. OKLCH so perceptual steps stay even.
+   See docs/research/ui-audit/DESIGN.md.
    --------------------------------------------------------------- */
 
 @theme {
@@ -43,9 +42,9 @@
   --radius-md: 10px;
   --radius-sm: 6px;
 
-  --font-sans: 'Inter Tight', ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --font-sans: 'Geist', 'Inter Tight', ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
-  --font-display: 'Newsreader', 'Source Serif Pro', Georgia, serif;
+  --font-display: 'Geist', 'Inter Tight', ui-sans-serif, system-ui, sans-serif;
 
   /* Motion — Opera Air-inspired "calm" easing. */
   --ease-calm: cubic-bezier(0.22, 0.61, 0.36, 1);
@@ -53,24 +52,26 @@
 
 @layer base {
   :root {
-    /* Light — warm paper stepped surfaces. */
-    --bg-canvas:    0.960 0.012 80;
-    --bg-surface:   0.975 0.010 80;
-    --bg-surface-2: 0.945 0.013 80;
-    --bg-sunken:    0.930 0.013 80;
-    --bg-overlay:   0.980 0.008 80;
+    /* Light — near-neutral zinc stepped surfaces.
+       Matches the Mix B Refined swatches: canvas #FFFFFF,
+       surface #FAFAFA, divider #E4E4E7, ink #18181B. */
+    --bg-canvas:    1.000 0 0;
+    --bg-surface:   0.984 0 0;
+    --bg-surface-2: 0.960 0 0;
+    --bg-sunken:    0.940 0 0;
+    --bg-overlay:   0.990 0 0;
 
-    --fg-primary:    0.240 0.015 60;
-    --fg-secondary:  0.440 0.012 60;
-    --fg-tertiary:   0.600 0.010 60;
-    --fg-quaternary: 0.730 0.008 60;
-    --fg-on-accent:  0.980 0.008 80;
+    --fg-primary:    0.200 0.004 285;
+    --fg-secondary:  0.500 0.005 285;
+    --fg-tertiary:   0.620 0.005 285;
+    --fg-quaternary: 0.770 0.005 285;
+    --fg-on-accent:  0.995 0 0;
 
-    /* Accent — muted sage-olive. Quiet, warm-cool neutral.
-       This is the app's only non-neutral hue in chrome. */
-    --accent:       0.560 0.055 140;
-    --accent-hover: 0.510 0.065 140;
-    --accent-soft:  0.930 0.025 140;
+    /* Accent — warm tangerine. The only non-neutral hue in
+       chrome. Used for active rail icon, save dot, primary CTA. */
+    --accent:       0.700 0.140 55;
+    --accent-hover: 0.640 0.150 55;
+    --accent-soft:  0.935 0.035 65;
 
     --success: 0.620 0.080 150;
     --warning: 0.720 0.110 80;
@@ -83,24 +84,25 @@
     --dur-breath: 600ms;
   }
 
-  /* Dark mode — warm charcoal, not blue-black. Same sage accent. */
+  /* Dark — deep near-black with a hair of warmth. Same tangerine
+     accent, brightened one step so it reads on the dark canvas. */
   .dark,
   [data-theme="dark"] {
-    --bg-canvas:    0.225 0.012 60;
-    --bg-surface:   0.255 0.012 60;
-    --bg-surface-2: 0.295 0.012 60;
-    --bg-sunken:    0.200 0.012 60;
-    --bg-overlay:   0.255 0.012 60;
+    --bg-canvas:    0.170 0.003 60;
+    --bg-surface:   0.205 0.003 60;
+    --bg-surface-2: 0.245 0.003 60;
+    --bg-sunken:    0.145 0.003 60;
+    --bg-overlay:   0.215 0.003 60;
 
-    --fg-primary:    0.935 0.010 80;
-    --fg-secondary:  0.760 0.012 70;
-    --fg-tertiary:   0.620 0.012 70;
-    --fg-quaternary: 0.480 0.012 70;
-    --fg-on-accent:  0.975 0.010 80;
+    --fg-primary:    0.940 0.003 60;
+    --fg-secondary:  0.740 0.005 60;
+    --fg-tertiary:   0.600 0.005 60;
+    --fg-quaternary: 0.460 0.005 60;
+    --fg-on-accent:  0.985 0.003 60;
 
-    --accent:       0.680 0.065 140;
-    --accent-hover: 0.720 0.070 140;
-    --accent-soft:  0.330 0.030 140;
+    --accent:       0.770 0.135 55;
+    --accent-hover: 0.810 0.135 55;
+    --accent-soft:  0.320 0.060 55;
   }
 
   * {
@@ -141,17 +143,17 @@
   height: 100%;
 }
 
-/* Display (Newsreader serif) utility — for note titles, view
-   headlines, anything that wants the "quiet notebook" tone. */
+/* Display — Geist bold with tight tracking. Used for note titles
+   and view headlines. Mix B Refined: 38px / 700 / -1.1 tracking. */
 .cx-display {
   font-family: var(--font-display);
-  font-weight: 500;
-  line-height: 1.1;
-  letter-spacing: -0.01em;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.028em;
 }
 
-/* Eyebrow / small-caps label — sidebar sections ("RECENT", "TAGS")
-   and palette group headers. */
+/* Eyebrow / small-caps label — sidebar sections ("RECENT", "TAGS"),
+   palette group headers, AI panel section titles. */
 .cx-eyebrow {
   font-family: var(--font-sans);
   font-weight: 500;
@@ -173,4 +175,41 @@
   font-size: 11px;
   font-weight: 500;
   border: 1px solid oklch(var(--fg-primary) / 0.08);
+}
+
+/* Breadcrumb text — chrome bar top of main. Muted segments with
+   a lighter slash divider and an active segment in primary ink. */
+.cx-crumb {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  color: oklch(var(--fg-secondary));
+}
+.cx-crumb-sep {
+  color: oklch(var(--fg-quaternary));
+}
+.cx-crumb-active {
+  color: oklch(var(--fg-primary));
+  font-weight: 500;
+}
+
+/* Tag chip — inline under the note title. Soft surface, muted
+   ink, 11px / 500. Rounded 4px, padding 5/10. */
+.cx-tag-chip {
+  display: inline-flex;
+  align-items: center;
+  background: oklch(var(--bg-surface-2));
+  color: oklch(var(--fg-secondary));
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 500;
+  padding: 5px 10px;
+  border-radius: 4px;
+}
+
+/* Status / footer rail text — 11px muted. */
+.cx-status {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  color: oklch(var(--fg-secondary));
+  letter-spacing: 0.01em;
 }

@@ -1,7 +1,10 @@
 import { Suspense } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useParams } from '@tanstack/react-router';
 import { queryOptions, useQuery } from '@tanstack/react-query';
 
+import { RouteLayout } from '../components/RouteLayout';
+import { SavedIndicator } from '../components/ChromeBar';
 import { commands, type NoteContent } from '../lib/bindings';
 import { NoteEditor, NoteLoadingSkeleton } from '../features/notes/NoteEditor';
 
@@ -28,6 +31,7 @@ export function NoteDetailRoute() {
 }
 
 function NoteDetailInner({ noteId }: { noteId: string }) {
+  const { t } = useTranslation();
   // `useQuery` with an Infinity staleTime reads from the loader's
   // pre-warmed cache — no fresh IPC unless the query has been
   // invalidated.
@@ -37,6 +41,13 @@ function NoteDetailInner({ noteId }: { noteId: string }) {
     // the brief window after invalidation before refetch returns.
     return <NoteLoadingSkeleton />;
   }
-  return <NoteEditor noteId={noteId} content={data} />;
+  const title = data.note.title || t('sidebar.untitled');
+  return (
+    <RouteLayout
+      trail={[t('nav.notes').toLowerCase(), `${title}.md`]}
+      chromeRight={<SavedIndicator label="Saved" />}
+    >
+      <NoteEditor noteId={noteId} content={data} />
+    </RouteLayout>
+  );
 }
-

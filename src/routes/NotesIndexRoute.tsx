@@ -6,6 +6,7 @@ import { BlockNoteView } from '@blocknote/shadcn';
 import '@blocknote/core/fonts/inter.css';
 import '@blocknote/shadcn/style.css';
 
+import { RouteLayout } from '../components/RouteLayout';
 import { useAppStore } from '../lib/store';
 import { useResolvedTheme } from '../lib/useTheme';
 
@@ -62,8 +63,6 @@ export function NotesIndexRoute() {
     persistTimerRef.current = null;
     try {
       const note = await newNote();
-      // Carry the buffered content into the first save so the user
-      // doesn't lose the keystrokes that happened during the IPC.
       const md = pendingContentRef.current;
       if (md.length > 0) {
         await saveNote(note.id, md);
@@ -81,17 +80,19 @@ export function NotesIndexRoute() {
   }
 
   return (
-    <section
-      className="h-full overflow-auto bn-container"
-      aria-label={t('editor.region')}
-      data-testid="notes-index-draft"
+    <RouteLayout
+      trail={[t('nav.notes').toLowerCase(), 'untitled.md']}
+      statusLeft={<span>0 palavras · 0 min</span>}
     >
-      {/* Reading-column centered at max 720 px per Claude Design
-          handoff. BlockNote owns the placeholder affordance —
-          double overlays were dropped in the 2026-04-20 pass. */}
-      <div className="mx-auto max-w-[720px] px-8 pt-14">
-        <BlockNoteView editor={editor} onChange={onChange} theme={theme} />
-      </div>
-    </section>
+      <section
+        className="h-full overflow-auto bn-container"
+        aria-label={t('editor.region')}
+        data-testid="notes-index-draft"
+      >
+        <div className="mx-auto max-w-[760px] px-24 pt-12">
+          <BlockNoteView editor={editor} onChange={onChange} theme={theme} />
+        </div>
+      </section>
+    </RouteLayout>
   );
 }
