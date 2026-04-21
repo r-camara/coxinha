@@ -207,6 +207,20 @@ function EditorInner({
     };
   }, [flushNow]);
 
+  // Ctrl+. (or Cmd+. on mac) toggles the actions menu — mirrors
+  // Notion's shortcut. Gated on Ctrl/Cmd so it doesn't fight the
+  // editor's own typing of a period.
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (!(e.ctrlKey || e.metaKey)) return;
+      if (e.key !== '.') return;
+      e.preventDefault();
+      setMenuOpen((v) => !v);
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
   function focusEditorOnDeadSpace(e: React.MouseEvent<HTMLElement>) {
     // Clicks inside the editor surface or on interactive chrome
     // (title, tags, header buttons) already do the right thing —
@@ -264,10 +278,14 @@ function EditorInner({
           aria-label={t('noteMenu.open')}
           aria-haspopup="menu"
           aria-expanded={menuOpen}
-          title={t('noteMenu.open')}
-          className="absolute top-3 right-3 z-10 w-8 h-8 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary/70 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+          title={`${t('noteMenu.open')} (Ctrl+.)`}
+          data-testid="note-actions-trigger"
+          className="absolute top-3 right-3 z-10 flex items-center gap-1 rounded-md border border-border bg-secondary/60 hover:bg-secondary px-2 py-1.5 text-foreground transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring shadow-sm"
         >
           <MoreHorizontal size={16} aria-hidden="true" />
+          <kbd className="hidden sm:inline-block font-mono text-[10px] text-muted-foreground">
+            ⌘.
+          </kbd>
         </button>
         <div
           className={clsx(

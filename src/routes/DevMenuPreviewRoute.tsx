@@ -32,10 +32,12 @@ export function DevMenuPreviewRoute() {
           type="button"
           onClick={() => setMenuOpen((v) => !v)}
           aria-label="More actions"
-          title="More actions"
-          className="absolute top-3 right-3 z-10 w-8 h-8 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary/70 transition-colors"
+          title="More actions (Ctrl+.)"
+          data-testid="note-actions-trigger"
+          className="absolute top-3 right-3 z-10 flex items-center gap-1 rounded-md border border-border bg-secondary/60 hover:bg-secondary px-2 py-1.5 text-foreground transition-colors shadow-sm"
         >
           <MoreHorizontal size={16} aria-hidden="true" />
+          <kbd className="font-mono text-[10px] text-muted-foreground">⌘.</kbd>
         </button>
         <div className="mx-auto max-w-[760px] px-24 pt-12 pb-10">
           <NoteHeader
