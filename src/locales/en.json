@@ -3,14 +3,38 @@
     "name": "Coxinha"
   },
   "nav": {
+    "home": "Home",
     "notes": "Notes",
     "agenda": "Agenda",
     "meetings": "Meetings",
     "settings": "Settings"
   },
   "rail": {
+    "workspace": "Workspace",
+    "workspaceOptions": "Workspace options",
     "search": "Search (⌘K)",
-    "toggleTheme": "Toggle theme"
+    "toggleTheme": "Toggle theme",
+    "newMeetingNote": "New AI meeting note",
+    "aiMeetingEmpty": "No meeting notes yet.",
+    "recentsEmpty": "No recent notes yet.",
+    "quick": {
+      "messages": "Messages",
+      "agenda": "Agenda",
+      "notes": "Notes"
+    },
+    "sections": {
+      "aiMeetingNotes": "AI meeting notes",
+      "recents": "Recents"
+    }
+  },
+  "chrome": {
+    "back": "Back",
+    "forward": "Forward",
+    "toggleRail": "Toggle sidebar",
+    "saved": "Saved"
+  },
+  "sidePanel": {
+    "toggle": "Toggle side panel"
   },
   "assistant": {
     "region": "Assistant",

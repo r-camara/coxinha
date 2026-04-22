@@ -15,6 +15,7 @@ import { AgendaRoute } from './routes/AgendaRoute';
 import { MeetingsRoute } from './routes/MeetingsRoute';
 import { SettingsRoute } from './routes/SettingsRoute';
 import { DevMenuPreviewRoute } from './routes/DevMenuPreviewRoute';
+import { DevShellPreviewRoute } from './routes/DevShellPreviewRoute';
 
 export interface RouterContext {
   queryClient: QueryClient;
@@ -72,13 +73,19 @@ const settingsRoute = createRoute({
   component: SettingsRoute,
 });
 
-// Dev-only preview route (stripped from prod bundle by the
-// `import.meta.env.DEV` guard below). Lets Playwright + humans
-// visually check the NoteActionsMenu without a real note.
+// Dev-only preview routes (stripped from prod bundle by the
+// `import.meta.env.DEV` guard below). Let Playwright + humans
+// visually check UI primitives without a real note.
 const devMenuPreviewRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: 'dev/menu-preview',
   component: DevMenuPreviewRoute,
+});
+
+const devShellPreviewRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: 'dev/shell-preview',
+  component: DevShellPreviewRoute,
 });
 
 const baseChildren = [
@@ -89,7 +96,9 @@ const baseChildren = [
   settingsRoute,
 ];
 const routeTree = rootRoute.addChildren(
-  import.meta.env.DEV ? [...baseChildren, devMenuPreviewRoute] : baseChildren,
+  import.meta.env.DEV
+    ? [...baseChildren, devMenuPreviewRoute, devShellPreviewRoute]
+    : baseChildren,
 );
 
 export function createAppRouter(queryClient: QueryClient) {
