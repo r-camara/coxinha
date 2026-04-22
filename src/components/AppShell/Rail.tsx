@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
+import { useMeetingNotes } from '../../features/meetings/fixtures';
 import { useAppStore } from '../../lib/store';
 import { RailItem } from './RailItem';
 import { RailSection } from './RailSection';
@@ -26,11 +27,13 @@ export interface RailProps {
 export function Rail({
   onOpenPalette,
   onNewMeetingNote,
-  meetingNotes = [],
+  meetingNotes,
   recents,
 }: RailProps) {
   const { t } = useTranslation();
   const storeNotes = useAppStore((s) => s.notes);
+  const fixtureMeetingNotes = useMeetingNotes();
+  const effectiveMeetingNotes = meetingNotes ?? fixtureMeetingNotes;
 
   const shownRecents =
     recents ??
@@ -97,12 +100,12 @@ export function Rail({
         </div>
 
         <RailSection title={t('rail.sections.aiMeetingNotes')}>
-          {meetingNotes.length === 0 ? (
+          {effectiveMeetingNotes.length === 0 ? (
             <div className="px-2 py-1 text-[12px] text-muted-foreground/70">
               {t('rail.aiMeetingEmpty')}
             </div>
           ) : (
-            meetingNotes.map((n) => (
+            effectiveMeetingNotes.map((n) => (
               <RailItem
                 key={n.id}
                 icon={<FileText size={14} aria-hidden="true" />}

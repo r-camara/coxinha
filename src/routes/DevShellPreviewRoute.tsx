@@ -3,6 +3,7 @@ import { Star, Share2, Link as LinkIcon, MoreHorizontal } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import { AppShell, SavedIndicator, type ChromeTab } from '../components/AppShell';
+import { MeetingCard } from '../features/meetings/MeetingCard';
 
 /**
  * Dev-only route exercising the new AppShell primitives on
@@ -14,7 +15,9 @@ import { AppShell, SavedIndicator, type ChromeTab } from '../components/AppShell
  */
 export function DevShellPreviewRoute() {
   const { t } = useTranslation();
-  const [activeCanvas, setActiveCanvas] = useState<'empty' | 'home'>('home');
+  const [activeCanvas, setActiveCanvas] = useState<'empty' | 'home' | 'meeting'>(
+    'home',
+  );
 
   const tabs: ChromeTab[] = [
     {
@@ -62,6 +65,18 @@ export function DevShellPreviewRoute() {
             </button>
             <button
               type="button"
+              onClick={() => setActiveCanvas('meeting')}
+              className={
+                'px-3 py-1 rounded-md text-sm ' +
+                (activeCanvas === 'meeting'
+                  ? 'bg-secondary text-foreground'
+                  : 'text-muted-foreground hover:text-foreground')
+              }
+            >
+              Meeting card
+            </button>
+            <button
+              type="button"
               onClick={() => setActiveCanvas('empty')}
               className={
                 'px-3 py-1 rounded-md text-sm ' +
@@ -73,7 +88,13 @@ export function DevShellPreviewRoute() {
               Empty canvas
             </button>
           </div>
-          {activeCanvas === 'home' ? <HomePreview /> : <EmptyPreview />}
+          {activeCanvas === 'home' ? (
+            <HomePreview />
+          ) : activeCanvas === 'meeting' ? (
+            <MeetingPreview />
+          ) : (
+            <EmptyPreview />
+          )}
         </div>
       </section>
     </AppShell>
@@ -103,6 +124,25 @@ function EmptyPreview() {
     <div className="py-16 text-muted-foreground">
       Empty canvas — just the shell, nothing else.
     </div>
+  );
+}
+
+function MeetingPreview() {
+  return (
+    <>
+      <h1 className="text-[32px] leading-[1.15] font-semibold tracking-tight">
+        VC 15/jan
+      </h1>
+      <p className="mt-2 text-muted-foreground">
+        Note containing a MeetingBlock — fixture-backed preview.
+      </p>
+      <div className="mt-6">
+        <MeetingCard meetingId="it-weekly-status" />
+      </div>
+      <div className="mt-4">
+        <MeetingCard meetingId="does-not-exist" />
+      </div>
+    </>
   );
 }
 

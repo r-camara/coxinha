@@ -60,6 +60,21 @@
       "continue": "Continue from yesterday"
     }
   },
+  "meeting": {
+    "label": "Meeting",
+    "card": {
+      "tabs": {
+        "summary": "Summary",
+        "transcript": "Transcript",
+        "actionItems": "Action items"
+      }
+    },
+    "block": {
+      "placeholder": "Empty meeting",
+      "notFound": "Meeting not found",
+      "unlink": "Unlink"
+    }
+  },
   "assistant": {
     "region": "Assistant",
     "title": "Assistant",

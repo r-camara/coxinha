@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from '@tanstack/react-router';
 import { useCreateBlockNote } from '@blocknote/react';
 import { BlockNoteView } from '@blocknote/shadcn';
+import { BlockNoteSchema, defaultBlockSpecs } from '@blocknote/core';
 import '@blocknote/core/fonts/inter.css';
 import '@blocknote/shadcn/style.css';
 import { MoreHorizontal } from 'lucide-react';
@@ -13,10 +14,21 @@ import { events, type NoteContent } from '../../lib/bindings';
 import { logNewNoteTrace, mark } from '../../lib/perf';
 import { useAppStore } from '../../lib/store';
 import { useResolvedTheme } from '../../lib/useTheme';
+import { meetingBlockSpec } from '../meetings/MeetingBlock';
 import { BacklinksPanel } from './BacklinksPanel';
 import { isInteractiveClickTarget } from './editorFocus';
 import { NoteActionsMenu, type NoteFont } from './NoteActionsMenu';
 import { NoteHeader } from './NoteHeader';
+
+// Schema extends BlockNote's defaults with our custom MeetingBlock.
+// Created once at module scope so useCreateBlockNote doesn't rebuild
+// it on every render (spec 0057).
+const editorSchema = BlockNoteSchema.create({
+  blockSpecs: {
+    ...defaultBlockSpecs,
+    meeting: meetingBlockSpec,
+  },
+});
 
 const PREF_FONT_KEY = 'coxinha:note-font';
 const PREF_SMALL_KEY = 'coxinha:note-small';
@@ -121,6 +133,7 @@ function EditorInner({
     window.localStorage.setItem(PREF_FULLWIDTH_KEY, fullWidth ? '1' : '0');
   }, [fullWidth]);
   const editor = useCreateBlockNote({
+    schema: editorSchema,
     uploadFile: async (file: File) => {
       const compressed = await compressImage(file);
       const arrayBuffer = await compressed.arrayBuffer();
