@@ -48,6 +48,12 @@
 
   /* Motion — Opera Air-inspired "calm" easing. */
   --ease-calm: cubic-bezier(0.22, 0.61, 0.36, 1);
+
+  /* AppShell dimensions (spec 0057). Canvases + chrome reference
+     these instead of hardcoding pixel widths. */
+  --shell-rail-width: 256px;
+  --shell-chrome-height: 48px;
+  --shell-panel-width: 380px;
 }
 
 @layer base {
@@ -84,15 +90,18 @@
     --dur-breath: 600ms;
   }
 
-  /* Dark — deep near-black with a hair of warmth. Same tangerine
-     accent, brightened one step so it reads on the dark canvas. */
+  /* Dark — near-black base (spec 0057 retune, supersedes the warm
+     #2A2A2A range from spec 0052). Matches docs/ui/new-options.pen
+     Pages 26/27/28 and the Notion reference: canvas ~#0A0A0A, with
+     surfaces stepped upward so cards still read against the bg. A
+     0.003 chroma keeps the faint warm cast from Mix B Refined. */
   .dark,
   [data-theme="dark"] {
-    --bg-canvas:    0.170 0.003 60;
-    --bg-surface:   0.205 0.003 60;
-    --bg-surface-2: 0.245 0.003 60;
-    --bg-sunken:    0.145 0.003 60;
-    --bg-overlay:   0.215 0.003 60;
+    --bg-canvas:    0.058 0.003 60;
+    --bg-surface:   0.110 0.003 60;
+    --bg-surface-2: 0.160 0.003 60;
+    --bg-sunken:    0.035 0.003 60;
+    --bg-overlay:   0.125 0.003 60;
 
     --fg-primary:    0.940 0.003 60;
     --fg-secondary:  0.740 0.005 60;
@@ -103,6 +112,11 @@
     --accent:       0.770 0.135 55;
     --accent-hover: 0.810 0.135 55;
     --accent-soft:  0.320 0.060 55;
+
+    /* Explicit border in dark to match the Pen stroke ~#1F1F1F.
+       The derived `fg-primary / 0.08` token dissolves against the
+       near-black canvas, so rail + card edges need a fixed value. */
+    --color-border: oklch(0.220 0.003 60);
   }
 
   * {
