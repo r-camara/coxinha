@@ -3,14 +3,83 @@
     "name": "Coxinha"
   },
   "nav": {
+    "home": "Home",
     "notes": "Notes",
     "agenda": "Agenda",
     "meetings": "Meetings",
     "settings": "Settings"
   },
   "rail": {
+    "workspace": "Workspace",
+    "workspaceOptions": "Workspace options",
     "search": "Search (⌘K)",
-    "toggleTheme": "Toggle theme"
+    "toggleTheme": "Toggle theme",
+    "newMeetingNote": "New AI meeting note",
+    "aiMeetingEmpty": "No meeting notes yet.",
+    "recentsEmpty": "No recent notes yet.",
+    "quick": {
+      "messages": "Messages",
+      "agenda": "Agenda",
+      "notes": "Notes"
+    },
+    "sections": {
+      "aiMeetingNotes": "AI meeting notes",
+      "recents": "Recents"
+    }
+  },
+  "chrome": {
+    "back": "Back",
+    "forward": "Forward",
+    "toggleRail": "Toggle sidebar",
+    "saved": "Saved"
+  },
+  "sidePanel": {
+    "toggle": "Toggle side panel",
+    "messages": {
+      "title": "Messages"
+    },
+    "news": {
+      "title": "Updates"
+    },
+    "sources": {
+      "title": "Related sources"
+    }
+  },
+  "home": {
+    "greeting": {
+      "morning": "Good morning,",
+      "afternoon": "Good afternoon,",
+      "evening": "Good evening,"
+    },
+    "thingsToday": {
+      "title": "{{count}} things for you today",
+      "empty": "Nothing scheduled for today."
+    },
+    "recents": {
+      "title": "Recents",
+      "continue": "Continue from yesterday"
+    }
+  },
+  "agendaPanel": {
+    "upcoming": "Upcoming",
+    "empty": "Nothing scheduled.",
+    "minutesSuffix": "min",
+    "hasMeetingNote": "Has linked note"
+  },
+  "meeting": {
+    "label": "Meeting",
+    "card": {
+      "tabs": {
+        "summary": "Summary",
+        "transcript": "Transcript",
+        "actionItems": "Action items"
+      }
+    },
+    "block": {
+      "placeholder": "Empty meeting",
+      "notFound": "Meeting not found",
+      "unlink": "Unlink"
+    }
   },
   "assistant": {
     "region": "Assistant",
@@ -34,13 +103,17 @@
       "openAgenda": "Open agenda",
       "openMeetings": "Open meetings",
       "openSettings": "Open settings",
-      "toggleTheme": "Toggle theme"
+      "toggleTheme": "Toggle theme",
+      "deleteCurrentNote": "Delete this note",
+      "deleteThisNote": "Delete note"
     },
     "hints": {
       "navigate": "navigate",
       "open": "open",
+      "delete": "delete",
       "close": "close"
-    }
+    },
+    "deleteConfirm": "Delete \"{{title}}\"? This moves the file out of the vault and cannot be undone yet."
   },
   "sidebar": {
     "newNoteButton": "+ New",
@@ -63,6 +136,41 @@
   },
   "status": {
     "draftCount": "0 words · 0 min"
+  },
+  "noteMenu": {
+    "title": "Note actions",
+    "open": "More actions",
+    "search": "Search actions…",
+    "copyLink": "Copy link",
+    "copyContents": "Copy page contents",
+    "duplicate": "Duplicate",
+    "moveTo": "Move to",
+    "archive": "Archive",
+    "moveToTrash": "Move to Trash",
+    "present": "Present",
+    "availableOffline": "Available offline",
+    "smallText": "Small text",
+    "fullWidth": "Full width",
+    "customizePage": "Customize page",
+    "lockPage": "Lock page",
+    "useWithAi": "Use with AI",
+    "suggestEdits": "Suggest edits",
+    "translate": "Translate",
+    "undo": "Undo",
+    "import": "Import",
+    "export": "Export",
+    "versionHistory": "Version history",
+    "copiedLink": "Link copied",
+    "copiedContents": "Contents copied",
+    "font": {
+      "default": "Default",
+      "serif": "Serif",
+      "mono": "Mono"
+    },
+    "footer": {
+      "wordCount": "Word count: {{count}} words",
+      "lastEditedBy": "Last edited by {{name}}"
+    }
   },
   "agenda": {
     "title": "Agenda",

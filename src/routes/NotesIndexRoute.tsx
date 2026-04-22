@@ -6,7 +6,8 @@ import { BlockNoteView } from '@blocknote/shadcn';
 import '@blocknote/core/fonts/inter.css';
 import '@blocknote/shadcn/style.css';
 
-import { RouteLayout } from '../components/RouteLayout';
+import { AppShell } from '../components/AppShell';
+import { isInteractiveClickTarget } from '../features/notes/editorFocus';
 import { useAppStore } from '../lib/store';
 import { useResolvedTheme } from '../lib/useTheme';
 
@@ -80,19 +81,23 @@ export function NotesIndexRoute() {
   }
 
   return (
-    <RouteLayout
+    <AppShell
       trail={[t('nav.notes').toLowerCase(), 'untitled.md']}
-      statusLeft={<span>{t('status.draftCount')}</span>}
+      tabs={[{ id: 'notes-draft', label: 'untitled.md', active: true }]}
     >
       <section
-        className="h-full overflow-auto bn-container"
+        className="h-full overflow-auto bn-container cursor-text"
         aria-label={t('editor.region')}
         data-testid="notes-index-draft"
+        onMouseDown={(e) => {
+          if (isInteractiveClickTarget(e.target)) return;
+          editor.focus();
+        }}
       >
         <div className="mx-auto max-w-[760px] px-24 pt-12">
           <BlockNoteView editor={editor} onChange={onChange} theme={theme} />
         </div>
       </section>
-    </RouteLayout>
+    </AppShell>
   );
 }

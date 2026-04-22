@@ -1,17 +1,56 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from '@tanstack/react-router';
 import { useCreateBlockNote } from '@blocknote/react';
 import { BlockNoteView } from '@blocknote/shadcn';
+import { BlockNoteSchema, defaultBlockSpecs } from '@blocknote/core';
 import '@blocknote/core/fonts/inter.css';
 import '@blocknote/shadcn/style.css';
+import { MoreHorizontal } from 'lucide-react';
+import clsx from 'clsx';
 import { invoke } from '@tauri-apps/api/core';
 
 import { events, type NoteContent } from '../../lib/bindings';
 import { logNewNoteTrace, mark } from '../../lib/perf';
 import { useAppStore } from '../../lib/store';
 import { useResolvedTheme } from '../../lib/useTheme';
+import { meetingBlockSpec } from '../meetings/MeetingBlock';
 import { BacklinksPanel } from './BacklinksPanel';
+import { isInteractiveClickTarget } from './editorFocus';
+import { NoteActionsMenu, type NoteFont } from './NoteActionsMenu';
 import { NoteHeader } from './NoteHeader';
+
+// Schema extends BlockNote's defaults with our custom MeetingBlock.
+// Created once at module scope so useCreateBlockNote doesn't rebuild
+// it on every render (spec 0057).
+const editorSchema = BlockNoteSchema.create({
+  blockSpecs: {
+    ...defaultBlockSpecs,
+    meeting: meetingBlockSpec,
+  },
+});
+
+const PREF_FONT_KEY = 'coxinha:note-font';
+const PREF_SMALL_KEY = 'coxinha:note-small';
+const PREF_FULLWIDTH_KEY = 'coxinha:note-full-width';
+
+function readPrefString<T extends string>(
+  key: string,
+  allowed: readonly T[],
+  fallback: T,
+): T {
+  if (typeof window === 'undefined') return fallback;
+  const raw = window.localStorage.getItem(key);
+  return (allowed as readonly string[]).includes(raw ?? '') ? (raw as T) : fallback;
+}
+
+function readPrefBool(key: string, fallback: boolean): boolean {
+  if (typeof window === 'undefined') return fallback;
+  const raw = window.localStorage.getItem(key);
+  if (raw === '1') return true;
+  if (raw === '0') return false;
+  return fallback;
+}
 
 interface Props {
   noteId: string;
@@ -31,6 +70,9 @@ export function NoteEditor({ noteId, content }: Props) {
   // `logNewNoteTrace` bails when the `hotkey` mark is missing.
   mark('editor-suspended');
   const saveNote = useAppStore((s) => s.saveNote);
+  const deleteNote = useAppStore((s) => s.deleteNote);
+  const duplicateNote = useAppStore((s) => s.duplicateNote);
+  const navigate = useNavigate();
 
   return (
     <EditorInner
@@ -40,6 +82,14 @@ export function NoteEditor({ noteId, content }: Props) {
       tags={content.note.tags ?? []}
       updatedAt={content.note.updated_at as unknown as string}
       onSave={(md) => saveNote(noteId, md)}
+      onDelete={async () => {
+        await deleteNote(noteId);
+        await navigate({ to: '/notes' });
+      }}
+      onDuplicate={async () => {
+        const copy = await duplicateNote(noteId);
+        await navigate({ to: '/notes/$noteId', params: { noteId: copy.id } });
+      }}
     />
   );
 }
@@ -51,6 +101,8 @@ function EditorInner({
   tags,
   updatedAt,
   onSave,
+  onDelete,
+  onDuplicate,
 }: {
   noteId: string;
   initialMarkdown: string;
@@ -58,10 +110,30 @@ function EditorInner({
   tags: string[];
   updatedAt: string;
   onSave: (md: string) => void;
+  onDelete: () => Promise<void>;
+  onDuplicate: () => Promise<void>;
 }) {
   const { t } = useTranslation();
   const theme = useResolvedTheme();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuButtonRef = useRef<HTMLButtonElement | null>(null);
+  const [font, setFont] = useState<NoteFont>(() =>
+    readPrefString<NoteFont>(PREF_FONT_KEY, ['default', 'serif', 'mono'], 'default'),
+  );
+  const [smallText, setSmallText] = useState(() => readPrefBool(PREF_SMALL_KEY, false));
+  const [fullWidth, setFullWidth] = useState(() => readPrefBool(PREF_FULLWIDTH_KEY, false));
+
+  useEffect(() => {
+    window.localStorage.setItem(PREF_FONT_KEY, font);
+  }, [font]);
+  useEffect(() => {
+    window.localStorage.setItem(PREF_SMALL_KEY, smallText ? '1' : '0');
+  }, [smallText]);
+  useEffect(() => {
+    window.localStorage.setItem(PREF_FULLWIDTH_KEY, fullWidth ? '1' : '0');
+  }, [fullWidth]);
   const editor = useCreateBlockNote({
+    schema: editorSchema,
     uploadFile: async (file: File) => {
       const compressed = await compressImage(file);
       const arrayBuffer = await compressed.arrayBuffer();
@@ -148,13 +220,92 @@ function EditorInner({
     };
   }, [flushNow]);
 
+  // Ctrl+. (or Cmd+. on mac) toggles the actions menu — mirrors
+  // Notion's shortcut. Gated on Ctrl/Cmd so it doesn't fight the
+  // editor's own typing of a period.
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (!(e.ctrlKey || e.metaKey)) return;
+      if (e.key !== '.') return;
+      e.preventDefault();
+      setMenuOpen((v) => !v);
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
+  function focusEditorOnDeadSpace(e: React.MouseEvent<HTMLElement>) {
+    // Clicks inside the editor surface or on interactive chrome
+    // (title, tags, header buttons) already do the right thing —
+    // only rescue clicks that landed on the dead padded area.
+    if (isInteractiveClickTarget(e.target)) return;
+    const doc = editor.document;
+    const last = doc[doc.length - 1];
+    if (last) editor.setTextCursorPosition(last, 'end');
+    editor.focus();
+  }
+
+  async function copyContentsToClipboard() {
+    const md = await editor.blocksToMarkdownLossy(editor.document);
+    await navigator.clipboard.writeText(md);
+  }
+
+  async function copyLinkToClipboard() {
+    await navigator.clipboard.writeText(`coxinha://notes/${noteId}`);
+  }
+
+  async function confirmAndDelete() {
+    const label = title || t('sidebar.untitled');
+    if (!window.confirm(t('palette.deleteConfirm', { title: label }))) return;
+    await onDelete();
+  }
+
+  const wordCount = useMemo(
+    () =>
+      initialMarkdown
+        .replace(/[#>*`_~\-]+/g, ' ')
+        .split(/\s+/)
+        .filter(Boolean).length,
+    [initialMarkdown],
+  );
+
   return (
-    <div className="h-full flex">
+    <div
+      className={clsx(
+        'h-full flex',
+        font === 'serif' && 'cx-note-font-serif',
+        font === 'mono' && 'cx-note-font-mono',
+        smallText && 'cx-note-size-small',
+      )}
+    >
       <section
-        className="flex-1 min-w-0 overflow-auto bn-container"
+        className="relative flex-1 min-w-0 overflow-auto bn-container cursor-text"
         aria-label={t('editor.region')}
+        onMouseDown={focusEditorOnDeadSpace}
+        data-testid="note-editor-surface"
       >
-        <div className="mx-auto max-w-[760px] px-24 pt-12 pb-10">
+        <button
+          ref={menuButtonRef}
+          type="button"
+          onClick={() => setMenuOpen((v) => !v)}
+          aria-label={t('noteMenu.open')}
+          aria-haspopup="menu"
+          aria-expanded={menuOpen}
+          title={`${t('noteMenu.open')} (Ctrl+.)`}
+          data-testid="note-actions-trigger"
+          className="absolute top-3 right-3 z-10 flex items-center gap-1 rounded-md border border-border bg-secondary/60 hover:bg-secondary px-2 py-1.5 text-foreground transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring shadow-sm"
+        >
+          <MoreHorizontal size={16} aria-hidden="true" />
+          <kbd className="hidden sm:inline-block font-mono text-[10px] text-muted-foreground">
+            ⌘.
+          </kbd>
+        </button>
+        <div
+          className={clsx(
+            'mx-auto px-24 pt-12 pb-10',
+            fullWidth ? 'max-w-none' : 'max-w-[760px]',
+          )}
+        >
           <NoteHeader title={title} tags={tags} updatedAt={updatedAt} />
           <BlockNoteView
             editor={editor}
@@ -163,6 +314,23 @@ function EditorInner({
             theme={theme}
           />
         </div>
+        <NoteActionsMenu
+          open={menuOpen}
+          onClose={() => setMenuOpen(false)}
+          anchorRef={menuButtonRef}
+          footer={{ wordCount }}
+          onCopyLink={() => void copyLinkToClipboard()}
+          onCopyContents={() => void copyContentsToClipboard()}
+          onDuplicate={() => void onDuplicate()}
+          onMoveToTrash={() => void confirmAndDelete()}
+          onUndo={() => editor.undo()}
+          font={font}
+          onFontChange={setFont}
+          smallText={smallText}
+          onSmallTextChange={setSmallText}
+          fullWidth={fullWidth}
+          onFullWidthChange={setFullWidth}
+        />
       </section>
       <BacklinksPanel noteId={noteId} />
     </div>

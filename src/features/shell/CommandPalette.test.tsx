@@ -10,13 +10,17 @@ vi.mock('react-i18next', () => ({
 }));
 
 const navigate = vi.fn();
+const pathname = { current: '/notes' };
 vi.mock('@tanstack/react-router', () => ({
   useNavigate: () => navigate,
+  useLocation: <T,>(opts: { select: (s: { pathname: string }) => T }) =>
+    opts.select({ pathname: pathname.current }),
 }));
 
 const storeState = {
   notes: [] as Array<{ id: string; title: string }>,
   newNote: vi.fn(),
+  deleteNote: vi.fn(),
 };
 
 vi.mock('../../lib/store', () => ({
@@ -39,12 +43,14 @@ function note(id: string, title: string) {
 
 beforeEach(() => {
   navigate.mockReset();
+  pathname.current = '/notes';
   storeState.notes = [
     note('a', 'Alpha architecture'),
     note('b', 'Beta meeting'),
     note('c', 'Gamma retro'),
   ];
   storeState.newNote.mockReset();
+  storeState.deleteNote.mockReset();
 });
 
 describe('CommandPalette', () => {
@@ -106,5 +112,51 @@ describe('CommandPalette', () => {
     expect(
       screen.getByText(/palette\.empty/),
     ).toBeInTheDocument();
+  });
+
+  it('exposes a Delete-this-note action only on note-detail routes', () => {
+    pathname.current = '/notes/b';
+    render(<CommandPalette open onClose={() => {}} />);
+    expect(
+      screen.getByText('palette.actions.deleteCurrentNote'),
+    ).toBeInTheDocument();
+  });
+
+  it('hides the Delete-this-note action on non-detail routes', () => {
+    pathname.current = '/settings';
+    render(<CommandPalette open onClose={() => {}} />);
+    expect(
+      screen.queryByText('palette.actions.deleteCurrentNote'),
+    ).not.toBeInTheDocument();
+  });
+
+  it('calls deleteNote when the user confirms the row trash icon', async () => {
+    const user = userEvent.setup();
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+    render(<CommandPalette open onClose={() => {}} />);
+
+    // Every note row has a Delete button — grab them all, pick Beta's.
+    const buttons = screen.getAllByRole('button', {
+      name: 'palette.actions.deleteThisNote',
+    });
+    expect(buttons).toHaveLength(3);
+    await user.click(buttons[1]);
+
+    expect(storeState.deleteNote).toHaveBeenCalledWith('b');
+    confirmSpy.mockRestore();
+  });
+
+  it('skips deletion when the user cancels the confirm', async () => {
+    const user = userEvent.setup();
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
+    render(<CommandPalette open onClose={() => {}} />);
+
+    const [firstDelete] = screen.getAllByRole('button', {
+      name: 'palette.actions.deleteThisNote',
+    });
+    await user.click(firstDelete);
+
+    expect(storeState.deleteNote).not.toHaveBeenCalled();
+    confirmSpy.mockRestore();
   });
 });

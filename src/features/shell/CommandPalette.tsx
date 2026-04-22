@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from '@tanstack/react-router';
+import { useLocation, useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { FileText, Search, Settings, Sparkles } from 'lucide-react';
+import { FileText, Search, Settings, Sparkles, Trash2 } from 'lucide-react';
 import clsx from 'clsx';
 
 import { useAppStore } from '../../lib/store';
@@ -25,15 +25,17 @@ type Group = { label: string; items: PaletteRow[] };
 
 /**
  * Ctrl+K overlay. Fuzzy across note titles + an action registry
- * (new note, switch view, toggle theme, open settings). Translated
- * from the Claude Design handoff `CommandPalette.jsx` to TypeScript
- * and wired into our router + store. Spec 0043.
+ * (new note, switch view, toggle theme, delete current note,
+ * open settings). Per-row trash button + Ctrl+Backspace for fast
+ * delete from the list. Spec 0043.
  */
 export function CommandPalette({ open, onClose }: Props) {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const pathname = useLocation({ select: (s) => s.pathname });
   const notes = useAppStore((s) => s.notes);
   const newNote = useAppStore((s) => s.newNote);
+  const deleteNote = useAppStore((s) => s.deleteNote);
 
   const [query, setQuery] = useState('');
   const [cursor, setCursor] = useState(0);
@@ -47,8 +49,27 @@ export function CommandPalette({ open, onClose }: Props) {
     return () => clearTimeout(id);
   }, [open]);
 
-  const actions = useMemo<PaletteRow[]>(
-    () => [
+  const currentNoteId = useMemo(() => {
+    const match = pathname.match(/^\/notes\/([^/]+)/);
+    return match?.[1];
+  }, [pathname]);
+  const currentNote = useMemo(
+    () => (currentNoteId ? notes.find((n) => n.id === currentNoteId) : undefined),
+    [currentNoteId, notes],
+  );
+
+  async function confirmAndDelete(note: { id: string; title: string }) {
+    const label = note.title || t('sidebar.untitled');
+    const prompt = t('palette.deleteConfirm', { title: label });
+    if (!window.confirm(prompt)) return;
+    await deleteNote(note.id);
+    if (note.id === currentNoteId) {
+      await navigate({ to: '/notes' });
+    }
+  }
+
+  const actions = useMemo<PaletteRow[]>(() => {
+    const items: PaletteRow[] = [
       {
         kind: 'action',
         id: 'new-note',
@@ -71,13 +92,6 @@ export function CommandPalette({ open, onClose }: Props) {
       },
       {
         kind: 'action',
-        id: 'open-meetings',
-        label: t('palette.actions.openMeetings'),
-        hint: 'Win+Shift+M',
-        run: () => navigate({ to: '/meetings' }),
-      },
-      {
-        kind: 'action',
         id: 'toggle-theme',
         label: t('palette.actions.toggleTheme'),
         run: () => {
@@ -95,14 +109,25 @@ export function CommandPalette({ open, onClose }: Props) {
         hint: 'Ctrl+,',
         run: () => navigate({ to: '/settings' }),
       },
-    ],
-    [navigate, newNote, t],
-  );
+    ];
+    if (currentNote) {
+      items.splice(1, 0, {
+        kind: 'action',
+        id: 'delete-current-note',
+        label: t('palette.actions.deleteCurrentNote'),
+        hint: 'Ctrl+Backspace',
+        run: () => void confirmAndDelete(currentNote),
+      });
+    }
+    return items;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [navigate, newNote, t, currentNote]);
 
   const groups = useMemo<Group[]>(() => {
     const q = query.trim().toLowerCase();
     if (!q) {
-      const recent = notes.slice(0, 5).map<PaletteRow>((n) => ({
+      // All notes on empty query — palette doubles as a browse list.
+      const recent = notes.map<PaletteRow>((n) => ({
         kind: 'note',
         id: n.id,
         label: n.title || t('sidebar.untitled'),
@@ -114,7 +139,7 @@ export function CommandPalette({ open, onClose }: Props) {
     }
     const noteHits = notes
       .filter((n) => (n.title || '').toLowerCase().includes(q))
-      .slice(0, 6)
+      .slice(0, 20)
       .map<PaletteRow>((n) => ({
         kind: 'note',
         id: n.id,
@@ -140,7 +165,7 @@ export function CommandPalette({ open, onClose }: Props) {
     }
   }
 
-  function onKey(e: React.KeyboardEvent) {
+  async function onKey(e: React.KeyboardEvent) {
     if (e.key === 'Escape') {
       e.preventDefault();
       onClose();
@@ -153,6 +178,18 @@ export function CommandPalette({ open, onClose }: Props) {
     if (e.key === 'ArrowUp') {
       e.preventDefault();
       setCursor((v) => Math.max(0, v - 1));
+    }
+    // Ctrl+Backspace on a focused note row → delete with confirm
+    if (e.key === 'Backspace' && (e.ctrlKey || e.metaKey)) {
+      const row = flat[cursor];
+      if (row?.kind === 'note') {
+        e.preventDefault();
+        const note = notes.find((n) => n.id === row.id);
+        if (note) {
+          await confirmAndDelete({ id: note.id, title: note.title });
+        }
+        return;
+      }
     }
     if (e.key === 'Enter' && flat[cursor]) {
       e.preventDefault();
@@ -209,41 +246,26 @@ export function CommandPalette({ open, onClose }: Props) {
                 const active = flatIdx === cursor;
                 const localIdx = flatIdx;
                 return (
-                  <button
+                  <PaletteItemRow
                     key={`${item.kind}-${item.id}`}
-                    onMouseEnter={() => setCursor(localIdx)}
-                    onClick={() => pick(item)}
-                    className={clsx(
-                      'w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-left text-sm text-foreground',
-                      active && 'bg-secondary/70',
-                    )}
-                  >
-                    {item.kind === 'note' ? (
-                      <FileText
-                        size={15}
-                        className="text-muted-foreground shrink-0"
-                        aria-hidden="true"
-                      />
-                    ) : item.id === 'open-settings' ? (
-                      <Settings
-                        size={15}
-                        className="text-muted-foreground shrink-0"
-                        aria-hidden="true"
-                      />
-                    ) : (
-                      <Sparkles
-                        size={15}
-                        className="text-muted-foreground shrink-0"
-                        aria-hidden="true"
-                      />
-                    )}
-                    <span className="flex-1 truncate">{item.label}</span>
-                    {item.hint && (
-                      <span className="font-mono text-[11px] text-muted-foreground">
-                        {item.hint}
-                      </span>
-                    )}
-                  </button>
+                    item={item}
+                    active={active}
+                    onHover={() => setCursor(localIdx)}
+                    onPick={() => pick(item)}
+                    onDelete={
+                      item.kind === 'note'
+                        ? () => {
+                            const note = notes.find((n) => n.id === item.id);
+                            if (note) {
+                              void confirmAndDelete({
+                                id: note.id,
+                                title: note.title,
+                              });
+                            }
+                          }
+                        : undefined
+                    }
+                  />
                 );
               })}
             </div>
@@ -259,10 +281,86 @@ export function CommandPalette({ open, onClose }: Props) {
             <kbd className="cx-kbd">↵</kbd> {t('palette.hints.open')}
           </span>
           <span>
+            <kbd className="cx-kbd">⌘⌫</kbd> {t('palette.hints.delete')}
+          </span>
+          <span>
             <kbd className="cx-kbd">Esc</kbd> {t('palette.hints.close')}
           </span>
         </div>
       </div>
+    </div>
+  );
+}
+
+function PaletteItemRow({
+  item,
+  active,
+  onHover,
+  onPick,
+  onDelete,
+}: {
+  item: PaletteRow;
+  active: boolean;
+  onHover: () => void;
+  onPick: () => void;
+  onDelete?: () => void;
+}) {
+  const { t } = useTranslation();
+  return (
+    <div
+      className={clsx(
+        'group w-full flex items-center rounded-md text-sm text-foreground',
+        active && 'bg-secondary/70',
+      )}
+      onMouseEnter={onHover}
+    >
+      <button
+        type="button"
+        onClick={onPick}
+        className="flex-1 min-w-0 flex items-center gap-2.5 px-2.5 py-2 text-left"
+      >
+        {item.kind === 'note' ? (
+          <FileText
+            size={15}
+            className="text-muted-foreground shrink-0"
+            aria-hidden="true"
+          />
+        ) : item.id === 'open-settings' ? (
+          <Settings
+            size={15}
+            className="text-muted-foreground shrink-0"
+            aria-hidden="true"
+          />
+        ) : item.id === 'delete-current-note' ? (
+          <Trash2
+            size={15}
+            className="text-destructive shrink-0"
+            aria-hidden="true"
+          />
+        ) : (
+          <Sparkles
+            size={15}
+            className="text-muted-foreground shrink-0"
+            aria-hidden="true"
+          />
+        )}
+        <span className="flex-1 truncate">{item.label}</span>
+      </button>
+      {onDelete ? (
+        <button
+          type="button"
+          onClick={onDelete}
+          aria-label={t('palette.actions.deleteThisNote')}
+          title={t('palette.actions.deleteThisNote')}
+          className="shrink-0 mx-1 p-1.5 rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
+        >
+          <Trash2 size={14} aria-hidden="true" />
+        </button>
+      ) : item.hint ? (
+        <span className="shrink-0 pr-3 font-mono text-[11px] text-muted-foreground">
+          {item.hint}
+        </span>
+      ) : null}
     </div>
   );
 }

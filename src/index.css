@@ -48,6 +48,12 @@
 
   /* Motion — Opera Air-inspired "calm" easing. */
   --ease-calm: cubic-bezier(0.22, 0.61, 0.36, 1);
+
+  /* AppShell dimensions (spec 0057). Canvases + chrome reference
+     these instead of hardcoding pixel widths. */
+  --shell-rail-width: 256px;
+  --shell-chrome-height: 48px;
+  --shell-panel-width: 380px;
 }
 
 @layer base {
@@ -84,15 +90,18 @@
     --dur-breath: 600ms;
   }
 
-  /* Dark — deep near-black with a hair of warmth. Same tangerine
-     accent, brightened one step so it reads on the dark canvas. */
+  /* Dark — near-black base (spec 0057 retune, supersedes the warm
+     #2A2A2A range from spec 0052). Matches docs/ui/new-options.pen
+     Pages 26/27/28 and the Notion reference: canvas ~#0A0A0A, with
+     surfaces stepped upward so cards still read against the bg. A
+     0.003 chroma keeps the faint warm cast from Mix B Refined. */
   .dark,
   [data-theme="dark"] {
-    --bg-canvas:    0.170 0.003 60;
-    --bg-surface:   0.205 0.003 60;
-    --bg-surface-2: 0.245 0.003 60;
-    --bg-sunken:    0.145 0.003 60;
-    --bg-overlay:   0.215 0.003 60;
+    --bg-canvas:    0.058 0.003 60;
+    --bg-surface:   0.110 0.003 60;
+    --bg-surface-2: 0.160 0.003 60;
+    --bg-sunken:    0.035 0.003 60;
+    --bg-overlay:   0.125 0.003 60;
 
     --fg-primary:    0.940 0.003 60;
     --fg-secondary:  0.740 0.005 60;
@@ -103,6 +112,11 @@
     --accent:       0.770 0.135 55;
     --accent-hover: 0.810 0.135 55;
     --accent-soft:  0.320 0.060 55;
+
+    /* Explicit border in dark to match the Pen stroke ~#1F1F1F.
+       The derived `fg-primary / 0.08` token dissolves against the
+       near-black canvas, so rail + card edges need a fixed value. */
+    --color-border: oklch(0.220 0.003 60);
   }
 
   * {
@@ -141,6 +155,47 @@
 /* BlockNote inside our layout: fill the pane, respect the theme. */
 .bn-container {
   height: 100%;
+  /* Per-note font family is switched by the NoteActionsMenu
+     picker (Default/Serif/Mono) — default to Geist. */
+  --cx-note-font: var(--font-sans);
+  --cx-note-size: 1rem;
+}
+
+.bn-container .ProseMirror {
+  font-family: var(--cx-note-font);
+  font-size: var(--cx-note-size);
+}
+
+.cx-note-font-serif {
+  --cx-note-font: 'Newsreader', 'Source Serif Pro', Georgia, serif;
+}
+.cx-note-font-mono {
+  --cx-note-font: var(--font-mono);
+}
+.cx-note-size-small {
+  --cx-note-size: 0.875rem;
+}
+
+/* Let the editor inherit the canvas background. Without this the
+   `@blocknote/shadcn` bundle paints `rgb(31,31,31)` in dark mode,
+   making the column look like a lighter slab floating over the
+   near-black shell — the user's "cinza mais claro no meio da tela"
+   report. Transparent here means "use whatever the page set". */
+.bn-container,
+.bn-container .bn-editor,
+.bn-container .ProseMirror {
+  background: transparent;
+}
+
+/* BlockNote shows its "Enter text or type '/' for commands" hint
+   via `::after` on *every* empty focused block. The user wants it
+   once — at the start of a blank note — then silent for the rest.
+   The attribute `data-is-only-empty-block` is set by BlockNote only
+   when this block is the sole empty block in the doc, which maps
+   exactly to the "first and only" case. Subsequent empty blocks
+   (created by Enter) lack the attribute and go quiet. */
+.bn-block-content[data-is-empty-and-focused="true"]:not([data-is-only-empty-block="true"])::after {
+  content: "" !important;
 }
 
 /* Display — Geist bold with tight tracking. Used for note titles

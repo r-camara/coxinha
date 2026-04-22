@@ -3,17 +3,18 @@ import {
   createRootRouteWithContext,
   createRoute,
   createMemoryHistory,
-  redirect,
   Outlet,
 } from '@tanstack/react-router';
 import { QueryClient } from '@tanstack/react-query';
 
 import { RootLayout } from './routes/__root';
+import { HomeRoute } from './routes/HomeRoute';
 import { NotesIndexRoute } from './routes/NotesIndexRoute';
 import { NoteDetailRoute, noteContentQueryOptions } from './routes/NoteDetailRoute';
 import { AgendaRoute } from './routes/AgendaRoute';
-import { MeetingsRoute } from './routes/MeetingsRoute';
 import { SettingsRoute } from './routes/SettingsRoute';
+import { DevMenuPreviewRoute } from './routes/DevMenuPreviewRoute';
+import { DevShellPreviewRoute } from './routes/DevShellPreviewRoute';
 
 export interface RouterContext {
   queryClient: QueryClient;
@@ -28,9 +29,7 @@ const rootRoute = createRootRouteWithContext<RouterContext>()({
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/',
-  beforeLoad: () => {
-    throw redirect({ to: '/notes' });
-  },
+  component: HomeRoute,
 });
 
 const notesRoute = createRoute({
@@ -59,25 +58,38 @@ const agendaRoute = createRoute({
   component: AgendaRoute,
 });
 
-const meetingsRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: 'meetings',
-  component: MeetingsRoute,
-});
-
 const settingsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: 'settings',
   component: SettingsRoute,
 });
 
-const routeTree = rootRoute.addChildren([
+// Dev-only preview routes (stripped from prod bundle by the
+// `import.meta.env.DEV` guard below). Let Playwright + humans
+// visually check UI primitives without a real note.
+const devMenuPreviewRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: 'dev/menu-preview',
+  component: DevMenuPreviewRoute,
+});
+
+const devShellPreviewRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: 'dev/shell-preview',
+  component: DevShellPreviewRoute,
+});
+
+const baseChildren = [
   indexRoute,
   notesRoute.addChildren([notesIndexRoute, noteDetailRoute]),
   agendaRoute,
-  meetingsRoute,
   settingsRoute,
-]);
+];
+const routeTree = rootRoute.addChildren(
+  import.meta.env.DEV
+    ? [...baseChildren, devMenuPreviewRoute, devShellPreviewRoute]
+    : baseChildren,
+);
 
 export function createAppRouter(queryClient: QueryClient) {
   // Memory history in F1 Tauri — no address bar, URL is internal

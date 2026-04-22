@@ -3,8 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useParams } from '@tanstack/react-router';
 import { queryOptions, useQuery } from '@tanstack/react-query';
 
-import { RouteLayout } from '../components/RouteLayout';
-import { SavedIndicator } from '../components/ChromeBar';
+import { AppShell, SavedIndicator } from '../components/AppShell';
 import { commands, type NoteContent } from '../lib/bindings';
 import { NoteEditor, NoteLoadingSkeleton } from '../features/notes/NoteEditor';
 
@@ -32,22 +31,18 @@ export function NoteDetailRoute() {
 
 function NoteDetailInner({ noteId }: { noteId: string }) {
   const { t } = useTranslation();
-  // `useQuery` with an Infinity staleTime reads from the loader's
-  // pre-warmed cache — no fresh IPC unless the query has been
-  // invalidated.
   const { data } = useQuery(noteContentQueryOptions(noteId));
   if (!data) {
-    // Loader resolves the promise, so this branch only hits during
-    // the brief window after invalidation before refetch returns.
     return <NoteLoadingSkeleton />;
   }
   const title = data.note.title || t('sidebar.untitled');
   return (
-    <RouteLayout
+    <AppShell
       trail={[t('nav.notes').toLowerCase(), `${title}.md`]}
-      chromeRight={<SavedIndicator label="Saved" />}
+      tabs={[{ id: `note-${noteId}`, label: `${title}.md`, active: true }]}
+      chromeRight={<SavedIndicator label={t('chrome.saved')} />}
     >
       <NoteEditor noteId={noteId} content={data} />
-    </RouteLayout>
+    </AppShell>
   );
 }

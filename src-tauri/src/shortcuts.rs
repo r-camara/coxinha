@@ -28,6 +28,8 @@ pub fn register_all(app: &AppHandle, cfg: &ShortcutsConfig) -> Result<()> {
     let mut routes = routes_lock().lock().unwrap();
     routes.clear();
 
+    let mut ok = 0u8;
+    let mut fail = 0u8;
     for (raw, route) in [
         (&cfg.new_note, Route::NotesNew),
         (&cfg.open_app, Route::Home),
@@ -39,14 +41,23 @@ pub fn register_all(app: &AppHandle, cfg: &ShortcutsConfig) -> Result<()> {
             Ok(shortcut) => {
                 if let Err(e) = gs.register(shortcut) {
                     tracing::warn!("failed to register {}: {:?}", raw, e);
+                    fail += 1;
                     continue;
                 }
                 tracing::info!("registered shortcut {} -> {:?}", raw, route);
                 routes.insert(shortcut, route);
+                ok += 1;
             }
-            Err(e) => tracing::warn!("invalid shortcut '{}': {:?}", raw, e),
+            Err(e) => {
+                tracing::warn!("invalid shortcut '{}': {:?}", raw, e);
+                fail += 1;
+            }
         }
     }
+    // One-line summary — shortcut_smoke asserts on this exact shape
+    // ("shortcut registration summary: N ok, M failed") so keep the
+    // format stable.
+    tracing::info!("shortcut registration summary: {} ok, {} failed", ok, fail);
     Ok(())
 }
 
