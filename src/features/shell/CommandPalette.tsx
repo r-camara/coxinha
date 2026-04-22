@@ -92,13 +92,6 @@ export function CommandPalette({ open, onClose }: Props) {
       },
       {
         kind: 'action',
-        id: 'open-meetings',
-        label: t('palette.actions.openMeetings'),
-        hint: 'Win+Shift+M',
-        run: () => navigate({ to: '/meetings' }),
-      },
-      {
-        kind: 'action',
         id: 'toggle-theme',
         label: t('palette.actions.toggleTheme'),
         run: () => {

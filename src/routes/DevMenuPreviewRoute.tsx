@@ -1,8 +1,7 @@
 import { useRef, useState } from 'react';
 import { MoreHorizontal } from 'lucide-react';
 
-import { RouteLayout } from '../components/RouteLayout';
-import { SavedIndicator } from '../components/ChromeBar';
+import { AppShell, SavedIndicator } from '../components/AppShell';
 import { NoteActionsMenu, type NoteFont } from '../features/notes/NoteActionsMenu';
 import { NoteHeader } from '../features/notes/NoteHeader';
 
@@ -22,8 +21,9 @@ export function DevMenuPreviewRoute() {
   const [fullWidth, setFullWidth] = useState(false);
 
   return (
-    <RouteLayout
+    <AppShell
       trail={['dev', 'menu-preview']}
+      tabs={[{ id: 'menu-preview', label: 'menu-preview', active: true }]}
       chromeRight={<SavedIndicator label="Saved" />}
     >
       <section className="relative h-full overflow-auto bn-container cursor-text">
@@ -80,6 +80,6 @@ export function DevMenuPreviewRoute() {
           onFullWidthChange={setFullWidth}
         />
       </section>
-    </RouteLayout>
+    </AppShell>
   );
 }

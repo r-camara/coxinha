@@ -12,7 +12,6 @@ import { RootLayout } from './routes/__root';
 import { NotesIndexRoute } from './routes/NotesIndexRoute';
 import { NoteDetailRoute, noteContentQueryOptions } from './routes/NoteDetailRoute';
 import { AgendaRoute } from './routes/AgendaRoute';
-import { MeetingsRoute } from './routes/MeetingsRoute';
 import { SettingsRoute } from './routes/SettingsRoute';
 import { DevMenuPreviewRoute } from './routes/DevMenuPreviewRoute';
 import { DevShellPreviewRoute } from './routes/DevShellPreviewRoute';
@@ -61,12 +60,6 @@ const agendaRoute = createRoute({
   component: AgendaRoute,
 });
 
-const meetingsRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: 'meetings',
-  component: MeetingsRoute,
-});
-
 const settingsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: 'settings',
@@ -92,7 +85,6 @@ const baseChildren = [
   indexRoute,
   notesRoute.addChildren([notesIndexRoute, noteDetailRoute]),
   agendaRoute,
-  meetingsRoute,
   settingsRoute,
 ];
 const routeTree = rootRoute.addChildren(

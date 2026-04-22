@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react';
-import { Outlet, useLocation, useNavigate } from '@tanstack/react-router';
+import { Outlet, useNavigate } from '@tanstack/react-router';
 import type { UnlistenFn } from '@tauri-apps/api/event';
 
-import { IconRail } from '../components/IconRail';
-import { AiPanel } from '../features/shell/AiPanel';
 import { CommandPalette } from '../features/shell/CommandPalette';
 import { events, type Route } from '../lib/bindings';
+import { useSidePanel } from '../lib/panels';
 import { mark } from '../lib/perf';
 import { useAppStore } from '../lib/store';
 import {
@@ -14,18 +13,17 @@ import {
   THEME_PREF_EVENT,
 } from '../lib/theme';
 
+/**
+ * Root layout. Every route renders inside its own AppShell (spec
+ * 0057) so this component only owns global concerns: theme
+ * follow-up, IPC listeners, command palette overlay, and
+ * shortcut handling that spans every route.
+ */
 export function RootLayout() {
   const navigate = useNavigate();
-  const pathname = useLocation({ select: (s) => s.pathname });
   const loadNotes = useAppStore((s) => s.loadNotes);
   const newNote = useAppStore((s) => s.newNote);
   const [paletteOpen, setPaletteOpen] = useState(false);
-  // AI panel is visible by default on note-detail routes where
-  // link/related suggestions make sense. Other routes keep it
-  // hidden so the chrome stays quiet.
-  const [aiPanelOpen, setAiPanelOpen] = useState(() =>
-    pathname.startsWith('/notes/') && pathname !== '/notes',
-  );
 
   useEffect(() => {
     let cleanup = followThemePreference(getThemePreference());
@@ -77,7 +75,10 @@ export function RootLayout() {
           navigate({ to: '/agenda' });
           return;
         case 'meetings':
-          navigate({ to: '/meetings' });
+          // /meetings was removed in spec 0057; the shortcut slot
+          // is repurposed in a later commit. Until then, send the
+          // user to /notes so they land somewhere sensible.
+          navigate({ to: '/notes' });
           return;
         case 'settings':
           navigate({ to: '/settings' });
@@ -94,9 +95,10 @@ export function RootLayout() {
     };
   }, [loadNotes, navigate, newNote]);
 
-  // Ctrl+K / Ctrl+P open the command palette; Ctrl+J toggles
-  // the AI panel. All gated on Ctrl/Cmd so they don't fight the
-  // editor's own hotkeys.
+  // Ctrl+K / Ctrl+P open the command palette; Ctrl+\ toggles
+  // the side panel. All gated on Ctrl/Cmd so they don't fight
+  // the editor's own hotkeys.
+  const toggleSidePanel = useSidePanel((s) => s.toggle);
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (!(e.ctrlKey || e.metaKey)) return;
@@ -106,27 +108,19 @@ export function RootLayout() {
         setPaletteOpen((v) => !v);
         return;
       }
-      if (key === 'j') {
+      if (key === '\\') {
         e.preventDefault();
-        setAiPanelOpen((v) => !v);
+        toggleSidePanel();
       }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, []);
+  }, [toggleSidePanel]);
 
   return (
-    <div className="h-screen w-screen flex bg-background text-foreground">
-      <IconRail onOpenPalette={() => setPaletteOpen(true)} />
-      <main className="flex-1 overflow-hidden">
-        <Outlet />
-      </main>
-      <AiPanel
-        open={aiPanelOpen}
-        onToggle={() => setAiPanelOpen((v) => !v)}
-        onClose={() => setAiPanelOpen(false)}
-      />
+    <>
+      <Outlet />
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
-    </div>
+    </>
   );
 }

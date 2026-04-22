@@ -1,13 +1,16 @@
 import { useTranslation } from 'react-i18next';
 
-import { RouteLayout } from '../components/RouteLayout';
+import { AppShell } from '../components/AppShell';
 import { SettingsView } from '../features/settings/SettingsView';
 
 export function SettingsRoute() {
   const { t } = useTranslation();
   return (
-    <RouteLayout trail={[t('nav.settings').toLowerCase()]} hideStatus>
+    <AppShell
+      trail={[t('nav.settings').toLowerCase()]}
+      tabs={[{ id: 'settings', label: t('nav.settings'), active: true }]}
+    >
       <SettingsView />
-    </RouteLayout>
+    </AppShell>
   );
 }
