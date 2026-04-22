@@ -69,7 +69,7 @@ export function RootLayout() {
           return;
         }
         case 'home':
-          navigate({ to: '/notes' });
+          navigate({ to: '/' });
           return;
         case 'agenda':
           navigate({ to: '/agenda' });

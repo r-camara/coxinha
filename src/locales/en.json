@@ -34,7 +34,31 @@
     "saved": "Saved"
   },
   "sidePanel": {
-    "toggle": "Toggle side panel"
+    "toggle": "Toggle side panel",
+    "messages": {
+      "title": "Messages"
+    },
+    "news": {
+      "title": "Updates"
+    },
+    "sources": {
+      "title": "Related sources"
+    }
+  },
+  "home": {
+    "greeting": {
+      "morning": "Good morning,",
+      "afternoon": "Good afternoon,",
+      "evening": "Good evening,"
+    },
+    "thingsToday": {
+      "title": "{{count}} things for you today",
+      "empty": "Nothing scheduled for today."
+    },
+    "recents": {
+      "title": "Recents",
+      "continue": "Continue from yesterday"
+    }
   },
   "assistant": {
     "region": "Assistant",

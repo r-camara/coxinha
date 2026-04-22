@@ -3,12 +3,12 @@ import {
   createRootRouteWithContext,
   createRoute,
   createMemoryHistory,
-  redirect,
   Outlet,
 } from '@tanstack/react-router';
 import { QueryClient } from '@tanstack/react-query';
 
 import { RootLayout } from './routes/__root';
+import { HomeRoute } from './routes/HomeRoute';
 import { NotesIndexRoute } from './routes/NotesIndexRoute';
 import { NoteDetailRoute, noteContentQueryOptions } from './routes/NoteDetailRoute';
 import { AgendaRoute } from './routes/AgendaRoute';
@@ -29,9 +29,7 @@ const rootRoute = createRootRouteWithContext<RouterContext>()({
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/',
-  beforeLoad: () => {
-    throw redirect({ to: '/notes' });
-  },
+  component: HomeRoute,
 });
 
 const notesRoute = createRoute({
