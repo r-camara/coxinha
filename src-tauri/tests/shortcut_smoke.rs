@@ -104,10 +104,12 @@ fn parse_summary(line: &str) -> (u32, u32) {
 
 fn extract_number_before(s: &str, tail: &str) -> Option<u32> {
     let idx = s.find(tail)?;
+    // rfind on the DoubleEndedIterator walks from the back in O(1)
+    // instead of iterating to the end (clippy::filter_next /
+    // clippy::double_ended_iterator_last).
     s[..idx]
         .split(|c: char| !c.is_ascii_digit())
-        .filter(|s| !s.is_empty())
-        .last()?
+        .rfind(|s| !s.is_empty())?
         .parse()
         .ok()
 }
