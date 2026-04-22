@@ -60,6 +60,12 @@
       "continue": "Continue from yesterday"
     }
   },
+  "agendaPanel": {
+    "upcoming": "Upcoming",
+    "empty": "Nothing scheduled.",
+    "minutesSuffix": "min",
+    "hasMeetingNote": "Has linked note"
+  },
   "meeting": {
     "label": "Meeting",
     "card": {
